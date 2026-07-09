@@ -33,8 +33,9 @@ const JefeCuadrillaApp = ({ tenantId }) => {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [recursos, setRecursos] = useState({ empleados: [], lotes: [], maquinaria: [] });
   const [assignData, setAssignData] = useState({
-    categoria: 'Lotes',
+    categoria: 'Preparacion_Suelos',
     descripcion_labor: '',
+    fecha_planificada: new Date().toISOString().split('T')[0],
     empleadosIds: [],
     id_lote: '',
     id_maquinaria: ''
@@ -272,7 +273,7 @@ const JefeCuadrillaApp = ({ tenantId }) => {
 
       if (res.ok) {
         setShowAssignModal(false);
-        setAssignData({ categoria: 'Lotes', descripcion_labor: '', empleadosIds: [], id_lote: '', id_maquinaria: '' });
+        setAssignData({ categoria: 'Preparacion_Suelos', descripcion_labor: '', fecha_planificada: new Date().toISOString().split('T')[0], empleadosIds: [], id_lote: '', id_maquinaria: '' });
         // Refrescar labores
         const cuadrillaId = typeof selectedCuadrilla === 'string' ? selectedCuadrilla : (selectedCuadrilla?.id ?? selectedCuadrilla?.id_cuadrilla);
         authFetch(`${API_URL}/cuadrilla/labores-hoy?cuadrilla=${cuadrillaId}${tenantId ? `&tenantId=${tenantId}` : ''}`)
@@ -584,6 +585,16 @@ const JefeCuadrillaApp = ({ tenantId }) => {
                    <option key={c.value} value={c.value}>{c.label}</option>
                 ))}
               </select>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#334155' }}>Fecha de la Labor</label>
+              <input 
+                type="date" 
+                value={assignData.fecha_planificada}
+                onChange={e => setAssignData({...assignData, fecha_planificada: e.target.value})}
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+              />
             </div>
 
             <div style={{ marginBottom: '16px' }}>
