@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #f5f7fa;
+  --card-bg: #ffffff;
+  --text: #333333;
+  --text-muted: #999999;
+  --primary: #2196F3;
+  --primary-dark: #1976D2;
+  --primary-light: #BBDEFB;
+  --success: #4CAF50;
+  --danger: #F44336;
+  --warning: #FF9800;
+  --info: #00BCD4;
+  --border: #e0e4e8;
+  --radius: 8px;
+  --transition: 0.2s ease;
+}
+
+/* Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121212;
+    --card-bg: #1e1e1e;
+    --text: #e0e0e0;
+    --border: #333333;
+    --primary: #90caf9;
+    --primary-dark: #5d99c6;
+    --primary-light: #e3f2fd;
+    --success: #66bb6a;
+    --danger: #ef5350;
+    --warning: #ffa726;
+    --info: #4dd0e1;
+  }
+}
+
+/* Global resets & utilities */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Hover effect utility */
+.hover-effect {
+  transition: var(--transition);
+}
+.hover-effect:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+@media print { .print\\:hidden { display: none !important; } .print-modal-wrapper { position: static !important; background: white !important; padding: 0 !important; } .print-modal-content { height: auto !important; max-width: 100% !important; border: none !important; box-shadow: none !important; } .table-container { overflow: visible !important; } }

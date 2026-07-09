@@ -1,0 +1,200 @@
+.satellite-dashboard {
+  padding: 20px;
+  background-color: #121212;
+  color: #e0e0e0;
+  height: calc(100vh - 40px); /* Adjust based on navbar */
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.satellite-header {
+  margin-bottom: 20px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 10px;
+}
+
+.satellite-header h2 {
+  margin: 0 0 5px 0;
+  color: #4caf50;
+  font-size: 24px;
+}
+
+.satellite-header p {
+  margin: 0;
+  color: #aaaaaa;
+  font-size: 14px;
+}
+
+.satellite-content {
+  display: flex;
+  flex: 1;
+  gap: 20px;
+  min-height: 0; /* Important for flex children to scroll */
+}
+
+/* Map Panel */
+.map-panel {
+  flex: 2;
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  border: 1px solid #2c2c2c;
+}
+
+.map-container {
+  width: 100%;
+  height: 100%;
+  background: #1e1e1e;
+}
+
+.map-overlay-controls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 10px;
+  z-index: 10;
+}
+
+.control-btn {
+  background: rgba(30, 30, 30, 0.8);
+  border: 1px solid #444;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+  transition: all 0.3s;
+}
+
+.control-btn:hover {
+  background: rgba(50, 50, 50, 0.9);
+}
+
+.control-btn.active {
+  background: #4caf50;
+  color: #fff;
+  border-color: #4caf50;
+}
+
+/* Info Panel (Copiloto) */
+.info-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.info-panel h3 {
+  margin-top: 0;
+  color: #2196f3;
+  font-size: 20px;
+}
+
+.glass-card {
+  background: rgba(30, 30, 30, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.lote-details h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #fff;
+  border-bottom: 1px solid #444;
+  padding-bottom: 10px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.metric-box {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 15px;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid #333;
+}
+
+.metric-title {
+  display: block;
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 5px;
+}
+
+.metric-value {
+  display: block;
+  font-size: 22px;
+  font-weight: bold;
+  color: #4caf50;
+}
+
+.chart-container {
+  height: 200px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.ai-alerts {
+  background: rgba(255, 87, 34, 0.1);
+  border-left: 4px solid #ff5722;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.ai-alerts h4 {
+  color: #ff5722;
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  border: none;
+}
+
+.ai-alerts ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #ffd0c1;
+  font-size: 14px;
+}
+
+.ai-alerts li {
+  margin-bottom: 5px;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  border: 1px dashed #555;
+  color: #888;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Custom Scrollbar for Info Panel */
+.info-panel::-webkit-scrollbar {
+  width: 6px;
+}
+.info-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+.info-panel::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 10px;
+}

@@ -1,0 +1,41 @@
+/* src/pages/Harvest/Harvest.css */
+
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.15);
+  --glass-blur: blur(10px);
+  --border-radius: 12px;
+  --shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  --primary-color: hsl(210, 60%, 55%);
+  --text-color: #f0f0f0;
+  --card-bg: rgba(30, 30, 30, 0.6);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #1e1e2f, #2a2a3b);
+  color: var(--text-color);
+}
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 24px;
+  margin: 16px;
+}
+
+.harvest-form-container .title,
+.harvest-dashboard .title {
+  font-size: 1.8rem;
+  margin-bottom: 16px;
+  color: var(--primary-color);
+  text-align: center;
+}
+
+.chart-card {
+  background: var(--card-bg) !important;
+  border-radius: var(--border-radius) !important;
+}

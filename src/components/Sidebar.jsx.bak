@@ -1,0 +1,692 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+
+function Sidebar({ modules, loading, selectedTable, onSelectTable, onNavigateHome, open, onToggle, permisos = [] }) {
+  console.log('Sidebar modules:', modules);
+  const [search, setSearch] = useState('');
+  const [expandedModules, setExpandedModules] = useState({});
+  const [expandedSubModules, setExpandedSubModules] = useState({});
+
+  const hasAccess = (moduleName) => {
+    if (!permisos || permisos.length === 0) return true;
+    const match = permisos.find(p => p.modulo === moduleName || p.modulo === 'Todos');
+    return match ? match.puede_leer === 1 : false;
+  };
+
+  // Start with all modules collapsed for a cleaner sidebar
+  useEffect(() => {
+    if (modules) {
+      const init = {};
+      Object.keys(modules).forEach((name) => {
+        init[name] = false;
+      });
+      setExpandedModules(init);
+    }
+  }, [modules]);
+
+  const customViews = {
+    'Satélite & GPS Tracker': [
+      { id: 'satellite-monitor', name: '🛰️ Satélite (GIS Premium)' },
+      { id: 'gps-tracker', name: '📍 GPS Tracker' }
+    ],
+    'Agricultura y Cultivos': [
+      { id: 'cultivos-avanzado', name: '📈 Tablero Avanzado (Gerencial)' },
+      { id: 'cultivos-dashboard', name: '🌍 Centro de Control (Cultivos)' },
+      { id: 'menu_cultivos', name: '🌾 Cultivos', isSubmenu: true, items: [
+        { id: 'cultivos', name: '🌱 Especies de Cultivos' },
+        { id: 'cultivos_catalogo', name: '🌱 Catálogo de Cultivos' },
+        { id: 'variedades', name: '🧬 Variedades' },
+        { id: 'calendario_agricola', name: '📅 Calendario Agrícola' },
+        { id: 'calendario_cultivo', name: '📆 Calendario de Cultivo' },
+        { id: 'calendario_riego', name: '💧 Calendario de Riego' },
+        { id: 'fenologia_cultivo', name: '📈 Fenología de Cultivo' },
+        { id: 'fenologia_etapas', name: '📊 Etapas Fenológicas' },
+        { id: 'rotaciones_cultivos', name: '🔄 Rotaciones de Cultivos' },
+        { id: 'rotaciones_fases', name: '🔁 Fases de Rotación' },
+        { id: 'asociacion_cultivos', name: '🤝 Asociaciones (Intercropping)' },
+        { id: 'satellite-monitor', name: '🛰️ Monitoreo Satelital' },
+        { id: 'salud_arboles', name: '🌲 Salud Árboles' }
+      ]},
+      { id: 'menu_siembras', name: '🌾 Siembras', isSubmenu: true, items: [
+        { id: 'siembras', name: '🌳 Registro de Siembras' },
+        { id: 'presupuestos_siembra', name: '💰 Presupuestos de Siembra' },
+        { id: 'siembra_arboles', name: '🌲 Siembra de Árboles (Individuos)' }
+      ]},
+      { id: 'menu_labores', name: '🚜 Tareas y Movimientos', isSubmenu: true, items: [
+        { id: 'central-verificacion', name: '✅ Centro Verificación Tareas/Asistencia' },
+        { id: 'labores_diarias', name: '👥 Control de Labores Diarias' },
+        { id: 'registro_aplicaciones', name: '💧 Abonos y Fumigaciones' },
+        { id: 'cosechas', name: '🚜 Registro de Cosechas' }
+      ]},
+      { id: 'menu_sanidad', name: '🔬 Sanidad Vegetal y Fitosanitario', isSubmenu: true, items: [
+        { id: 'plagas', name: '🐛 Catálogo de Plagas' },
+        { id: 'enfermedades', name: '🦠 Catálogo de Enfermedades' },
+        { id: 'control_plagas', name: '🛡️ Aplicaciones Sanitarias' }
+      ]},
+      { id: 'menu_viveros', name: '🌱 Viveros', isSubmenu: true, items: [
+        { id: 'vivero-dashboard', name: '📊 Dashboard Vivero' },
+        { id: 'inventario-camadas', name: '🌱 Inventario y Camadas' }
+      ]},
+      { id: 'menu_agua', name: '💧 Gestión Hídrica y Riego', isSubmenu: true, items: [
+        { id: 'agua', name: '💧 Dashboard Hídrico' }
+      ]},
+      { id: 'menu_ambiente', name: '🌍 Medio Ambiente', isSubmenu: true, items: [] },
+      { id: 'menu_clima', name: '🌤️ Clima y Meteorología', isSubmenu: true, items: [
+        { id: 'clima-dashboard', name: '🌤️ Dashboard Climatológico' }
+      ]},
+      { id: 'menu_certificaciones', name: '🏅 Certificaciones y Auditorías', isSubmenu: true, items: [] },
+      { id: 'menu_forestal', name: '🌲 Gestión Forestal', isSubmenu: true, items: [] },
+      { id: 'menu_energia', name: '⚡ Gestión de Energía', isSubmenu: true, items: [] }
+    ],
+    'IA': [
+      { id: 'task-planner', name: '🗓️ Planificador de Tareas' }
+    ],
+    'Inventario': [
+      { id: 'menu_inventario_catalogos', name: '📚 Catálogos', isSubmenu: true, items: [
+        { id: 'bod_bodegas', name: '🏢 Catálogo de Bodegas' },
+        { id: 'categorias_insumos', name: '🗂️ Categorías de Artículos' },
+        { id: 'bodegas', name: '🏢 Configuración de Bodegas' },
+        { id: 'insumos', name: '📦 Insumos' },
+        { id: 'inv_conversiones', name: '🔄 Inv Conversiones' },
+        { id: 'inv_documentos', name: '📄 Inv Documentos' },
+        { id: 'inv_grupos', name: '📁 Inv Grupos' },
+        { id: 'inv_subgrupos', name: '📂 Inv Subgrupos' },
+        { id: 'inv_tipos_documento', name: '🏷️ Inv Tipos de Documentos' },
+        { id: 'inv_unidades_medida', name: '📏 Inv Unidades de Medida' }
+      ]},
+      { id: 'menu_inventario_movimientos', name: '📝 Movimientos', isSubmenu: true, items: [
+        { id: 'recepcion-mercancia', name: '📥 Recepción de Almacén (Entradas)' },
+        { id: 'salidas_mercancia', name: '📤 Salidas y Consumos' },
+        { id: 'traslados_bodegas', name: '🔄 Traslados Entre Bodegas' },
+        { id: 'toma_fisica', name: '📋 Toma Física de Inventario' },
+        { id: 'inv_pedidos', name: '📦 Gestor de Pedidos Internos' },
+        { id: 'inv_repuestos_cambiados', name: '🛡️ Custodia de Repuestos' }
+      ]},
+      { id: 'menu_inventario_consultas', name: '🔍 Consultas y Reportes', isSubmenu: true, items: [
+        { id: 'bodegas-dashboard', name: '📊 Dashboard de Bodegas' },
+        { id: 'kardex-dashboard', name: '📋 Kárdex y Movimientos' },
+        { id: 'saldos_bodega', name: '📦 Saldos por Bodega' },
+        { id: 'inv_existencias', name: '📦 Inv de Existencias' },
+        { id: 'movimientos_inventario', name: '📝 Movimientos de Inventario' }
+      ]},
+      { id: 'menu_inventario_parametros', name: '⚙️ Configuraciones', isSubmenu: true, items: [
+        { id: 'config_inventario', name: '🔧 Parámetros de Inventario', isPlaceholder: true },
+        { id: 'config_alertas_seguridad', name: '🔐 Alertas y Seguridad (PIN)' }
+      ]}
+    ],
+    'Taller y Mantenimiento': [
+      { id: 'menu_taller_catalogos', name: '📚 Catálogos', isSubmenu: true, items: [
+        { id: 'agroind_maquinaria_equipo', name: '🚜 Maquinaria Pesada' },
+        { id: 'maquinaria', name: '⚙️ Equipos y Maquinaria Secundarios' },
+        { id: 'vehiculos', name: '🚚 Flota Vehicular' },
+        { id: 'mecanicos', name: '👷 Catálogo de Mecánicos del Taller' },
+        { id: 'taller-herramientas', name: '🔧 Control de Herramientas' }
+      ]},
+      { id: 'menu_taller_movimientos', name: '🔄 Movimientos', isSubmenu: true, items: [
+        { id: 'taller-ordenes', name: '📋 Órdenes de Trabajo' },
+        { id: 'taller-combustible', name: '⛽ Suministro de Combustible' },
+        { id: 'taller-checklists', name: '✅ Checklists Pre-operacionales' }
+      ]},
+      { id: 'menu_taller_consultas', name: '🔍 Consultas y Reportes', isSubmenu: true, items: [
+        { id: 'taller-master', name: '👑 Módulo Master Taller' }
+      ]}
+    ],
+    'Básculas': [
+      { id: 'basculas-config', name: '⚙️ Configuración de Básculas' },
+      { id: 'basculas-pruebas', name: '🔬 Pruebas y Simulación' }
+    ],
+    'Compras': [
+      { id: 'compras-dashboard', name: '📈 Dashboard de Compras' },
+      { id: 'solicitudes_pedido', name: '📝 Solicitudes de Compra' },
+      { id: 'validador-compras', name: '✅ Validador de Compras' },
+      { id: 'programador-compras', name: '🗓️ Programador de Compras' },
+      { id: 'compras_precios_proveedor', name: '💲 Catálogo de Precios' },
+      { id: 'orden-compra-capturer', name: '🛒 Orden de Compra' },
+      { id: 'analisis-compras', name: '📊 Análisis de Compras' }
+    ],
+    'Aplicaciones Agrícolas': [
+      { id: 'agricultura_biblioteca', name: <span style={{display:'inline-flex', alignItems:'center', gap:'8px'}}><img src="https://www.ica.gov.co/getattachment/5f80b985-78e8-4663-bd43-2c1b820fb726/logo-ica.png.aspx" alt="ICA" style={{height:'20px', width:'20px', objectFit: 'contain', background: '#fff', borderRadius: '4px', padding: '1px'}} /> Biblioteca Fitosanitaria ICA</span>, path: '/agricultura/biblioteca' },
+      { id: 'menu_aplicaciones_unificado', name: '💧 Formulación y Aplicaciones', isSubmenu: true, items: [
+        { id: 'agricultura_recetario', name: '📖 Recetario General', path: '/agricultura/recetario' },
+        { id: 'agricultura_recetario_inteligente', name: '👨‍🌾 Recetario e IA', path: '/agricultura/recetario-inteligente' },
+        { id: 'agricultura_programador', name: '📅 Programador de Aplicaciones', path: '/agricultura/programador' },
+        { id: 'app_produccion_organica', name: '🏭 Bio-Fábrica (Abonos y Violes)' },
+        { id: 'app_preparaciones_mezcla', name: '⚗️ Centro de Mezclas (Químicos)' },
+        { id: 'agricultura_ejecucion', name: '🚜 Registro Diario de Aplicación', path: '/agricultura/ejecucion' },
+        { id: 'dashboard_aplicaciones', name: '📊 Tablero de Control y Costos' }
+      ]}
+    ],
+    'Acuícola': [
+      { id: 'acuicola-dashboard', name: '🐟 Dashboard Acuícola', path: '/acuicola/dashboard' }
+    ],
+    'Comercialización': [
+      { id: 'comercial-dashboard', name: '📊 Mercados y Trading' },
+      { id: 'com_ventas_historial', name: '📦 Historial de Ventas' },
+      { id: 'com_empresas_compradoras', name: '🏢 Empresas Compradoras' },
+      { id: 'com_empresas_transportadoras', name: '🚚 Transportadoras Logísticas' },
+      { id: 'com_precios_mercado', name: '📈 Precios de Mercado' },
+      { id: 'cosechas', name: '🚜 Registro de Cosechas' },
+      { id: 'productos_cosecha', name: '🌾 Productos Cosechados' },
+      { id: 'calidad_postcosecha', name: '🔬 Calidad Postcosecha' }
+    ],
+    'ATEC': [
+      { id: 'atec-dashboard', name: '👨‍🌾 Dashboard Gerencial ATEC' }
+    ],
+    'RRHH & Labores': [
+      { id: 'menu_rrhh_catalogos', name: '📚 Catálogos', isSubmenu: true, items: [
+        { id: 'employees', name: '👥 Empleados Activos' },
+        { id: 'rrhh_catalogo_labores', name: '🚜 Catálogo Central de Labores' },
+        { id: 'rrhh_conceptos', name: '💰 Conceptos de Nómina' }
+      ]},
+      { id: 'menu_rrhh_movimientos', name: '📝 Movimientos', isSubmenu: true, items: [
+        { id: 'app-empleado-mobile', name: '📱 App Móvil del Empleado' },
+        { id: 'jefe-cuadrilla-mobile', name: '📱 App Jefe de Cuadrilla' },
+        { id: 'rrhh_planillas_manuales', name: '📋 Planillas Manuales' },
+        { id: 'rrhh_dian', name: <span style={{display:'inline-flex', alignItems:'center', gap:'8px'}}><img src="https://pbs.twimg.com/profile_images/1618641178491871233/bO2s3-B6_400x400.jpg" alt="DIAN" style={{height:'16px', width:'16px', borderRadius:'50%'}} /> Nómina Electrónica DIAN</span> },
+        { id: 'rrhh_permisos', name: '🎟️ Control de Permisos' },
+        { id: 'rrhh_vacaciones', name: '🏖️ Programador de Vacaciones' },
+        { id: 'rrhh_contratos', name: '🤝 Control de Contratos' },
+        { id: 'rrhh_generador_nomina', name: '💰 Generador de Nómina' }
+      ]},
+      { id: 'menu_rrhh_consultas', name: '🔍 Consultas y Reportes', isSubmenu: true, items: [
+        { id: 'rrhh-dashboard', name: '📊 Dashboard RRHH' },
+        { id: 'rrhh_ubicacion_personal', name: '📍 Ubicación del Personal' },
+        { id: 'labores-report', name: '🚜 Reporte de Labores' },
+        { id: 'rrhh_historial', name: '📜 Planillas y Liquidaciones' },
+        { id: 'rrhh_hojas_vida', name: '📋 Expedientes y Hojas de Vida' }
+      ]},
+      { id: 'menu_rrhh_parametros', name: '⚙️ Configuraciones', isSubmenu: true, items: [
+        { id: 'rrhh_parametros_dian', name: '🔌 Parámetros DIAN', isPlaceholder: true },
+        { id: 'unicidad-reglas', name: '🛡️ Reglas de Unicidad' }
+      ]}
+    ],
+    'Finanzas': [
+      { id: 'menu_catalogos', name: '📁 Catálogos', isSubmenu: true, items: [
+        { id: 'contabilidad_parametros', name: '⚙️ Catálogos y Parámetros' },
+        { id: 'configuracion-contable', name: '📄 Distribución Contable' },
+        { id: 'fincas', name: '🏢 Fincas / Subempresas' },
+        { id: 'contab_documentos', name: '📖 Comprobantes Diarios' },
+        { id: 'plan_contable', name: '🗂️ Plan de Cuentas (PUC)' },
+        { id: 'terceros', name: '👥 Directorio de Terceros' },
+        { id: 'centros_costo', name: '📍 Centros de Costo' },
+        { id: 'motor_contable', name: '⚙️ Motor de Integración ERP' },
+        { id: 'tipos_documentos', name: '📄 Tipos de Documentos' },
+        { id: 'periodos_contables', name: '⏱️ Lapsos Contables' },
+        { id: 'cuentas_bancarias', name: '🏦 Bancos' },
+        { id: 'ph_retencion', name: '🚧 Conceptos de Retención', isPlaceholder: true }
+      ]},
+      { id: 'menu_movimientos', name: '📝 Movimientos', isSubmenu: true, items: [
+        { id: 'contabilidad_capturador', name: '⌨️ Capturador Contable' },
+        { id: 'cartera_pagos', name: '💰 Capturador de Pagos' },
+        { id: 'tesoreria_pagos_nomina', name: '💸 Tesorería: Pago Nómina' },
+        { id: 'cartera_prestamos', name: '💸 Préstamos y Adelantos' },
+        { id: 'ph_causacion', name: '🚧 Causación de Facturas', isPlaceholder: true },
+        { id: 'ph_notas', name: '🚧 Notas Bancarias', isPlaceholder: true }
+      ]},
+      { id: 'menu_consultas', name: '🔍 Consultas', isSubmenu: true, items: [
+        { id: 'finanzas', name: '📊 Dashboard Financiero' },
+        { id: 'cartera_dashboard', name: '📈 Dashboard Cartera' },
+        { id: 'cartera_historico', name: '📜 Estado de Cuenta' },
+        { id: 'consultas_contables', name: '🔎 Consultas Contables (Saldos)' },
+        { id: 'ph_consulta_doc', name: '🚧 Consulta de Documentos', isPlaceholder: true }
+      ]},
+      { id: 'menu_oficiales', name: '🏛️ Libros Oficiales (NIIF)', isSubmenu: true, items: [
+          { id: 'libro_auxiliar', name: '📓 Libro Auxiliar' },
+          { id: 'libro_diario', name: '📘 Libro Diario (Columnario)' },
+          { id: 'libro_mayor', name: '📚 Libro Mayor y Balances' },
+          { id: 'libro_inventarios', name: '📜 Libro Inventario y Balances' }
+        ]},
+        { id: 'menu_reportes', name: '📊 Reportes Gerenciales', isSubmenu: true, items: [
+          { id: 'contabilidad_balance', name: '⚖️ Balance de Comprobación' },
+          { id: 'balance_acumulado_lapsos', name: '📈 Balance por Lapsos' },
+          { id: 'balance_general', name: '🏢 Estado de Situación Financiera' },
+          { id: 'estado_resultados', name: '💰 Estado de Resultados' },
+          { id: 'estado_resultados_lapsos', name: '📈 Est. Resultados por Lapsos' }
+        ]},
+        { id: 'menu_auditoria', name: '🛡️ Auditoría y Control Interno', isSubmenu: true, items: [
+          { id: 'control_consecutivos', name: '🔍 Control de Consecutivos' },
+          { id: 'rastro_auditoria', name: '👣 Rastro de Auditoría (Log)' },
+          { id: 'conciliacion_bancaria', name: '🏦 Conciliación Bancaria' }
+        ]},
+        { id: 'menu_finanzas_agro', name: '🚜 Gestión Agro-Financiera', isSubmenu: true, items: [
+          { id: 'costos_produccion', name: '🌾 Costos de Producción Agrícola' },
+          { id: 'activos_biologicos', name: '🌳 Activos Biológicos (NIC 41)' }
+        ]},
+        { id: 'menu_tributario', name: '🏛️ Cumplimiento Tributario', isSubmenu: true, items: [
+          { id: 'exogena_dian', name: '📄 Información Exógena (DIAN)' },
+          { id: 'conciliacion_fiscal', name: '⚖️ Conciliación NIIF vs Fiscal' }
+        ]},
+        { id: 'menu_eeff', name: '📊 Estados Financieros NIIF', isSubmenu: true, items: [
+          { id: 'flujo_efectivo', name: '💸 Flujo de Efectivo' },
+          { id: 'cambios_patrimonio', name: '📈 Cambios en el Patrimonio' },
+          { id: 'dashboard_gerencial', name: '📉 Dashboard Gerencial (KPIs)' }
+        ]}
+    ],
+    'Sistemas SAS': [
+      { id: 'sistemas-tenants', name: '🏢 Gestión de Empresas' },
+      { id: 'sistemas-stats', name: '📊 Estadísticas Globales' }
+    ]
+  };
+
+  // Inyectar las tablas dinámicas de Viveros directamente en su submenú para evitar que se desparramen
+  if (modules && modules['Viveros']) {
+    const agCultivos = customViews['Agricultura y Cultivos'];
+    const menuViveros = agCultivos.find(i => i.id === 'menu_viveros');
+    if (menuViveros) {
+      modules['Viveros'].tables?.forEach(t => {
+        if (!menuViveros.items.find(i => i.id === t.TABLE_NAME)) {
+          menuViveros.items.push({ id: t.TABLE_NAME, name: `⚙️ ${t.TABLE_NAME.replace(/_/g, ' ')}` });
+        }
+      });
+    }
+  }
+
+  // Inyectar las tablas dinámicas de Siembras directamente en su submenú
+  if (modules && modules['Siembras']) {
+    const agCultivos = customViews['Agricultura y Cultivos'];
+    const menuSiembras = agCultivos.find(i => i.id === 'menu_siembras');
+    if (menuSiembras) {
+      modules['Siembras'].tables?.forEach(t => {
+        if (!menuSiembras.items.find(i => i.id === t.TABLE_NAME)) {
+          menuSiembras.items.push({ id: t.TABLE_NAME, name: `⚙️ ${t.TABLE_NAME.replace(/_/g, ' ')}` });
+        }
+      });
+    }
+  }
+
+  // Inyectar las tablas dinámicas de Agua directamente en su submenú
+  if (modules && modules['Agua']) {
+    const agCultivos = customViews['Agricultura y Cultivos'];
+    const menuAgua = agCultivos.find(i => i.id === 'menu_agua');
+    if (menuAgua) {
+      modules['Agua'].tables?.forEach(t => {
+        if (!menuAgua.items.find(i => i.id === t.TABLE_NAME)) {
+          menuAgua.items.push({ id: t.TABLE_NAME, name: `⚙️ ${t.TABLE_NAME.replace(/_/g, ' ')}` });
+        }
+      });
+    }
+  }
+
+  // Inyectar las tablas dinámicas de Ambiente directamente en su submenú
+  if (modules && modules['Ambiente']) {
+    const agCultivos = customViews['Agricultura y Cultivos'];
+    const menuAmbiente = agCultivos.find(i => i.id === 'menu_ambiente');
+    if (menuAmbiente) {
+      modules['Ambiente'].tables?.forEach(t => {
+        if (!menuAmbiente.items.find(i => i.id === t.TABLE_NAME)) {
+          menuAmbiente.items.push({ id: t.TABLE_NAME, name: `⚙️ ${t.TABLE_NAME.replace(/_/g, ' ')}` });
+        }
+      });
+    }
+  }
+
+  // Inyectar las tablas dinámicas de Clima directamente en su submenú
+  if (modules && modules['Clima']) {
+    const agCultivos = customViews['Agricultura y Cultivos'];
+    const menuClima = agCultivos.find(i => i.id === 'menu_clima');
+    if (menuClima) {
+      modules['Clima'].tables?.forEach(t => {
+        if (!menuClima.items.find(i => i.id === t.TABLE_NAME)) {
+          menuClima.items.push({ id: t.TABLE_NAME, name: `⚙️ ${t.TABLE_NAME.replace(/_/g, ' ')}` });
+        }
+      });
+    }
+  }
+
+  // Inyectar las tablas dinámicas de Certificaciones directamente en su submenú
+  if (modules && modules['Certificaciones']) {
+    const agCultivos = customViews['Agricultura y Cultivos'];
+    const menuCertificaciones = agCultivos.find(i => i.id === 'menu_certificaciones');
+    if (menuCertificaciones) {
+      modules['Certificaciones'].tables?.forEach(t => {
+        if (!menuCertificaciones.items.find(i => i.id === t.TABLE_NAME)) {
+          menuCertificaciones.items.push({ id: t.TABLE_NAME, name: `⚙️ ${t.TABLE_NAME.replace(/_/g, ' ')}` });
+        }
+      });
+    }
+  }
+
+  // Inyectar las tablas dinámicas de Forestal
+  if (modules && modules['Forestal']) {
+    const agCultivos = customViews['Agricultura y Cultivos'];
+    const menuForestal = agCultivos.find(i => i.id === 'menu_forestal');
+    if (menuForestal) {
+      modules['Forestal'].tables?.forEach(t => {
+        if (!menuForestal.items.find(i => i.id === t.TABLE_NAME)) {
+          menuForestal.items.push({ id: t.TABLE_NAME, name: `⚙️ ${t.TABLE_NAME.replace(/_/g, ' ')}` });
+        }
+      });
+    }
+  }
+
+  // Inyectar las tablas dinámicas de Energía
+  if (modules && modules['Energía']) {
+    const agCultivos = customViews['Agricultura y Cultivos'];
+    const menuEnergia = agCultivos.find(i => i.id === 'menu_energia');
+    if (menuEnergia) {
+      modules['Energía'].tables?.forEach(t => {
+        if (!menuEnergia.items.find(i => i.id === t.TABLE_NAME)) {
+          menuEnergia.items.push({ id: t.TABLE_NAME, name: `⚙️ ${t.TABLE_NAME.replace(/_/g, ' ')}` });
+        }
+      });
+    }
+  }
+
+  // Inyectar las tablas dinámicas de Fitosanitario en Sanidad Vegetal
+  if (modules && modules['Fitosanitario']) {
+    const agCultivos = customViews['Agricultura y Cultivos'];
+    const menuSanidad = agCultivos.find(i => i.id === 'menu_sanidad');
+    if (menuSanidad) {
+      modules['Fitosanitario'].tables?.forEach(t => {
+        if (!menuSanidad.items.find(i => i.id === t.TABLE_NAME)) {
+          menuSanidad.items.push({ id: t.TABLE_NAME, name: `⚙️ ${t.TABLE_NAME.replace(/_/g, ' ')}` });
+        }
+      });
+    }
+  }
+
+  const filteredModules = useMemo(() => {
+    // 1. Recopilar todos los IDs manuales para no repetirlos abajo
+    const manualIds = new Set();
+    Object.values(customViews).forEach(group => {
+      group.forEach(item => {
+        if (item.isSubmenu && item.items) {
+          item.items.forEach(sub => manualIds.add(sub.id));
+        } else {
+          manualIds.add(item.id);
+        }
+      });
+    });
+
+    if (!modules) return {};
+    const q = search.trim().toLowerCase();
+    const result = {};
+    for (const [name, group] of Object.entries(modules)) {
+      if (name === 'Agroindustria & Maquinaria') continue; // ASESINATO DEL MÓDULO VIEJO
+      // Ya manejamos Viveros, Siembras, Agua, Ambiente, Clima, Certificaciones, Forestal, Energía y Fitosanitario inyectándolos en customViews
+      if (['Viveros', 'Siembras', 'Agua', 'Ambiente', 'Clima', 'Certificaciones', 'Forestal', 'Energía', 'Fitosanitario'].includes(name)) continue;
+      
+      const filteredTables = (group?.tables || []).filter((t) => {
+        // Excluir si ya está en los menús organizados arriba
+        if (manualIds.has(t.TABLE_NAME)) return false;
+        
+        // Tablas internas que no deben mostrarse como CRUD genérico
+        const hiddenInternalTables = [
+          'inv_tomas_fisicas', 'inv_tomas_fisicas_detalle',
+          'app_control_envases', 'app_programacion', 'app_programacion_insumos',
+          'app_recetas', 'app_recetas_detalle', 'lib_fitosanitaria_ica'
+        ];
+        if (hiddenInternalTables.includes(t.TABLE_NAME)) return false;
+        
+        // Excluir por búsqueda
+        if (q && !t?.TABLE_NAME?.toLowerCase().includes(q)) return false;
+        
+        return true;
+      });
+      let targetName = name;
+      if (name === 'Cultivos') {
+        targetName = 'Agricultura y Cultivos';
+      }
+
+      if (filteredTables.length > 0 || customViews[targetName]) {
+        if (!result[targetName]) {
+          result[targetName] = { ...group, tables: [] };
+        }
+        result[targetName].tables = [...(result[targetName].tables || []), ...filteredTables];
+      }
+    }
+
+    // Asegurar que las customViews que no vienen del backend (como Taller) también se rendericen
+    for (const name of Object.keys(customViews)) {
+      if (!result[name]) {
+        result[name] = { icon: '✨', tables: [] };
+      }
+    }
+    
+    return result;
+  }, [modules, search]);
+
+  const toggleModule = (name) => {
+    setExpandedModules((prev) => ({ ...prev, [name]: !prev[name] }));
+  };
+
+  const toggleSubModule = (id) => {
+    setExpandedSubModules((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleTableClick = (tableName) => {
+    onSelectTable(tableName);
+  };
+
+  if (loading) {
+    return (
+      <aside className={`sidebar ${open ? 'open' : ''}`}>
+        <div className="sidebar-header">
+          <h2>Módulos</h2>
+          <button className="sidebar-close-btn" onClick={onToggle}>×</button>
+        </div>
+        <div className="loading-container">
+          <div className="spinner" />
+          <span className="loading-text">Cargando módulos...</span>
+        </div>
+      </aside>
+    );
+  }
+
+  const totalTables = modules
+    ? Object.values(modules).reduce((s, g) => s + (g?.tables?.length || 0), 0)
+    : 0;
+
+  return (
+    <aside className={`sidebar ${open ? 'open' : ''}`}>
+      <div className="sidebar-header">
+        <h2>
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              onNavigateHome();
+            }}
+            style={{ color: 'inherit', textDecoration: 'none' }}
+          >
+            🌿 SAS Agrícolas
+          </a>
+        </h2>
+        <button className="sidebar-close-btn" onClick={onToggle}>×</button>
+      </div>
+
+      <div className="sidebar-search">
+        <input
+          type="text"
+          placeholder={`Buscar en ${totalTables} tablas...`}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      <nav className="sidebar-nav">
+        {/* Dashboard link */}
+        <div
+          className={`table-item ${!selectedTable ? 'active' : ''}`}
+          onClick={onNavigateHome}
+          style={{ paddingLeft: '16px', fontWeight: selectedTable ? 400 : 600 }}
+        >
+          <span style={{ marginRight: '8px' }}>📊</span>
+          <span>Dashboard</span>
+        </div>
+
+{filteredModules &&
+          Object.entries(filteredModules)
+            .sort(([a], [b]) => {
+              const PREFERRED_ORDER = [
+                'IA',
+                'Satélite & GPS Tracker',
+                'Viveros',
+                'Agricultura y Cultivos',
+                'Aplicaciones Agrícolas',
+                'Básculas',
+                'Inventario',
+                'Taller y Mantenimiento',
+                'RRHH & Labores',
+                'Compras',
+                'Finanzas',
+                'Sistemas SAS'
+              ];
+              const idxA = PREFERRED_ORDER.indexOf(a);
+              const idxB = PREFERRED_ORDER.indexOf(b);
+              if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+              if (idxA !== -1) return -1;
+              if (idxB !== -1) return 1;
+              // Push 'Agroindustria & Maquinaria' to the bottom if it somehow survives
+              if (a === 'Agroindustria & Maquinaria') return 1;
+              if (b === 'Agroindustria & Maquinaria') return -1;
+              return a.localeCompare(b);
+            })
+            .map(([name, group]) => {
+            if (!hasAccess(name)) return null;
+
+            let badgeCount = (group?.tables || []).length;
+            if (customViews[name]) {
+              customViews[name].forEach(cv => {
+                if (cv.isSubmenu) badgeCount += (cv.items || []).length;
+                else badgeCount += 1;
+              });
+            }
+
+            return (
+            <div key={name} className="module-group">
+              <div className="module-header" onClick={() => toggleModule(name)}>
+                <span className="module-header-left">
+                  <span className="module-icon">{group.icon}</span>
+                  <span>{name}</span>
+                  <span className="module-badge">{badgeCount}</span>
+                </span>
+                <span className={`module-arrow ${expandedModules[name] ? 'open' : ''}`}>
+                  ▶
+                </span>
+              </div>
+              <div className={`module-tables ${expandedModules[name] ? 'open' : ''}`}>
+                {customViews[name] && customViews[name].map((cv) => {
+                  if (cv.isSubmenu) {
+                    return (
+                      <div key={cv.id} className="submodule-group" style={{ marginBottom: '4px' }}>
+                        <div 
+                          className="table-item" 
+                          onClick={() => toggleSubModule(cv.id)} 
+                          style={{ fontWeight: 600, color: '#475569', display: 'flex', justifyContent: 'space-between', paddingRight: '12px', background: expandedSubModules[cv.id] ? '#f8fafc' : 'transparent', borderLeft: expandedSubModules[cv.id] ? '3px solid #cbd5e1' : '3px solid transparent' }}
+                        >
+                          <span className="table-item-name">{cv.name}</span>
+                          <span className={`module-arrow ${expandedSubModules[cv.id] ? 'open' : ''}`} style={{fontSize: '10px', color: '#94a3b8', transform: expandedSubModules[cv.id] ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s'}}>▶</span>
+                        </div>
+                        <div className={`submodule-items ${expandedSubModules[cv.id] ? 'open' : ''}`} style={{ display: expandedSubModules[cv.id] ? 'block' : 'none', paddingLeft: '8px', borderLeft: '1px dashed #e2e8f0', marginLeft: '12px', marginTop: '4px' }}>
+                          {cv.items.map(subCv => (
+                            <div
+                              key={subCv.id}
+                              className={`table-item ${selectedTable === subCv.id ? 'active' : ''}`}
+                              onClick={() => {
+                                if (subCv.isPlaceholder) {
+                                  alert('Módulo en construcción: ' + subCv.name.replace('🚧', '').trim());
+                                  return;
+                                }
+                                handleTableClick(subCv.id);
+                              }}
+                              title={subCv.name}
+                              style={{ fontWeight: selectedTable === subCv.id ? 600 : 400, color: subCv.isPlaceholder ? '#94a3b8' : (selectedTable === subCv.id ? 'var(--primary)' : '#64748b'), fontSize: '13px', paddingTop: '6px', paddingBottom: '6px', fontStyle: subCv.isPlaceholder ? 'italic' : 'normal' }}
+                            >
+                              <span className="table-item-name">{subCv.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // For Sistemas SAS module, use Link
+                  if (cv.id === 'sistemas-tenants') {
+                    return (
+                      <Link
+                        key={cv.id}
+                        to="/sistemas"
+                        className={`table-item`}
+                        title={cv.name}
+                        style={{ fontWeight: 400, color: 'var(--primary)', textDecoration: 'none' }}
+                      >
+                        <span className="table-item-name">{cv.name}</span>
+                      </Link>
+                    );
+                  }
+                  if (cv.id === 'sistemas-stats') {
+                    return (
+                      <Link
+                        key={cv.id}
+                        to="/sistemas/stats"
+                        className={`table-item`}
+                        title={cv.name}
+                        style={{ fontWeight: 400, color: 'var(--primary)', textDecoration: 'none' }}
+                      >
+                        <span className="table-item-name">{cv.name}</span>
+                      </Link>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={cv.id}
+                      className={`table-item ${selectedTable === cv.id ? 'active' : ''}`}
+                      onClick={() => handleTableClick(cv.id)}
+                      title={cv.name}
+                      style={{ fontWeight: selectedTable === cv.id ? 600 : 400, color: 'var(--primary)' }}
+                    >
+                      <span className="table-item-name">{cv.name}</span>
+                    </div>
+                  );
+                })}
+                {name !== 'Finanzas' && name !== 'RRHH & Labores' && (group?.tables || []).map((t) => {
+                  const getTableIcon = (name) => {
+                    if (!name) return '📁';
+                    if (name.includes('empleado') || name.includes('usuario')) return '👤';
+                    if (name.includes('config') || name.includes('sys_')) return '⚙️';
+                    if (name.includes('sat_') || name.includes('gps_')) return '🛰️';
+                    if (name.includes('finca') || name.includes('lote') || name.includes('cultivo')) return '🌿';
+                    if (name.includes('compra') || name.includes('pedido')) return '🛒';
+                    if (name.includes('inventario') || name.includes('bodega')) return '📦';
+                    if (name.includes('mantenimiento') || name.includes('activo')) return '🔧';
+                    if (name.includes('fin_') || name.includes('cartera')) return '💵';
+                    if (name.includes('rrhh')) return '👥';
+                    if (name.includes('agua') || name.includes('riego')) return '💧';
+                    if (name.includes('ganado') || name.includes('animal')) return '🐄';
+                    if (name.includes('forest') || name.includes('arbol')) return '🌲';
+                    if (name.includes('vivero')) return '🌱';
+                    if (name.includes('clima') || name.includes('meteorolog')) return '🌤️';
+                    if (name.includes('plaga') || name.includes('enfermedad')) return '🐛';
+                    return '📄';
+                  };
+                  const rawName = t?.TABLE_NAME?.replace(/_/g, ' ') || '';
+                  const displayName = rawName.replace(/\b\w/g, char => char.toUpperCase());
+                  
+                  return (
+                  <div
+                    key={t?.TABLE_NAME}
+                    className={`table-item ${selectedTable === t?.TABLE_NAME ? 'active' : ''}`}
+                    onClick={() => handleTableClick(t?.TABLE_NAME)}
+                    title={t?.TABLE_NAME}
+                  >
+                    <span className="table-item-name">{getTableIcon(t?.TABLE_NAME)} {displayName}</span>
+                    <span className="table-item-count">{t?.TABLE_ROWS || 0}</span>
+                  </div>
+                )})}
+              </div>
+            </div>
+          );})}
+
+        {!filteredModules && (
+          <div className="loading-container" style={{ padding: '20px' }}>
+            <span className="loading-text">Sin datos</span>
+          </div>
+        )}
+      </nav>
+    </aside>
+  );
+}
+
+export default Sidebar;

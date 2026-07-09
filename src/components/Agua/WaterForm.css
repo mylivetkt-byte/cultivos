@@ -1,0 +1,89 @@
+/* src/components/Agua/WaterForm.css */
+
+.water-form {
+  padding: 1.5rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: var(--glass-bg, rgba(255, 255, 255, 0.12));
+  border-radius: var(--radius, 12px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.2));
+  box-shadow: var(--shadow, 0 8px 32px rgba(0, 0, 0, 0.2));
+  color: var(--text, #f0f0f0);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.water-form .form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.water-form label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text, #f0f0f0);
+}
+
+.water-form input,
+.water-form select,
+.water-form textarea {
+  padding: 0.6rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.water-form input:focus,
+.water-form select:focus,
+.water-form textarea:focus {
+  border-color: var(--accent, hsl(165, 60%, 55%));
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 2px rgba(26, 188, 156, 0.3);
+}
+
+.water-form select option {
+  background: #1e1e1e;
+  color: #fff;
+}
+
+.water-form .btn-primary {
+  grid-column: 1 / -1;
+  background: linear-gradient(120deg, var(--primary, hsl(210, 70%, 55%)), var(--accent, hsl(165, 60%, 55%)));
+  color: #fff;
+  border: none;
+  padding: 0.8rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-top: 0.5rem;
+}
+
+.water-form .btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(26, 188, 156, 0.4);
+}
+
+.water-form .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.water-form .error-alert {
+  grid-column: 1 / -1;
+  background: rgba(255, 92, 92, 0.2);
+  border: 1px solid #ff5c5c;
+  color: #ffb3b3;
+  padding: 0.8rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  text-align: center;
+}

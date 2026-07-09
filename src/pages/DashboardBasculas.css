@@ -1,0 +1,31 @@
+.dashboard-basculas {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  color: var(--text-primary);
+}
+
+.dashboard-basculas h2 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+}
+
+.dashboard-basculas .controls {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.dashboard-basculas .ant-btn-primary {
+  background: linear-gradient(135deg, hsl(210, 70%, 50%), hsl(210, 70%, 60%));
+  border: none;
+  transition: transform 0.2s ease;
+}
+.dashboard-basculas .ant-btn-primary:hover {
+  transform: translateY(-2px);
+}

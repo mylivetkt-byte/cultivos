@@ -1,0 +1,337 @@
+import 'dotenv/config';
+import path from 'path';
+import logoRouter from './routes/logoPath.js';
+import express from 'express';
+import cors from 'cors';
+import basculasRouter from './routes/basculas.js';
+import tablesRouter from './routes/tables.js';
+import crudRouter from './routes/crud.js';
+import satelliteRouter from './routes/satellite.js';
+import trackingRouter from './routes/tracking.js';
+import agronomyRouter from './routes/agronomy.js';
+import atecRouter from './routes/atec.js';
+import laboresRouter from './routes/labores.js';
+import semilleroRouter from './routes/semillero.js';
+import nominaRouter from './routes/nomina.js';
+import tasksRouter from './routes/tasks.js';
+import biofabricaRouter from './routes/biofabrica.js';
+import dashboardSateliteRouter from './routes/dashboard_satelite.js';
+import dashboardCultivosRouter from './routes/dashboard_cultivos.js';
+import gisRouter from './routes/gis.js';
+import climaRouter from './routes/clima.js';
+import rrhhRouter from './routes/rrhh.js';
+import dashboardGerenciaRouter from './routes/dashboard_gerencia.js';
+import bodegasAvanzadoRoutes from './routes/bodegas_avanzado.js';
+import cuadrillaRouter from './routes/cuadrilla.js';
+import reportsRouter from './routes/reports.js';
+import trasladosRouter from './routes/traslados.js';
+import configRouter from './routes/config.js';
+import tomasFisicasRouter from './routes/tomas_fisicas.js';
+import pedidosInternosRouter from './routes/pedidos_internos.js';
+import custodiaRepuestosRouter from './routes/custodia_repuestos.js';
+import tallerRouter from './routes/taller.js';
+import comercializacionRouter from './routes/comercializacion.js';
+import cosechasRouter from './routes/cosechas.js';
+import cosechasDetalleRouter from './routes/cosechasDetalle.js';
+import cultivosRouter from './routes/cultivos.js';
+import cosechasAuditoriaRouter from './routes/cosechasAuditoria.js';
+import { authMiddleware, tenantPoolMiddleware } from './utils/auth.js';
+const app = express();
+const auth = [authMiddleware, tenantPoolMiddleware];
+
+app.get('/api/public-seed-cosechas', async (req, res) => {
+  try {
+    const db = pool;
+    const [estanques] = await db.query("SELECT * FROM acuicola_estanques WHERE id_tenant = 1 LIMIT 5");
+    const [especies] = await db.query("SELECT * FROM acuicola_especies WHERE id_tenant = 1 LIMIT 3");
+    if(estanques.length === 0 || especies.length === 0) return res.json({ msg: 'Faltan estanques/especies' });
+    const [siembrasExistentes] = await db.query("SELECT * FROM acuicola_siembras WHERE estado = 'Activo' AND id_tenant = 1");
+    if (siembrasExistentes.length >= 3) return res.json({ msg: 'Ya existen siembras activas', inserted: 0 });
+    let inserted = 0;
+    for (let i = 0; i < Math.min(4, estanques.length); i++) {
+      const q = `INSERT INTO acuicola_siembras (id_tenant, id_estanque, id_especie_acui, fecha_siembra, cantidad_alevines, peso_promedio_ingreso_g, estado, notas) VALUES (1, ?, ?, DATE_SUB(NOW(), INTERVAL 180 DAY), ?, 5, 'Activo', 'Siembra demo de auditoría')`;
+      await db.query(q, [estanques[i].id_estanque, especies[i % especies.length].id_especie_acui, 5000 + (i * 1000)]);
+      inserted++;
+    }
+    res.json({ msg: 'Seed completado', inserted });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.use('/api/cosechas', authMiddleware, tenantPoolMiddleware, cosechasRouter);
+app.use('/api/cosechas', authMiddleware, tenantPoolMiddleware, cosechasDetalleRouter);
+app.use('/api/cosechas', auth, cosechasAuditoriaRouter);
+
+import aiRouter from './routes/ai_diagnosis.js';
+import whatsappRoutes from './routes/whatsapp.js';
+import reportesInventarioRouter from './routes/reportes-inventario.js';
+import { connectToWhatsApp } from './services/whatsappService.js';
+import authRouter from './routes/auth.js';
+import sistemasRouter from './routes/sistemas.js';
+
+import parametrosRoutes from './routes/parametros.js';
+import contabilidadRouter from './routes/contabilidad.js';
+import municipiosRouter from './routes/municipios.js';
+import carteraRouter from './routes/cartera.js';
+import comprasRouter from './routes/compras.js';
+import tercerosStatsRouter from './routes/terceros_stats.js';
+import kardexRouter from './routes/kardex.js';
+import applicationsRouter from './routes/applications.js';
+import aplicacionesAuxRouter from './routes/aplicaciones_aux.js';
+import aplicacionesReportesRouter from './routes/aplicaciones_reportes.js';
+import auditoriaRouter from './routes/auditoria.js';
+import finanzasAgroRouter from './routes/finanzas_agro.js';
+import dianRouter from './routes/dian.js';
+import estadosFinancierosRouter from './routes/estados_financieros.js';
+import recetasRouter from './routes/recetas.js';
+import erpBridgeRouter from './routes/erp_bridge.js';
+import acuicolaRouter from './routes/acuicola.js';
+import waterRouter from './routes/water.js';
+import ganadoAvanzadoRouter from './routes/ganado_avanzado.js';
+import ganadoHerramientasRouter from './routes/ganado_herramientas.js';
+import ganadoReproduccionRouter from './routes/ganado_reproduccion.js';
+import acuicolaHerramientasRouter from './routes/acuicola_herramientas.js';
+import acuicolaProgramadorRouter from './routes/acuicola_programador.js';
+import acuicolaMolinoRouter from './routes/acuicola_molino.js';
+import acuicolaCosechasMobileRouter from './routes/acuicola_cosechas_mobile.js';
+import syncRouter from './routes/sync.js';
+import pool from './db.js';
+
+
+const PORT = Number(process.env.PORT || 3002);
+
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+// Public auth routes (no middleware)
+app.use('/api/auth', authRouter);
+
+// Health check (public)
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Protected routes - all require authentication + tenant pool
+
+app.use('/api/basculas', auth, basculasRouter);
+app.use('/api/tables', auth, tablesRouter);
+app.use('/api/whatsapp', auth, whatsappRoutes);
+app.use('/api/table', auth, crudRouter);
+app.use('/api/biofabrica', auth, biofabricaRouter);
+app.use('/api/ai', auth, aiRouter);
+app.use('/api/ai-diagnosis', auth, aiRouter);
+app.use('/api/recetas', auth, recetasRouter);
+app.use('/api/pedidos_internos', auth, pedidosInternosRouter);
+app.use('/api/gis', auth, gisRouter);
+app.use('/api/dashboard-satelite', auth, dashboardSateliteRouter);
+app.use('/api/dashboard-cultivos', auth, dashboardCultivosRouter);
+app.use('/api/dashboard-gerencia', auth, dashboardGerenciaRouter);
+app.use('/api/tracking', auth, trackingRouter);
+app.use('/api/agronomy', auth, agronomyRouter);
+app.use('/api/atec', auth, atecRouter);
+app.use('/api/clima', auth, climaRouter);
+app.use('/api/labores', auth, laboresRouter);
+app.use('/api/semillero', auth, semilleroRouter);
+app.use('/api/nomina', auth, nominaRouter);
+app.use('/api/tasks', auth, tasksRouter);
+app.use('/api/rrhh', auth, rrhhRouter);
+app.use('/api/satellite', auth, satelliteRouter);
+app.use('/api/inventario', auth, bodegasAvanzadoRoutes);
+app.use('/api/cuadrilla', auth, cuadrillaRouter);
+app.use('/api/reports', auth, reportsRouter);
+app.use('/api/traslados', auth, trasladosRouter);
+app.use('/api/configuracion', auth, configRouter);
+app.use('/api/config/logo', auth, logoRouter);
+app.use('/api/tomas-fisicas', auth, tomasFisicasRouter);
+app.use('/api/pedidos-internos', auth, pedidosInternosRouter);
+app.use('/api/custodia-repuestos', auth, custodiaRepuestosRouter);
+app.use('/api/taller', auth, tallerRouter);
+app.use('/api/reportes-inventario', auth, reportesInventarioRouter);
+app.use('/api/ganado_herramientas', auth, ganadoHerramientasRouter);
+app.use('/api/acuicola_herramientas', auth, acuicolaHerramientasRouter);
+app.use('/api/sistemas', auth, sistemasRouter);
+app.use('/api/ganado_avanzado', auth, ganadoAvanzadoRouter);
+app.use('/api/ganado_reproduccion', auth, ganadoReproduccionRouter);
+
+app.use('/api/parametros', auth, parametrosRoutes);
+app.use('/api/contabilidad', auth, contabilidadRouter);
+app.use('/api/municipios', auth, municipiosRouter);
+app.use('/api/auditoria', auth, auditoriaRouter);
+app.use('/api/finanzas-agro', auth, finanzasAgroRouter);
+app.use('/api/dian', auth, dianRouter);
+app.use('/api/estados-financieros', auth, estadosFinancierosRouter);
+app.use('/api/erp', auth, erpBridgeRouter);
+app.use('/api/cartera', auth, carteraRouter);
+app.use('/api/compras', auth, comprasRouter);
+app.use('/api/terceros-stats', auth, tercerosStatsRouter);
+app.use('/api/kardex', auth, kardexRouter);
+app.use('/api/applications', auth, applicationsRouter);
+// Alias for Spanish UI terminology (aplicaciones)
+app.use('/api/aplicaciones', auth, applicationsRouter);
+app.use('/api/aplicaciones', auth, aplicacionesAuxRouter);
+app.use('/api/aplicaciones', auth, aplicacionesReportesRouter);
+app.use('/api/acuicola_programador', auth, acuicolaProgramadorRouter);
+app.use('/api/acuicola_molino', auth, acuicolaMolinoRouter);
+app.use('/api/acuicola-cosechas-mobile', auth, acuicolaCosechasMobileRouter);
+app.use('/api/acuicola', auth, acuicolaRouter);
+app.use('/api/basculas', auth, basculasRouter);
+app.use('/api/comercializacion', auth, comercializacionRouter);
+app.use('/api/cultivos', auth, cultivosRouter);
+app.use('/api/sync', auth, syncRouter);
+
+app.use('/api/water', auth, waterRouter);
+app.get('/api/dashboard/stats', auth, async (req, res) => {
+  const { fincaId, nucleoId } = req.query;
+  const db = req.tenantPool;
+  try {
+    // 1. Raw database stats from tenant DB
+    const [tables] = await db.query(`
+      SELECT TABLE_NAME, TABLE_ROWS, TABLE_COMMENT
+      FROM INFORMATION_SCHEMA.TABLES
+      WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'
+      ORDER BY TABLE_NAME`, [req.dbName]);
+
+    const totalTables = tables.length;
+    const totalRecords = tables.reduce((sum, t) => sum + (t.TABLE_ROWS || 0), 0);
+    const tablesWithData = tables.filter(t => t.TABLE_ROWS > 0).length;
+    const emptyTables = totalTables - tablesWithData;
+
+    // 2. Database size in MB
+    const [sizeResult] = await db.query(`
+      SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) as size_mb
+      FROM INFORMATION_SCHEMA.TABLES
+      WHERE TABLE_SCHEMA = ?`, [req.dbName]);
+    const dbSize = sizeResult[0].size_mb || 0;
+
+    // 3. Top tables by row count
+    const topTables = tables
+      .sort((a, b) => b.TABLE_ROWS - a.TABLE_ROWS)
+      .slice(0, 10)
+      .map(t => ({ name: t.TABLE_NAME, rows: t.TABLE_ROWS }));
+
+    // 4. Business metrics
+    const [fCount] = await db.query('SELECT COUNT(*) as count FROM fincas');
+    const fincasCount = fCount[0].count;
+
+    // Lotes count and total hectares
+    let loteSql = 'SELECT COUNT(*) as count, IFNULL(SUM(hectareas), 0) as total_ha FROM lotes';
+    const loteParams = [];
+    if (nucleoId) {
+      loteSql += ' WHERE id_nucleo = ?';
+      loteParams.push(nucleoId);
+    } else if (fincaId) {
+      loteSql += ' WHERE id_nucleo IN (SELECT id_nucleo FROM nucleos WHERE id_finca = ?)';
+      loteParams.push(fincaId);
+    }
+    const [lCount] = await db.query(loteSql, loteParams);
+    const lotesCount = lCount[0].count;
+    const totalHectareas = parseFloat(lCount[0].total_ha) || 0;
+
+    // Employees count
+    let empSql = 'SELECT COUNT(*) as count FROM rrhh_empleados';
+    const empParams = [];
+    if (fincaId) {
+      empSql += ' WHERE id_finca = ?';
+      empParams.push(fincaId);
+    }
+    const [eCount] = await db.query(empSql, empParams);
+    const empleadosCount = eCount[0].count;
+
+    res.json({
+      totalTables,
+      totalRecords,
+      tablesWithData,
+      emptyTables,
+      dbSize,
+      topTables,
+      fincasCount,
+      lotesCount,
+      totalHectareas,
+      empleadosCount
+    });
+  } catch (err) {
+    console.error('Error fetching dashboard stats:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// New Harvest/Agriculture endpoint
+app.get('/api/dashboard/harvest', auth, async (req, res) => {
+  try {
+    const db = req.tenantPool;
+    const [rows] = await db.query(`
+      SELECT COALESCE(l.nombre, CONCAT('Lote ', l.id_lote)) AS id_lote,
+             ROUND(SUM(c.produccion_total_kg), 0) AS total
+      FROM cosechas c
+      JOIN siembras s ON c.id_siembra = s.id_siembra
+      JOIN lotes l ON s.id_lote = l.id_lote
+      GROUP BY l.id_lote, l.nombre
+      ORDER BY total DESC
+      LIMIT 5
+    `);
+
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching harvest data:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// === LABOR STATS: distribución porcentual de labores agrícolas ===
+app.get('/api/dashboard/labor-stats', auth, async (req, res) => {
+  try {
+    const db = req.tenantPool;
+    const [rows] = await db.query(`
+      SELECT categoria AS type, COUNT(*) AS cnt
+      FROM labores_diarias
+      GROUP BY categoria
+    `);
+
+    if (rows.length > 0) {
+      const totalCnt = rows.reduce((s, r) => s + r.cnt, 0);
+      const result = rows.map(r => ({
+        type: r.type || 'Otros',
+        percentage: Math.round((r.cnt / totalCnt) * 100)
+      }));
+      return res.json(result);
+    }
+
+    res.json([]);
+  } catch (err) {
+    console.error('Error fetching labor stats:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// === HARVEST TREND: tendencia histórica de cosecha ===
+app.get('/api/dashboard/harvest-trend', auth, async (req, res) => {
+  try {
+    const db = req.tenantPool;
+    const [rows] = await db.query(`
+      SELECT DATE_FORMAT(c.fecha_cosecha, '%Y-%m') AS date,
+             ROUND(SUM(c.produccion_total_kg), 0) AS total
+      FROM cosechas c
+      JOIN siembras s ON c.id_siembra = s.id_siembra
+      GROUP BY DATE_FORMAT(c.fecha_cosecha, '%Y-%m')
+      ORDER BY date ASC
+      LIMIT 12
+    `);
+
+    res.json(rows.map(r => ({ date: r.date, total: Number(r.total) })));
+  } catch (err) {
+    console.error('Error fetching harvest trend:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.listen(PORT, '127.0.0.1', () => {
+  console.log(`✅ SAS Agrícolas API Server running at http://localhost:${PORT}`);
+  
+  // Iniciar servicio de WhatsApp en segundo plano
+  connectToWhatsApp().catch(err => console.error("Error iniciando WhatsApp:", err));
+});
+
+// touch for nodemon

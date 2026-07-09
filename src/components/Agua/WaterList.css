@@ -1,0 +1,142 @@
+/* src/components/Agua/WaterList.css */
+
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.12);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --primary: hsl(210, 70%, 55%); /* suave azul */
+  --accent: hsl(165, 60%, 55%); /* verde agua */
+  --text: #f0f0f0;
+  --radius: 12px;
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.water-list {
+  padding: 1.5rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: var(--glass-bg);
+  border-radius: var(--radius);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+
+.water-list .section-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  background: linear-gradient(120deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  justify-content: center;
+}
+
+.filter-bar button {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-bar button:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.records-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0.5rem;
+}
+
+.records-table th {
+  background: var(--glass-bg);
+  color: var(--text);
+  padding: 0.8rem;
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.records-table td {
+  background: var(--glass-bg);
+  padding: 0.8rem;
+  border-radius: var(--radius);
+}
+
+.records-table tr:hover td {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  transition: all 0.2s ease;
+}
+
+.actions-cell button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  margin-right: 0.4rem;
+  transition: transform 0.2s ease;
+}
+
+.actions-cell .edit-btn:hover {
+  color: var(--accent);
+  transform: scale(1.2);
+}
+
+.actions-cell .delete-btn:hover {
+  color: #ff5c5c;
+  transform: scale(1.2);
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  max-width: 800px;
+  width: 90%;
+  padding: 1.5rem;
+  backdrop-filter: blur(8px);
+  background: var(--glass-bg);
+  border-radius: var(--radius);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow);
+  position: relative;
+}
+
+.close-modal {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-modal:hover {
+  color: #ff5c5c;
+}
