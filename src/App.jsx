@@ -104,6 +104,8 @@ import ProgramadorVacaciones from './components/Payroll/ProgramadorVacaciones';
 import PagosNomina from './components/Payroll/PagosNomina';
 import ControlContratos from './components/Payroll/ControlContratos';
 import CatalogoLabores from './components/Payroll/CatalogoLabores';
+import CatalogoCuadrillas from './components/Payroll/CatalogoCuadrillas';
+import HistorialCuadrillas from './components/Payroll/HistorialCuadrillas';
 import PlanillasManuales from './components/Payroll/PlanillasManuales';
 import ConfiguracionBasculas from './components/Basculas/ConfiguracionBasculas';
 import PruebasBasculas from './components/Basculas/PruebasBasculas';
@@ -417,6 +419,10 @@ function AppContent() {
                     <ConceptosNomina />
                   ) : selectedTable === 'rrhh_catalogo_labores' ? (
                     <CatalogoLabores tenantId={tenantId} />
+                  ) : selectedTable === 'rrhh_catalogo_cuadrillas' ? (
+                    <CatalogoCuadrillas />
+                  ) : selectedTable === 'rrhh_historial_cuadrillas' ? (
+                    <HistorialCuadrillas />
                   ) : selectedTable === 'rrhh_planillas_manuales' ? (
                     <PlanillasManuales tenantId={tenantId} fincaId={selectedFinca} />
                   ) : selectedTable === 'rrhh_historial' ? (

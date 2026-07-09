@@ -272,6 +272,7 @@ export const STATIC_NAVIGATION = [
         items: [
           { id: 'employees', name: 'Empleados Activos' },
           { id: 'rrhh_catalogo_labores', name: 'Labores' },
+          { id: 'rrhh_catalogo_cuadrillas', name: 'Catálogo de Cuadrillas' },
           { id: 'rrhh_conceptos', name: 'Conceptos de Nómina' }
         ]
       },
@@ -300,6 +301,7 @@ export const STATIC_NAVIGATION = [
           { id: 'rrhh-dashboard', name: 'Dashboard RRHH' },
           { id: 'rrhh_ubicacion_personal', name: 'Ubicación del Personal' },
           { id: 'labores-report', name: 'Reporte de Labores' },
+          { id: 'rrhh_historial_cuadrillas', name: 'Historial de Cuadrillas' },
           { id: 'auditoria_costos', name: 'Auditoría Costos (Cruce)' },
           { id: 'rrhh_historial', name: 'Historial Nómina' },
           { id: 'rrhh_hojas_vida', name: 'Hojas de Vida' }
