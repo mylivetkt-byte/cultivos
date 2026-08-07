@@ -102,33 +102,53 @@ router.post('/camadas', async (req, res) => {
 // === 3. MOVIMIENTOS Y VENTAS (Integración Contable) ===
 router.get('/movimientos', async (req, res) => {
   try {
-    const tenantId = req.query.tenantId;
-    const tF = tenantId ? 'WHERE m.id_tenant = ?' : '';
+    const { tenantId, fechaInicio, fechaFin, idSemilla, idEmpleado } = req.query;
+    
+    let tF = tenantId ? 'WHERE m.id_tenant = ?' : 'WHERE 1=1';
     const params = tenantId ? [tenantId] : [];
+
+    if (fechaInicio && fechaFin) {
+      tF += ' AND DATE(m.fecha) BETWEEN ? AND ?';
+      params.push(fechaInicio, fechaFin);
+    }
+    
+    if (idSemilla) {
+      tF += ' AND c.id_item_semilla = ?';
+      params.push(idSemilla);
+    }
+
+    if (idEmpleado) {
+      tF += ' AND m.id_empleado_responsable = ?';
+      params.push(idEmpleado);
+    }
+
+    // Si hay filtros de fecha, no limitamos tan agresivamente, asumimos que el usuario sabe lo que busca
+    const limitClause = (fechaInicio && fechaFin) ? 'LIMIT 2000' : 'LIMIT 200';
 
     const [rows] = await getDb(req).query(`
       SELECT m.*,
              e.nombres AS empleado_nombres, e.apellidos AS empleado_apellidos, rc.descripcion AS empleado_cargo,
-             c.codigo_camada, c.nombre_semilla,
-             l.descripcion_labor, l.estado AS labor_estado, l.fecha_completado AS labor_fecha_completado
+             c.codigo_camada, i.nombre AS nombre_semilla,
+             l.descripcion_labor, l.estado AS labor_estado, l.fecha_completado AS labor_fecha_completado, l.costo_mano_obra AS labor_costo
       FROM vivero_movimientos m
       LEFT JOIN rrhh_empleados e ON m.id_empleado_responsable = e.id_empleado
        LEFT JOIN rrhh_cargos rc ON e.id_cargo = rc.id_cargo
       LEFT JOIN vivero_camadas c ON m.id_camada = c.id_camada
+      LEFT JOIN vivero_inventario i ON c.id_item_semilla = i.id_item
       LEFT JOIN labores_diarias l ON l.id_tenant = m.id_tenant
         AND l.categoria IN ('Viveros', 'Semilleros')
         AND l.descripcion_labor LIKE CONCAT('%Vivero:%', m.tipo_movimiento, '%')
         AND DATE(l.fecha_planificada) = DATE(m.fecha)
         AND l.id_empleado = m.id_empleado_responsable
       ${tF}
-      ORDER BY m.fecha DESC
-      LIMIT 200
+      ORDER BY m.fecha ASC
+      ${limitClause}
     `, params);
 
     res.json(rows);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error fetching movimientos' });
+    console.error('API Error /movimientos:', err);
+    res.status(500).json({ error: `Error interno de DB: ${err.message}` });
   }
 });
 
@@ -249,41 +269,222 @@ router.post('/seguimiento', async (req, res) => {
   }
 });
 
-// === 5. DASHBOARD GERENCIAL VIVERO ===
-router.get('/dashboard', async (req, res) => {
+// === 5. FILTROS PARA VIVEROS ===
+router.get('/filtros', async (req, res) => {
   const { tenantId } = req.query;
   try {
-    const tQ = tenantId ? [tenantId] : [];
     const tF = tenantId ? 'WHERE id_tenant = ?' : '';
+    const tQ = tenantId ? [tenantId] : [];
+
+    // Fincas que tienen viveros
+    const [fincas] = await getDb(req).query(`
+      SELECT DISTINCT f.id_finca, f.nombre
+      FROM fincas f
+      JOIN viveros v ON f.id_finca = v.id_finca
+      ${tenantId ? 'WHERE f.id_tenant = ? AND v.id_tenant = ?' : ''}
+    `, tenantId ? [tenantId, tenantId] : []);
+
+    // Viveros
+    const [viveros] = await getDb(req).query(`
+      SELECT id_vivero, id_finca, nombre, codigo 
+      FROM viveros 
+      ${tF}
+    `, tQ);
+
+    // Tipos de Plantas/Semillas
+    const [plantas] = await getDb(req).query(`
+      SELECT id_item, nombre, tipo 
+      FROM vivero_inventario 
+      WHERE tipo IN ('Semilla', 'Planta') ${tenantId ? 'AND id_tenant = ?' : ''}
+    `, tQ);
+
+    res.json({ fincas, viveros, plantas });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error fetching vivero filtros' });
+  }
+});
+
+// === 6. DASHBOARD GERENCIAL VIVERO ===
+router.get('/dashboard', async (req, res) => {
+  const { tenantId, id_finca, id_vivero, id_semilla, fecha_inicio, fecha_fin } = req.query;
+  try {
+    const params = [];
+    let filterStr = tenantId ? 'id_tenant = ?' : '1=1';
+    if (tenantId) params.push(tenantId);
+    
+    if (id_vivero) {
+      filterStr += ' AND id_vivero = ?';
+      params.push(id_vivero);
+    } else if (id_finca) {
+      // If a finca is selected but no specific vivero, filter by all viveros in that finca
+      filterStr += ' AND id_vivero IN (SELECT id_vivero FROM viveros WHERE id_finca = ?)';
+      params.push(id_finca);
+    }
+
+    if (fecha_inicio && fecha_fin) {
+      // Movimientos will use this date filter
+    }
 
     // 1. Destino de Plantas (Movimientos acumulados)
-    const [destinos] = await getDb(req).query(`
-      SELECT tipo_movimiento as tipo, SUM(cantidad) as total
-      FROM vivero_movimientos
-      ${tF}
-      GROUP BY tipo_movimiento
-    `, tQ);
+    let qDestinos = `SELECT tipo_movimiento as tipo, SUM(cantidad) as total FROM vivero_movimientos WHERE ${filterStr}`;
+    const pDestinos = [...params];
+    if (fecha_inicio && fecha_fin) {
+      qDestinos += ' AND fecha BETWEEN ? AND ?';
+      pDestinos.push(fecha_inicio, fecha_fin);
+    }
+    qDestinos += ' GROUP BY tipo_movimiento';
+    
+    const [destinos] = await getDb(req).query(qDestinos, pDestinos);
 
-    // 2. Estado de Camadas Actuales
-    const [estadosCamadas] = await getDb(req).query(`
-      SELECT estado, SUM(cantidad_actual) as cantidad
-      FROM vivero_camadas
-      ${tF}
-      GROUP BY estado
-    `, tQ);
+    // 2. Estado de Camadas Actuales (Con cálculo de edades)
+    let qCamadas = `
+      SELECT c.id_camada, c.estado, c.cantidad_actual, c.fecha_siembra_bandeja, 
+             i.dias_germinacion, i.dias_listo_siembra,
+             DATEDIFF(CURDATE(), c.fecha_siembra_bandeja) as dias_transcurridos
+      FROM vivero_camadas c
+      LEFT JOIN vivero_inventario i ON c.id_item_semilla = i.id_item
+      WHERE ${filterStr.replace(/id_/g, 'c.id_').replace(/c\.id_finca/g, 'id_finca')}
+    `;
+    const pCamadas = [...params];
+    if (id_semilla) {
+      qCamadas += ' AND c.id_item_semilla = ?';
+      pCamadas.push(id_semilla);
+    }
 
-    // 3. Valorización Inventario (Cantidad * Costo)
-    const [valorInventario] = await getDb(req).query(`
-      SELECT tipo, SUM(cantidad_disponible * costo_unitario) as valor_total
+    const [camadasRaw] = await getDb(req).query(qCamadas, pCamadas);
+    
+    // Process camadas to group by dynamically calculated state
+    const estadosCamadasMap = {};
+    const camadasTimeline = [];
+
+    camadasRaw.forEach(c => {
+      let estadoDinamico = c.estado; // Fallback to DB state
+      const dias = c.dias_transcurridos || 0;
+      const germinacion = c.dias_germinacion || 10; // Default 10 days
+      const siembra = c.dias_listo_siembra || 30; // Default 30 days
+      
+      if (c.estado !== 'Agotada' && c.estado !== 'Perdida') {
+        if (dias < germinacion) estadoDinamico = 'En Germinación';
+        else if (dias >= germinacion && dias < siembra) estadoDinamico = 'Crecimiento';
+        else if (dias >= siembra) estadoDinamico = 'Lista para Siembra';
+      }
+
+      estadosCamadasMap[estadoDinamico] = (estadosCamadasMap[estadoDinamico] || 0) + parseFloat(c.cantidad_actual || 0);
+      
+      camadasTimeline.push({
+        id: c.id_camada,
+        dias,
+        estado: estadoDinamico,
+        cantidad: parseFloat(c.cantidad_actual || 0)
+      });
+    });
+
+    const estadosCamadas = Object.keys(estadosCamadasMap).map(k => ({
+      estado: k,
+      cantidad: estadosCamadasMap[k]
+    }));
+
+    // 3. Valorización Inventario (Stock actual vs Consumo)
+    let qInventario = `
+      SELECT id_item, tipo, nombre, cantidad_disponible, costo_unitario, (cantidad_disponible * costo_unitario) as valor_total
       FROM vivero_inventario
-      ${tF}
-      GROUP BY tipo
-    `, tQ);
+      WHERE ${filterStr}
+    `;
+    const pInventario = [...params];
+    const [inventarioRaw] = await getDb(req).query(qInventario, pInventario);
+
+    // Get Consumos and other movements to build the Kardex
+    let qConsumo = `
+      SELECT id_item, tipo_movimiento, SUM(cantidad) as cantidad_movimiento 
+      FROM vivero_movimientos 
+      WHERE tipo_movimiento IN ('Consumo', 'Salida_Siembra', 'Salida_Resiembra', 'Baja_Enfermedad') AND ${filterStr}
+    `;
+    const pConsumo = [...params];
+    if (fecha_inicio && fecha_fin) {
+      qConsumo += ' AND fecha BETWEEN ? AND ?';
+      pConsumo.push(fecha_inicio, fecha_fin);
+    }
+    qConsumo += ' GROUP BY id_item, tipo_movimiento';
+    const [consumosRaw] = await getDb(req).query(qConsumo, pConsumo);
+    
+    const consumosMap = {};
+    consumosRaw.forEach(c => {
+      if (!consumosMap[c.id_item]) {
+        consumosMap[c.id_item] = { consumo: 0, siembra: 0, resiembra: 0, mortalidad: 0 };
+      }
+      const val = Number(c.cantidad_movimiento);
+      if (c.tipo_movimiento === 'Consumo') consumosMap[c.id_item].consumo += val;
+      if (c.tipo_movimiento === 'Salida_Siembra') consumosMap[c.id_item].siembra += val;
+      if (c.tipo_movimiento === 'Salida_Resiembra') consumosMap[c.id_item].resiembra += val;
+      if (c.tipo_movimiento === 'Baja_Enfermedad') consumosMap[c.id_item].mortalidad += val;
+    });
+
+    const kardex = inventarioRaw.map(i => {
+      const movs = consumosMap[i.id_item] || { consumo: 0, siembra: 0, resiembra: 0, mortalidad: 0 };
+      return {
+        nombre: i.nombre,
+        tipo: i.tipo,
+        existencia: Number(i.cantidad_disponible),
+        consumo: movs.consumo,
+        siembra: movs.siembra,
+        resiembra: movs.resiembra,
+        mortalidad: movs.mortalidad,
+        valor_total: Number(i.valor_total)
+      };
+    });
+
+    // 4. Trazabilidad de Siembra en Lotes
+    let qSiembrasLotes = `
+      SELECT l.nombre as lote_nombre, i.nombre as planta_nombre, m.tipo_movimiento, SUM(m.cantidad) as cantidad_sembrada
+      FROM vivero_movimientos m
+      JOIN vivero_inventario i ON m.id_item = i.id_item
+      JOIN lotes l ON m.id_lote_destino = l.id_lote
+      WHERE m.tipo_movimiento IN ('Salida_Siembra', 'Salida_Resiembra') AND ${filterStr.replace(/id_vivero/g, 'm.id_vivero').replace(/id_tenant/g, 'm.id_tenant').replace(/m\.m\./g, 'm.')}
+    `;
+    const pSiembrasLotes = [...params];
+    if (fecha_inicio && fecha_fin) {
+      qSiembrasLotes += ' AND m.fecha BETWEEN ? AND ?';
+      pSiembrasLotes.push(fecha_inicio, fecha_fin);
+    }
+    qSiembrasLotes += ' GROUP BY l.id_lote, i.id_item, m.tipo_movimiento';
+    const [siembrasLotesRaw] = await getDb(req).query(qSiembrasLotes, pSiembrasLotes);
+
+    // Pivot table for lotes (Siembra vs Resiembra)
+    const lotesMap = {};
+    siembrasLotesRaw.forEach(r => {
+      const key = `${r.lote_nombre}_${r.planta_nombre}`;
+      if (!lotesMap[key]) {
+        lotesMap[key] = {
+          lote: r.lote_nombre,
+          planta: r.planta_nombre,
+          siembra: 0,
+          resiembra: 0
+        };
+      }
+      if (r.tipo_movimiento === 'Salida_Siembra') lotesMap[key].siembra += Number(r.cantidad_sembrada);
+      if (r.tipo_movimiento === 'Salida_Resiembra') lotesMap[key].resiembra += Number(r.cantidad_sembrada);
+    });
+    const siembrasPorLote = Object.values(lotesMap);
+
+
+    // Group for pie chart
+    const valorInventarioMap = {};
+    inventarioRaw.forEach(i => {
+      valorInventarioMap[i.tipo] = (valorInventarioMap[i.tipo] || 0) + Number(i.valor_total);
+    });
+    const valorInventario = Object.keys(valorInventarioMap).map(k => ({
+      tipo: k,
+      valor_total: valorInventarioMap[k]
+    }));
 
     res.json({
       destinos,
       estadosCamadas,
-      valorInventario
+      valorInventario,
+      kardex,
+      camadasTimeline,
+      siembrasPorLote
     });
   } catch (err) {
     console.error(err);

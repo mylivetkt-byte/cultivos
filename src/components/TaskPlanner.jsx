@@ -35,6 +35,7 @@ function TaskPlanner({ tenantId, fincaId, nucleoId }) {
   const [trees, setTrees] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [machines, setMachines] = useState([]);
+  const [insumosList, setInsumosList] = useState([]);
 
   // UIs & Forms
   const [loading, setLoading] = useState(false);
@@ -61,6 +62,7 @@ function TaskPlanner({ tenantId, fincaId, nucleoId }) {
   const [auditStatus, setAuditStatus] = useState('Completada');
   const [auditObs, setAuditObs] = useState('');
   const [auditEvaluator, setAuditEvaluator] = useState('Ing. Principal');
+  const [auditInsumos, setAuditInsumos] = useState([]);
 
   // Load Initial Lookups
   useEffect(() => {
@@ -75,6 +77,7 @@ function TaskPlanner({ tenantId, fincaId, nucleoId }) {
         const caminosRes = await fetchTableData('caminos_calles', { tenantId, pageSize: 150 });
         const vehRes = await fetchTableData('vehiculos', { tenantId, pageSize: 150 });
         const maqRes = await fetchTableData('maquinaria', { tenantId, pageSize: 150 });
+        const insRes = await fetchTableData('insumos', { tenantId, pageSize: 500 });
 
         setEmployees(empsRes.data || []);
         setLotes(lotesRes.data || []);
@@ -85,6 +88,7 @@ function TaskPlanner({ tenantId, fincaId, nucleoId }) {
         setCaminos(caminosRes.data || []);
         setVehicles(vehRes.data || []);
         setMachines(maqRes.data || []);
+        setInsumosList(insRes.data || []);
       } catch (err) {
         console.error('Error loading lookups for TaskPlanner:', err);
       }
@@ -199,11 +203,13 @@ function TaskPlanner({ tenantId, fincaId, nucleoId }) {
       await evaluateLabor(auditingTask.id_labor, {
         estado: auditStatus,
         observaciones: auditObs,
-        evaluador: auditEvaluator
+        evaluador: auditEvaluator,
+        insumos_utilizados: auditInsumos.filter(i => i.id_insumo && i.cantidad > 0)
       });
 
       setAuditingTask(null);
       setAuditObs('');
+      setAuditInsumos([]);
       loadTasksList();
       alert(`Labor calificada correctamente como "${auditStatus}".`);
     } catch (err) {
@@ -504,6 +510,7 @@ function TaskPlanner({ tenantId, fincaId, nucleoId }) {
                     setAuditingTask(task);
                     setAuditStatus(task.estado === 'Planificada' || task.estado === 'En Progreso' ? 'Completada' : task.estado);
                     setAuditObs(task.cumplimiento_observaciones || '');
+                    setAuditInsumos([]);
                   }}
                   >
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
@@ -556,6 +563,7 @@ function TaskPlanner({ tenantId, fincaId, nucleoId }) {
                           setAuditingTask(task);
                           setAuditStatus(task.estado === 'Planificada' || task.estado === 'En Progreso' ? 'Completada' : task.estado);
                           setAuditObs(task.cumplimiento_observaciones || '');
+                          setAuditInsumos([]);
                         }}
                         className="btn btn-outline"
                         style={{ padding: '6px 12px', fontSize: '12px' }}
@@ -669,6 +677,36 @@ function TaskPlanner({ tenantId, fincaId, nucleoId }) {
                   value={auditObs}
                   onChange={(e) => setAuditObs(e.target.value)}
                 />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Insumos Aplicados / Descuento de Inventario</label>
+                <p style={{fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 8px 0'}}>Asocie los insumos usados para descontar el stock del Kardex y costear la trazabilidad del lote.</p>
+                {auditInsumos.map((ai, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
+                    <select className="form-control" style={{ flex: 2 }} value={ai.id_insumo} onChange={(e) => {
+                      const newAi = [...auditInsumos];
+                      newAi[i].id_insumo = parseInt(e.target.value);
+                      setAuditInsumos(newAi);
+                    }}>
+                      <option value="">Seleccione Insumo (Bodega)...</option>
+                      {insumosList.map(ins => (
+                        <option key={ins.id_insumo} value={ins.id_insumo}>{ins.nombre} ({ins.unidad_medida} | Stock: {ins.stock_actual})</option>
+                      ))}
+                    </select>
+                    <input type="number" className="form-control" style={{ flex: 1 }} min="0.01" step="0.01" placeholder="Cantidad" value={ai.cantidad} onChange={(e) => {
+                      const newAi = [...auditInsumos];
+                      newAi[i].cantidad = parseFloat(e.target.value);
+                      setAuditInsumos(newAi);
+                    }} />
+                    <button type="button" className="btn btn-outline" style={{ border: '1px solid #ef4444', color: '#ef4444', padding: '4px 8px' }} onClick={() => {
+                      setAuditInsumos(auditInsumos.filter((_, idx) => idx !== i));
+                    }}>✕</button>
+                  </div>
+                ))}
+                <button type="button" className="btn btn-outline" style={{ fontSize: '12px', marginTop: '4px' }} onClick={() => setAuditInsumos([...auditInsumos, { id_insumo: '', cantidad: '' }])}>
+                  + Reportar Consumo de Insumo
+                </button>
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>

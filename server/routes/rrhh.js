@@ -214,33 +214,45 @@ router.get('/kpis', async (req, res) => {
 
 // Auditoría: Costos por Lote vs Nómina
 router.get('/auditoria-costos', async (req, res) => {
-  const { tenantId, periodoAnio, periodoMes, quincena } = req.query;
+  const { tenantId, periodoAnio, periodoMes, quincena, idFinca, fechaInicio: customFechaInicio, fechaFin: customFechaFin } = req.query;
   const tid = tenantId || 1;
   const pAnio = periodoAnio || new Date().getFullYear();
   const pMes = periodoMes || (new Date().getMonth() + 1);
   const pQuin = quincena || 'Primera';
 
   try {
-    // 1. Total Nómina (Devengado + Provisiones, simplificado al neto por ahora)
-    const [nomina] = await getDb(req).query(`
-      SELECT SUM(total_devengado) as total_devengado, SUM(total_neto) as total_neto
-      FROM rrhh_nomina_quincena
-      WHERE id_tenant = ? AND periodo_anio = ? AND periodo_mes = ? AND quincena = ?
-    `, [tid, pAnio, pMes, pQuin]);
+    // 1. Fechas
+    let fechaInicio, fechaFin;
+    if (customFechaInicio && customFechaFin) {
+      fechaInicio = customFechaInicio;
+      fechaFin = customFechaFin;
+    } else {
+      const diaInicio = pQuin === 'Primera' ? 1 : 16;
+      const diaFin = pQuin === 'Primera' ? 15 : 31;
+      fechaInicio = `${pAnio}-${String(pMes).padStart(2, '0')}-${String(diaInicio).padStart(2, '0')}`;
+      fechaFin = `${pAnio}-${String(pMes).padStart(2, '0')}-${String(diaFin).padStart(2, '0')}`;
+    }
 
-    // 2. Trazabilidad por empleado (Nómina vs Labores)
-    // Para simplificar, buscamos las labores completadas en ese mes/quincena
-    // (Asumimos quincena 1 = días 1-15, quincena 2 = días 16-31)
-    const diaInicio = pQuin === 'Primera' ? 1 : 16;
-    const diaFin = pQuin === 'Primera' ? 15 : 31;
-    const fechaInicio = `${pAnio}-${String(pMes).padStart(2, '0')}-${String(diaInicio).padStart(2, '0')}`;
-    const fechaFin = `${pAnio}-${String(pMes).padStart(2, '0')}-${String(diaFin).padStart(2, '0')}`;
+    // Filtros de finca
+    let fincaJoin = '';
+    let fincaWhere = '';
+    const paramsTraz = [pAnio, pMes, pQuin, fechaInicio, fechaFin, tid];
+    const paramsLotes = [tid, fechaInicio, fechaFin];
+    
+    if (idFinca && idFinca !== 'Todas' && idFinca !== 'undefined') {
+      fincaJoin = 'LEFT JOIN lotes l ON ld.id_lote = l.id_lote';
+      fincaWhere = 'AND l.id_finca = ?';
+      paramsTraz.push(idFinca);
+      paramsLotes.push(idFinca);
+    } else {
+      fincaJoin = 'LEFT JOIN lotes l ON ld.id_lote = l.id_lote';
+    }
 
     const [trazabilidad] = await getDb(req).query(`
       SELECT 
         e.id_empleado,
-        COALESCE(e.nombres, t.nombres) as nombres,
-        COALESCE(e.apellidos, t.apellidos) as apellidos,
+        COALESCE(e.nombres, t.nombre_completo) as nombres,
+        e.apellidos as apellidos,
         COALESCE(nd.total_devengos, nd.salario_base_devengado + COALESCE(nd.bonificaciones, 0)) as nomina_devengada,
         SUM(COALESCE(ld.costo_mano_obra, 0)) as costo_reportado_labores,
         COUNT(ld.id_labor) as cantidad_labores
@@ -249,21 +261,21 @@ router.get('/auditoria-costos', async (req, res) => {
       LEFT JOIN rrhh_nomina_quincena nq ON nq.id_tenant = e.id_tenant AND nq.periodo_anio = ? AND nq.periodo_mes = ? AND nq.quincena = ?
       LEFT JOIN rrhh_nomina_detalle nd ON nd.id_nomina = nq.id_nomina AND nd.id_empleado = e.id_empleado
       LEFT JOIN labores_diarias ld ON ld.id_empleado = e.id_empleado AND ld.fecha_planificada BETWEEN ? AND ? AND ld.estado = 'Completada'
-      WHERE e.id_tenant = ? AND (nd.id_nomina_detalle IS NOT NULL OR ld.id_labor IS NOT NULL)
-      GROUP BY e.id_empleado, e.nombres, t.nombres, e.apellidos, t.apellidos, nd.total_devengos, nd.salario_base_devengado, nd.bonificaciones
-    `, [pAnio, pMes, pQuin, fechaInicio, fechaFin, tid]);
+      ${fincaJoin}
+      WHERE e.id_tenant = ? AND (nd.id_nomina_detalle IS NOT NULL OR ld.id_labor IS NOT NULL) ${fincaWhere}
+      GROUP BY e.id_empleado, e.nombres, t.nombre_completo, e.apellidos, nd.total_devengos, nd.salario_base_devengado, nd.bonificaciones
+    `, paramsTraz);
 
-    // 3. Distribución de costos por Lote (Gráficos)
     const [lotes] = await getDb(req).query(`
       SELECT 
         COALESCE(l.nombre, CONCAT('Lote ', ld.id_lote)) as lote,
         SUM(COALESCE(ld.costo_mano_obra, 0)) as costo_total,
         COUNT(ld.id_labor) as labores_ejecutadas
       FROM labores_diarias ld
-      LEFT JOIN lotes l ON ld.id_lote = l.id_lote
-      WHERE ld.id_tenant = ? AND ld.fecha_planificada BETWEEN ? AND ? AND ld.estado = 'Completada'
+      ${fincaJoin}
+      WHERE ld.id_tenant = ? AND ld.fecha_planificada BETWEEN ? AND ? AND ld.estado = 'Completada' ${fincaWhere}
       GROUP BY ld.id_lote, l.nombre
-    `, [tid, fechaInicio, fechaFin]);
+    `, paramsLotes);
 
     const totalLabores = trazabilidad.reduce((acc, emp) => acc + Number(emp.costo_reportado_labores || 0), 0);
     const totalDevengado = trazabilidad.reduce((acc, emp) => acc + Number(emp.nomina_devengada || 0), 0);

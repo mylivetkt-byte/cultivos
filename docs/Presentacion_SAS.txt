@@ -1,0 +1,95 @@
+Manual Ejecutivo y Operativo: SAS
+	Sistema de Administración y Seguimiento Agroindustrial
+	Control Total, Auditoría y Eficiencia Operativa
+	Solución Integral 360°
+
+Capítulo 1: Centro de Control y Alertas
+	Torre de Control unificada para notificaciones de toda la hacienda.
+	Gestión de requisiciones urgentes y alertas de stock mínimo.
+	Flujo de abastecimiento sin cuellos de botella.
+	Beneficio: Visibilidad gerencial del pulso diario de toda la operación.
+
+Capítulo 2: Monitoreo Satelital y Telemetría GPS
+	Integración con cartografía satelital (GIS) y dispositivos GPS.
+	Mapa interactivo de cultivos (NDVI) y pivotes de riego.
+	Auditoría de rutas y velocidad de maquinaria agrícola.
+	Beneficio: Auditoría visual de la hacienda y prevención de fugas.
+
+Capítulo 3: Gestión Agrícola y Semilleros
+	Trazabilidad desde la semilla hasta el lote productivo.
+	Control fenológico y Manejo Integrado de Plagas (MIPE).
+	Formulación agronómica respetando periodos de carencia.
+	Beneficio: Estandariza protocolos y audita el plan agronómico.
+
+Capítulo 4: Sistema Automatizado de Cosecha y Básculas
+	Integración directa a básculas electrónicas.
+	Cero digitación manual en la recepción de la cosecha.
+	Control exacto de mermas y calidad en puerto de acopio.
+	Beneficio: Elimina el fraude ("dedo en la báscula") y pagos injustos.
+
+Capítulo 5: Biofábrica y Producción de Bioles
+	Gestión de fórmulas maestras y tiempos de fermentación.
+	Control de insumos (melaza, estiércol, microorganismos).
+	Cálculo exacto del costo de producción por litro.
+	Beneficio: Transforma desechos en ahorros y estandariza la calidad.
+
+Capítulo 6: Gestión Ganadera y Pecuaria
+	Hoja de vida electrónica y trazabilidad de potreros.
+	Control genético, pesajes y producción lechera.
+	Identificación de animales improductivos.
+	Beneficio: Audita la ganancia de peso y optimiza el uso de pasturas.
+
+Capítulo 7: Gestión Acuícola (Piscicultura)
+	Control de piscinas: oxígeno, temperatura, biomasa.
+	Muestreos de peso y factor de conversión alimenticia (FCA).
+	Programación automatizada de aireadores.
+	Beneficio: Minimiza mortalidad masiva y audita consumo de concentrado.
+
+Capítulo 8: Control de Bodegas e Inventarios
+	Gestión unificada (Agro, Veterinario, Repuestos).
+	Control PEPS, lotes, caducidad y códigos de barras.
+	Traslados seguros entre haciendas.
+	Beneficio: Inventario blindado, evita el robo hormiga y vencimientos.
+
+Capítulo 9: Logística y Compras
+	Requisición -> Cotización paralela -> Aprobación gerencial.
+	Evaluación de proveedores y fluctuación de precios.
+	Bloqueo de compras no planificadas.
+	Beneficio: Negociaciones transparentes y reducción de costos operativos.
+
+Capítulo 10: Maquinaria, Mantenimiento y Riego
+	Hoja de vida técnica, control de horómetros y combustible.
+	Mantenimiento preventivo de tractores y bombas acuícolas.
+	Sincronización con órdenes de riego.
+	Beneficio: Previene daños costosos y audita consumos por GPS.
+
+Capítulo 11: RRHH, Nómina y Geolocalización
+	Pago de jornales y destajos conectados a básculas.
+	Asistencia mediante biometría o GPS móvil.
+	Cálculo automático de seguridad social y liquidaciones.
+	Beneficio: Blindaje laboral (UGPP) y pago exacto por lo producido.
+
+Capítulo 12: Comercialización y Ventas
+	Facturación electrónica directa a la DIAN.
+	Trazabilidad desde la finca hasta el exportador.
+	Gestión eficiente de cartera y despachos.
+	Beneficio: Acelera el flujo de caja y audita rentabilidad por cliente.
+
+Capítulo 13: Contabilidad, Tributaria y DIAN
+	Motor contable bajo normas NIIF en tiempo real.
+	Integración automática de nómina, compras y bodegas.
+	Retenciones y Medios Magnéticos automáticos.
+	Beneficio: Paz mental, evita multas y refleja la salud financiera exacta.
+
+Capítulo 14: Auditoría, Revisoría Fiscal y Costeo (BI)
+	Logs inmutables y bloqueo estricto de periodos fiscales.
+	Drill-Down de Revisoría Fiscal.
+	Motor de prorrateo (cruces de costos entre unidades).
+	Beneficio: Máximo gobierno corporativo, desenmascara unidades improductivas.
+
+¿Por qué SAS es la Única Opción?
+	Gestión Multidimensional 360° (Agro, Ganadería, Peces, Biol).
+	Auditoría Satelital y Electrónica Antifraude.
+	Rigor DIAN y Revisoría Fiscal Incorruptible.
+	Centro de Control: La Finca en su bolsillo.
+	Garantía absoluta para dueños e inversionistas.

@@ -12,13 +12,17 @@ router.get('/', async (req, res) => {
   const tid = req.query.tenantId || 1;
   try {
     const query = `
-      SELECT c.*, f.nombre as finca_nombre 
+      SELECT c.*, f.nombre as finca_nombre, 
+             GROUP_CONCAT(CONCAT(e.nombres, ' ', e.apellidos) SEPARATOR ', ') as empleados_nombres
       FROM rrhh_cuadrillas c 
       LEFT JOIN fincas f ON c.id_finca = f.id_finca 
+      LEFT JOIN rrhh_empleados e ON c.id_cuadrilla = e.id_cuadrilla
       WHERE c.id_tenant = ? 
+      GROUP BY c.id_cuadrilla
       ORDER BY c.estado ASC, c.nombre ASC
     `;
     const [rows] = await getDb(req).query(query, [tid]);
+    console.log(`[rrhh_cuadrillas] Retornando ${rows.length} cuadrillas para tenant ${tid}`);
     res.json(rows);
   } catch (err) {
     console.error('Error fetching cuadrillas:', err);
@@ -80,7 +84,8 @@ router.delete('/:id', async (req, res) => {
 
 // 5. Obtener historial/récord operativo de las cuadrillas
 router.get('/historial', async (req, res) => {
-  const { tenantId, fecha_inicio, fecha_fin, id_cuadrilla, id_finca, id_lote } = req.query;
+  console.log('[HISTORIAL] Req query:', req.query);
+  const { tenantId, fecha_inicio, fecha_fin, id_cuadrilla, id_finca, id_lote, id_empleado } = req.query;
   const tid = tenantId || 1;
   try {
     let query = `
@@ -126,10 +131,15 @@ router.get('/historial', async (req, res) => {
       query += " AND l.id_lote = ?";
       params.push(id_lote);
     }
+    if (id_empleado) {
+      query += " AND l.id_empleado = ?";
+      params.push(id_empleado);
+    }
 
     query += " ORDER BY l.fecha_planificada DESC, c.nombre ASC";
 
     const [rows] = await getDb(req).query(query, params);
+    console.log(`[HISTORIAL] Query returned ${rows.length} rows`);
     res.json(rows);
   } catch (err) {
     console.error('Error fetching historial cuadrillas:', err);

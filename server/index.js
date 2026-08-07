@@ -72,6 +72,8 @@ import authRouter from './routes/auth.js';
 import sistemasRouter from './routes/sistemas.js';
 
 import parametrosRoutes from './routes/parametros.js';
+import gerenciaGlobalRouter from './routes/dashboardGerenciaGlobal.js';
+import dashboardFincaAuditoriaRouter from './routes/dashboardFincaAuditoria.js';
 import contabilidadRouter from './routes/contabilidad.js';
 import municipiosRouter from './routes/municipios.js';
 import carteraRouter from './routes/cartera.js';
@@ -138,11 +140,13 @@ app.use('/api/labores', auth, laboresRouter);
 app.use('/api/semillero', auth, semilleroRouter);
 app.use('/api/nomina', auth, nominaRouter);
 app.use('/api/tasks', auth, tasksRouter);
+app.use('/api/sistemas/dashboard-alta-gerencia', auth, gerenciaGlobalRouter);
+app.use('/api/sistemas/dashboard-finca-auditoria', auth, dashboardFincaAuditoriaRouter);
 app.use('/api/rrhh', auth, rrhhRouter);
 app.use('/api/satellite', auth, satelliteRouter);
 app.use('/api/inventario', auth, bodegasAvanzadoRoutes);
 app.use('/api/cuadrilla', auth, cuadrillaRouter);
-app.use('/api/rrhh-cuadrillas', auth, rrhhCuadrillasRouter);
+app.use('/api/catalogo-cuadrillas', rrhhCuadrillasRouter);
 app.use('/api/reports', auth, reportsRouter);
 app.use('/api/traslados', auth, trasladosRouter);
 app.use('/api/configuracion', auth, configRouter);
@@ -218,14 +222,14 @@ app.get('/api/dashboard/stats', auth, async (req, res) => {
     const [fCount] = await db.query('SELECT COUNT(*) as count FROM fincas');
     const fincasCount = fCount[0].count;
 
-    // Lotes count and total hectares
-    let loteSql = 'SELECT COUNT(*) as count, IFNULL(SUM(hectareas), 0) as total_ha FROM lotes';
+    // Lotes count and total hectares (filtrando los activos)
+    let loteSql = 'SELECT COUNT(*) as count, IFNULL(SUM(hectareas), 0) as total_ha FROM lotes WHERE activo = 1';
     const loteParams = [];
     if (nucleoId) {
-      loteSql += ' WHERE id_nucleo = ?';
+      loteSql += ' AND id_nucleo = ?';
       loteParams.push(nucleoId);
     } else if (fincaId) {
-      loteSql += ' WHERE id_nucleo IN (SELECT id_nucleo FROM nucleos WHERE id_finca = ?)';
+      loteSql += ' AND id_nucleo IN (SELECT id_nucleo FROM nucleos WHERE id_finca = ?)';
       loteParams.push(fincaId);
     }
     const [lCount] = await db.query(loteSql, loteParams);

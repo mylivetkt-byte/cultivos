@@ -20,11 +20,12 @@ export function exportToExcel(tableName, columns, data, metadata = {}) {
       return rowData;
     });
 
+    const rolStr = metadata.rol ? ` (Rol: ${metadata.rol})` : '';
     const ws = XLSX.utils.aoa_to_sheet([
       [`Empresa: ${metadata.empresa || 'SAS Agrícolas'}`],
-      [`Reporte: ${tableName.replace(/_/g, ' ')}`],
+      [`Reporte: ${metadata.reportName || tableName.replace(/_/g, ' ')}`],
       [`Finca Operativa: ${metadata.finca || 'Todas las Fincas'}`],
-      [`Generado por: ${metadata.usuario || 'Usuario del Sistema'}`],
+      [`Generado por: ${metadata.usuario || 'Usuario del Sistema'}${rolStr}`],
       [`Fecha y Hora: ${new Date().toLocaleString('es-ES')}`],
       [],
     ]);

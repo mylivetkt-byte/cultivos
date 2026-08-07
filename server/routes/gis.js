@@ -34,30 +34,54 @@ router.get('/fincas', async (req, res) => {
 router.get('/lotes/:fincaId', async (req, res) => {
   const { fincaId } = req.params;
   try {
+    // Buscar lotes de la finca: tanto los que están enlazados por nucleo como los que tienen id_finca directo
     const [rows] = await getDb(req).query(`
-      SELECT l.id_lote AS id, l.nombre, ST_AsGeoJSON(l.poligono_gps) AS geo 
+      SELECT 
+        l.id_lote AS id,
+        l.nombre,
+        l.codigo,
+        l.hectareas,
+        l.cultivo_actual,
+        n.nombre AS nucleo_nombre,
+        ST_AsGeoJSON(l.poligono_gps) AS geo,
+        CASE WHEN l.poligono_gps IS NOT NULL THEN 1 ELSE 0 END AS tiene_poligono
       FROM lotes l
-      JOIN nucleos n ON l.id_nucleo = n.id_nucleo
-      WHERE n.id_finca = ?
-    `, [fincaId]);
+      LEFT JOIN nucleos n ON l.id_nucleo = n.id_nucleo
+      WHERE n.id_finca = ? OR l.id_finca = ?
+      ORDER BY l.nombre ASC
+    `, [fincaId, fincaId]);
     
     const features = rows.map(r => {
       let geometry = null;
       if (r.geo) {
-        geometry = typeof r.geo === 'string' ? JSON.parse(r.geo) : r.geo;
+        try {
+          geometry = typeof r.geo === 'string' ? JSON.parse(r.geo) : r.geo;
+        } catch (e) {
+          console.warn('Error parsing geo for lote', r.id, e.message);
+        }
       }
       return {
         type: 'Feature',
         geometry,
-        properties: { id: r.id, nombre: r.nombre }
+        properties: { 
+          id: r.id, 
+          nombre: r.nombre, 
+          codigo: r.codigo,
+          hectareas: r.hectareas,
+          cultivo_actual: r.cultivo_actual,
+          nucleo_nombre: r.nucleo_nombre,
+          tiene_poligono: r.tiene_poligono
+        }
       };
     });
+    console.log(`[GIS] Finca ${fincaId}: ${features.length} lotes encontrados (${features.filter(f => f.geometry).length} con polígono)`);
     res.json({ type: 'FeatureCollection', features });
   } catch (e) {
     console.error('Error in /lotes:', e);
     res.status(500).json({ error: 'Database error', details: e.message });
   }
 });
+
 
 // Get real metrics for a batch of lotes
 router.post('/metrics', async (req, res) => {

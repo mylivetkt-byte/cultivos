@@ -4,18 +4,44 @@ import { authFetch } from '../../utils/api';
 function HistorialRepuestosModal({ machine, onClose }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Dictionaries for ID resolution
+  const [insumos, setInsumos] = useState({});
+  const [empleados, setEmpleados] = useState({});
+
+  useEffect(() => {
+    const fetchDicts = async () => {
+      try {
+        const [insRes, empRes] = await Promise.all([
+          authFetch('/api/table/insumos/data'),
+          authFetch('/api/table/rrhh_empleados/data')
+        ]);
+        if (insRes.ok) {
+          const insData = await insRes.json();
+          const insMap = {};
+          (insData.data || []).forEach(i => insMap[i.id_insumo] = i.nombre);
+          setInsumos(insMap);
+        }
+        if (empRes.ok) {
+          const empData = await empRes.json();
+          const empMap = {};
+          (empData.data || []).forEach(e => empMap[e.id_empleado] = `${e.nombres} ${e.apellidos || ''}`.trim());
+          setEmpleados(empMap);
+        }
+      } catch (e) {
+        console.error("Error loading dictionaries", e);
+      }
+    };
+    fetchDicts();
+  }, []);
 
   useEffect(() => {
     if (machine) {
       setLoading(true);
-      // Fetch data filtering by id_maquinaria
-      // The generic API /api/table/:name/data might not support exact column filtering out of the box
-      // except if we pass it as a query param or use search. We'll use search for prototyping.
       const machineId = machine.id_maq_agro || machine.id_maquinaria || machine.id_vehiculo;
       authFetch(`/api/table/inv_repuestos_cambiados/data?search=${machineId}`)
         .then(res => res.json())
         .then(json => {
-          // Filter strictly in frontend just in case search brought extra matches
           const filtered = (json.data || []).filter(item => String(item.id_maquinaria) === String(machineId));
           setData(filtered);
           setLoading(false);
@@ -55,22 +81,22 @@ function HistorialRepuestosModal({ machine, onClose }) {
               <thead>
                 <tr>
                   <th>ID Cambio</th>
-                  <th>Insumo ID</th>
+                  <th>Insumo / Repuesto</th>
                   <th>Fecha Entrega</th>
                   <th>Pieza Vieja</th>
                   <th>Estado</th>
-                  <th>Empleado ID</th>
+                  <th>Mecánico / Empleado</th>
                 </tr>
               </thead>
               <tbody>
                 {data.map(row => (
                   <tr key={row.id_cambio}>
                     <td>{row.id_cambio}</td>
-                    <td>{row.id_insumo}</td>
+                    <td style={{ fontWeight: 'bold' }}>{insumos[row.id_insumo] || `ID: ${row.id_insumo}`}</td>
                     <td>{row.fecha_entrega_pieza ? new Date(row.fecha_entrega_pieza).toLocaleDateString() : 'N/A'}</td>
                     <td>{row.pieza_vieja_entregada ? 'Entregada' : 'No'}</td>
                     <td><span className={`badge ${row.estado_devolucion === 'Entregado_Bodega' ? 'badge-success' : 'badge-warning'}`}>{row.estado_devolucion}</span></td>
-                    <td>{row.id_empleado}</td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{empleados[row.id_empleado] || `ID: ${row.id_empleado}`}</td>
                   </tr>
                 ))}
               </tbody>

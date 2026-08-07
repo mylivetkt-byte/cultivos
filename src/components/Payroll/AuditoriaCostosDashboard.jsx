@@ -1,20 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { authFetch } from '../../utils/api';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell, PieChart, Pie
+  Card, Row, Col, Statistic, Table, Select, Button, 
+  Alert, Typography, Space, Spin, Tag, message, DatePicker
+} from 'antd';
+import { useGlobalSelectors } from '../../context/GlobalSelectorsContext';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import { 
   ShieldCheck, AlertTriangle, CheckCircle, TrendingUp, DollarSign, 
-  Users, Map, Calendar, Download, RefreshCw, FileText
+  Users, Map, FileText, Download, RefreshCw
 } from 'lucide-react';
 
+const { Title, Text, Paragraph } = Typography;
+const { Option } = Select;
+const { RangePicker } = DatePicker;
+
 export default function AuditoriaCostosDashboard({ tenantId }) {
+  const { state: globalState } = useGlobalSelectors();
+  const selectedFinca = globalState?.finca || 'Todas';
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     periodoAnio: new Date().getFullYear(),
     periodoMes: new Date().getMonth() + 1,
-    quincena: 'Primera'
+    quincena: 'Primera',
+    fechaInicio: null,
+    fechaFin: null
   });
   const [contabilizando, setContabilizando] = useState(false);
   const [successMsg, setSuccessMsg] = useState(null);
@@ -22,15 +35,24 @@ export default function AuditoriaCostosDashboard({ tenantId }) {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/rrhh/auditoria-costos', {
-        params: {
-          tenantId: tenantId || 1,
-          ...filters
-        }
-      });
-      setData(res.data);
+      let queryString = `tenantId=${tenantId || 1}&periodoAnio=${filters.periodoAnio}&periodoMes=${filters.periodoMes}&quincena=${filters.quincena}`;
+      if (selectedFinca !== 'Todas') {
+        queryString += `&idFinca=${selectedFinca}`;
+      }
+      if (filters.fechaInicio && filters.fechaFin) {
+        queryString += `&fechaInicio=${filters.fechaInicio}&fechaFin=${filters.fechaFin}`;
+      }
+      
+      const res = await authFetch(`/api/rrhh/auditoria-costos?${queryString}`);
+      if (!res.ok) {
+        const errorJson = await res.json().catch(() => ({}));
+        throw new Error(errorJson.error || 'Error de red');
+      }
+      const jsonData = await res.json();
+      setData(jsonData);
     } catch (err) {
       console.error(err);
+      message.error("Error: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -38,43 +60,40 @@ export default function AuditoriaCostosDashboard({ tenantId }) {
 
   useEffect(() => {
     fetchData();
-  }, [tenantId, filters.periodoAnio, filters.periodoMes, filters.quincena]);
+  }, [tenantId, filters.periodoAnio, filters.periodoMes, filters.quincena, filters.fechaInicio, filters.fechaFin, selectedFinca]);
 
   const handleContabilizar = async () => {
     if (!data) return;
     setContabilizando(true);
     setSuccessMsg(null);
     try {
-      const res = await axios.post('/api/rrhh/contabilizar-nomina', {
-        tenantId: tenantId || 1,
-        pAnio: filters.periodoAnio,
-        pMes: filters.periodoMes,
-        pQuin: filters.quincena,
-        totalNomina: data.kpis.totalNomina,
-        totalLabores: data.kpis.totalLabores,
-        variacion: data.kpis.variacion
+      const res = await authFetch('/api/rrhh/contabilizar-nomina', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantId: tenantId || 1,
+          pAnio: filters.periodoAnio,
+          pMes: filters.periodoMes,
+          pQuin: filters.quincena,
+          totalNomina: data.kpis.totalNomina,
+          totalLabores: data.kpis.totalLabores,
+          variacion: data.kpis.variacion
+        })
       });
-      if (res.data.success) {
-        setSuccessMsg(`Comprobante ${res.data.documento} generado con éxito.`);
+      const responseData = await res.json();
+      if (responseData.success) {
+        setSuccessMsg(`Comprobante ${responseData.documento} generado con éxito.`);
+        message.success(`Comprobante ${responseData.documento} generado con éxito.`);
+      } else {
+        throw new Error(responseData.error || 'Error desconocido');
       }
     } catch (err) {
       console.error(err);
-      alert('Error al contabilizar: ' + (err.response?.data?.error || err.message));
+      message.error('Error al contabilizar: ' + (err.response?.data?.error || err.message));
     } finally {
       setContabilizando(false);
     }
   };
-
-  if (loading && !data) {
-    return (
-      <div className="flex items-center justify-center min-h-[600px] w-full">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-          <p className="text-gray-500 font-medium">Cruzando bases de datos de auditoría...</p>
-        </div>
-      </div>
-    );
-  }
 
   const kpis = data?.kpis || { totalNomina: 0, totalLabores: 0, variacion: 0 };
   const trazabilidad = data?.trazabilidad || [];
@@ -89,275 +108,303 @@ export default function AuditoriaCostosDashboard({ tenantId }) {
     : 0;
 
   const isAuditClean = Math.abs(kpis.variacion) < 1000; // Tolerance threshold
-  const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+  const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
-  return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 animate-fade-in font-sans">
-      
-      {/* Header Premium */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 bg-gradient-to-r from-gray-900 to-slate-800 p-8 rounded-2xl shadow-xl text-white">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <ShieldCheck className="w-10 h-10 text-emerald-400" />
-            <h1 className="text-4xl font-bold tracking-tight">Auditoría de Costos</h1>
-          </div>
-          <p className="text-gray-400 text-lg max-w-2xl">
-            Cruce transaccional entre Nómina Pagada y Costos de Producción en Lotes.
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20">
-          <select 
-            value={filters.periodoMes}
-            onChange={(e) => setFilters({...filters, periodoMes: e.target.value})}
-            className="bg-transparent text-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-lg px-2 py-1 appearance-none cursor-pointer"
-          >
-            {Array.from({length: 12}, (_, i) => (
-              <option key={i+1} value={i+1} className="text-gray-900">
-                {new Date(2000, i, 1).toLocaleString('es', { month: 'long' }).toUpperCase()}
-              </option>
-            ))}
-          </select>
-          <div className="w-px h-6 bg-white/20"></div>
-          <select 
-            value={filters.quincena}
-            onChange={(e) => setFilters({...filters, quincena: e.target.value})}
-            className="bg-transparent text-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-lg px-2 py-1 appearance-none cursor-pointer"
-          >
-            <option value="Primera" className="text-gray-900">1ra Quincena</option>
-            <option value="Segunda" className="text-gray-900">2da Quincena</option>
-            <option value="Mensual" className="text-gray-900">Mensual</option>
-          </select>
-          <button 
-            onClick={fetchData}
-            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-            title="Actualizar Datos"
-          >
-            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-      </div>
-
-      {/* Alerta de Auditoría */}
-      <div className={`p-4 rounded-xl border flex items-center justify-between gap-4 shadow-sm transition-all ${
-        isAuditClean 
-          ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
-          : 'bg-amber-50 border-amber-200 text-amber-800'
-      }`}>
-        <div className="flex items-center gap-4">
-          <div className={`p-3 rounded-full ${isAuditClean ? 'bg-emerald-100' : 'bg-amber-100'}`}>
-            {isAuditClean ? <CheckCircle className="w-6 h-6" /> : <AlertTriangle className="w-6 h-6" />}
+  const columns = [
+    {
+      title: 'ID / Empleado',
+      key: 'empleado',
+      render: (_, record) => (
+        <Space>
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%', backgroundColor: '#f3f4f6', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#6b7280'
+          }}>
+            {record.nombres?.charAt(0) || 'E'}
           </div>
           <div>
-            <h3 className="font-bold text-lg">
-              {isAuditClean ? 'Cruce Operativo Exitoso' : 'Descuadre Detectado en el Cruce'}
-            </h3>
-            <p className="text-sm opacity-90">
-              {isAuditClean 
-                ? 'El 100% de la nómina operativa ha sido costeada y reportada en las labores de los lotes.' 
+            <div style={{ fontWeight: 'bold', color: '#111827' }}>{record.nombres} {record.apellidos}</div>
+            <Text type="secondary" style={{ fontSize: '12px' }}>ID: {record.id_empleado}</Text>
+          </div>
+        </Space>
+      )
+    },
+    {
+      title: 'Nómina Liquidada',
+      dataIndex: 'nomina_devengada',
+      key: 'nomina_devengada',
+      align: 'right',
+      render: (val) => <Text strong>{formatCurrency(val)}</Text>
+    },
+    {
+      title: 'Labores Creadas',
+      dataIndex: 'cantidad_labores',
+      key: 'cantidad_labores',
+      align: 'center',
+      render: (val) => <Tag color="blue">{val}</Tag>
+    },
+    {
+      title: 'Costo a Lotes',
+      dataIndex: 'costo_reportado_labores',
+      key: 'costo_reportado_labores',
+      align: 'right',
+      render: (val) => <Text strong type="success">{formatCurrency(val)}</Text>
+    },
+    {
+      title: 'Variación / Ocio',
+      key: 'variacion',
+      align: 'right',
+      render: (_, record) => {
+        const diff = (record.nomina_devengada || 0) - (record.costo_reportado_labores || 0);
+        const isDiff = Math.abs(diff) > 1000;
+        return (
+          <Space style={{ color: isDiff ? '#d97706' : '#9ca3af', fontWeight: 'bold' }}>
+            {isDiff && <AlertTriangle size={14} />}
+            {formatCurrency(diff)}
+          </Space>
+        );
+      }
+    }
+  ];
+
+  return (
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+        <div>
+          <Title level={2} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <ShieldCheck size={32} color="#10b981" /> 
+            Auditoría de Costos
+          </Title>
+          <Text type="secondary" style={{ fontSize: '16px' }}>
+            Cruce transaccional entre Nómina Pagada y Costos de Producción en Lotes.
+          </Text>
+        </div>
+        
+        <Space size="middle" style={{ backgroundColor: '#fff', padding: '12px', borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+          <Text strong>Finca:</Text>
+          <Tag color="green">{selectedFinca === 'Todas' ? 'Todas las Fincas' : `ID Finca: ${selectedFinca}`}</Tag>
+          
+          <div style={{ width: '1px', height: '24px', backgroundColor: '#e5e7eb' }}></div>
+          
+          <RangePicker 
+            onChange={(dates, dateStrings) => {
+              if (dates) {
+                setFilters({...filters, fechaInicio: dateStrings[0], fechaFin: dateStrings[1]});
+              } else {
+                setFilters({...filters, fechaInicio: null, fechaFin: null});
+              }
+            }}
+          />
+
+          <div style={{ width: '1px', height: '24px', backgroundColor: '#e5e7eb' }}></div>
+          <Select 
+            value={filters.periodoMes} 
+            onChange={(val) => setFilters({...filters, periodoMes: val, fechaInicio: null, fechaFin: null})}
+            style={{ width: 120 }}
+            bordered={false}
+            disabled={filters.fechaInicio !== null}
+          >
+            {Array.from({length: 12}, (_, i) => (
+              <Option key={i+1} value={i+1}>
+                {new Date(2000, i, 1).toLocaleString('es', { month: 'long' }).toUpperCase()}
+              </Option>
+            ))}
+          </Select>
+          <div style={{ width: '1px', height: '24px', backgroundColor: '#e5e7eb' }}></div>
+          <Select 
+            value={filters.quincena} 
+            onChange={(val) => setFilters({...filters, quincena: val, fechaInicio: null, fechaFin: null})}
+            style={{ width: 140 }}
+            bordered={false}
+            disabled={filters.fechaInicio !== null}
+          >
+            <Option value="Primera">1ra Quincena</Option>
+            <Option value="Segunda">2da Quincena</Option>
+            <Option value="Mensual">Mensual</Option>
+          </Select>
+          <div style={{ width: '1px', height: '24px', backgroundColor: '#e5e7eb' }}></div>
+          <Button 
+            type="text" 
+            icon={<RefreshCw size={18} className={loading ? 'animate-spin' : ''} />} 
+            onClick={fetchData}
+            style={{ color: '#10b981' }}
+          />
+        </Space>
+      </div>
+
+      <Spin spinning={loading && !data}>
+        {data && (
+          <>
+            {/* Alerta de Estado */}
+            <Alert
+              message={<span style={{ fontSize: '16px', fontWeight: 'bold' }}>{isAuditClean ? 'Cruce Operativo Exitoso' : 'Descuadre Detectado en el Cruce'}</span>}
+              description={isAuditClean 
+                ? 'El 100% de la nómina operativa ha sido costeada y reportada en las labores de los lotes.'
                 : `Existe una diferencia de ${formatCurrency(kpis.variacion)} entre la nómina pagada y el valor costeado en campo.`}
-            </p>
-          </div>
-        </div>
-        {!isAuditClean && (
-          <button className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium text-sm transition-colors shadow-sm">
-            Ver Detalle de Fugas
-          </button>
+              type={isAuditClean ? 'success' : 'warning'}
+              showIcon
+              icon={isAuditClean ? <CheckCircle size={24} /> : <AlertTriangle size={24} />}
+              style={{ marginBottom: '24px', padding: '16px', borderRadius: '12px' }}
+              action={
+                !isAuditClean && (
+                  <Button type="primary" danger style={{ marginTop: '8px' }}>
+                    Ver Detalle de Fugas
+                  </Button>
+                )
+              }
+            />
+
+            {/* KPIs */}
+            <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+              <Col xs={24} sm={8}>
+                <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <Statistic
+                    title={<span style={{ fontWeight: 500, color: '#6b7280' }}>TOTAL NÓMINA PAGADA</span>}
+                    value={kpis.totalNomina}
+                    formatter={(value) => formatCurrency(value)}
+                    prefix={<DollarSign size={20} color="#ef4444" style={{ marginRight: 8, background: '#fee2e2', padding: 4, borderRadius: '50%' }}/>}
+                    valueStyle={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}
+                  />
+                  <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: '8px' }}>
+                    Extractado de <Text code>rrhh_nomina_detalle</Text>
+                  </Text>
+                </Card>
+              </Col>
+              
+              <Col xs={24} sm={8}>
+                <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <Statistic
+                    title={<span style={{ fontWeight: 500, color: '#6b7280' }}>COSTEADO A LOTES</span>}
+                    value={kpis.totalLabores}
+                    formatter={(value) => formatCurrency(value)}
+                    prefix={<Map size={20} color="#10b981" style={{ marginRight: 8, background: '#d1fae5', padding: 4, borderRadius: '50%' }}/>}
+                    valueStyle={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}
+                  />
+                  <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: '8px' }}>
+                    Extractado de <Text code>labores_diarias</Text>
+                  </Text>
+                </Card>
+              </Col>
+
+              <Col xs={24} sm={8}>
+                <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: isAuditClean ? 'none' : '1px solid #fde68a', backgroundColor: isAuditClean ? '#fff' : '#fffbeb' }}>
+                  <Statistic
+                    title={<span style={{ fontWeight: 500, color: isAuditClean ? '#6b7280' : '#92400e' }}>VARIACIÓN (TIEMPO OCIOSO)</span>}
+                    value={kpis.variacion}
+                    formatter={(value) => formatCurrency(value)}
+                    prefix={<TrendingUp size={20} color={isAuditClean ? "#6366f1" : "#d97706"} style={{ marginRight: 8, background: isAuditClean ? '#e0e7ff' : '#fef3c7', padding: 4, borderRadius: '50%' }}/>}
+                    valueStyle={{ fontSize: '28px', fontWeight: 700, color: isAuditClean ? '#111827' : '#78350f' }}
+                  />
+                  <Text style={{ fontSize: '13px', display: 'block', marginTop: '8px', color: isAuditClean ? '#059669' : '#b45309', fontWeight: 500 }}>
+                    {variacionPercentage}% respecto a la nómina
+                  </Text>
+                </Card>
+              </Col>
+            </Row>
+
+            {/* Grafico y Accion */}
+            <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+              <Col xs={24} lg={12}>
+                <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <Title level={4} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+                    <Map size={20} color="#4f46e5" /> Distribución Operativa por Lote
+                  </Title>
+                  <div style={{ height: 300, width: '100%' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={lotes} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                        <XAxis dataKey="lote" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
+                        <YAxis 
+                          axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}}
+                          tickFormatter={(val) => `$${val / 1000}k`}
+                        />
+                        <RechartsTooltip 
+                          cursor={{fill: '#f9fafb'}}
+                          contentStyle={{borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                          formatter={(val) => [formatCurrency(val), 'Costo']}
+                        />
+                        <Bar dataKey="costo_total" radius={[6, 6, 0, 0]}>
+                          {lotes.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+              </Col>
+
+              <Col xs={24} lg={12}>
+                <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', backgroundColor: '#e0e7ff', height: '100%' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center', padding: '0 16px' }}>
+                    <div style={{ width: 56, height: 56, backgroundColor: '#c7d2fe', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+                      <FileText size={28} color="#4f46e5" />
+                    </div>
+                    <Title level={3} style={{ marginTop: 0 }}>Integración Contable</Title>
+                    <Paragraph style={{ color: '#4b5563', fontSize: '15px' }}>
+                      La nómina de este periodo está lista para ser transferida a la contabilidad. Se generará un comprobante diario afectando automáticamente las cuentas de Costos de Producción (7105), Gastos y Pasivos.
+                    </Paragraph>
+                    
+                    {successMsg && (
+                      <Alert 
+                        type="success" 
+                        showIcon 
+                        message={successMsg} 
+                        style={{ marginBottom: '16px' }}
+                      />
+                    )}
+                    
+                    <Button 
+                      type="primary" 
+                      size="large"
+                      onClick={handleContabilizar}
+                      loading={contabilizando}
+                      disabled={successMsg !== null}
+                      style={{ 
+                        backgroundColor: successMsg ? '#10b981' : '#4f46e5', 
+                        borderColor: successMsg ? '#10b981' : '#4f46e5',
+                        width: '100%',
+                        fontWeight: 'bold',
+                        height: '48px',
+                        borderRadius: '8px',
+                        marginTop: 'auto'
+                      }}
+                    >
+                      {successMsg ? 'Contabilizado Exitosamente' : 'Generar Comprobante Contable'}
+                    </Button>
+                  </div>
+                </Card>
+              </Col>
+            </Row>
+
+            {/* Tabla Detalle */}
+            <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }} bodyStyle={{ padding: 0 }}>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Title level={4} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Users size={20} color="#6b7280" /> Trazabilidad Detallada por Empleado
+                </Title>
+                <Button type="text" icon={<Download size={16} />}>
+                  Exportar CSV
+                </Button>
+              </div>
+              <Table 
+                columns={columns}
+                dataSource={trazabilidad}
+                rowKey="id_empleado"
+                pagination={{
+                  defaultPageSize: 10,
+                  showSizeChanger: true,
+                  pageSizeOptions: ['10', '25', '50'],
+                  showTotal: (total) => `Total ${total} empleados`
+                }}
+                style={{ width: '100%' }}
+              />
+            </Card>
+          </>
         )}
-      </div>
-
-      {/* KPIs Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-shadow">
-          <div className="absolute -right-6 -top-6 bg-red-50 w-24 h-24 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-red-100 p-2 rounded-lg text-red-600"><DollarSign className="w-5 h-5" /></div>
-              <p className="text-gray-500 font-medium text-sm uppercase tracking-wider">Total Nómina Pagada</p>
-            </div>
-            <h3 className="text-3xl font-bold text-gray-900">{formatCurrency(kpis.totalNomina)}</h3>
-            <p className="text-sm text-gray-500 mt-2 flex items-center gap-1">
-              Extractado de `rrhh_nomina_detalle`
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-shadow">
-          <div className="absolute -right-6 -top-6 bg-emerald-50 w-24 h-24 rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-emerald-100 p-2 rounded-lg text-emerald-600"><Map className="w-5 h-5" /></div>
-              <p className="text-gray-500 font-medium text-sm uppercase tracking-wider">Costeado a Lotes</p>
-            </div>
-            <h3 className="text-3xl font-bold text-gray-900">{formatCurrency(kpis.totalLabores)}</h3>
-            <p className="text-sm text-gray-500 mt-2 flex items-center gap-1">
-              Extractado de `labores_diarias`
-            </p>
-          </div>
-        </div>
-
-        <div className={`p-6 rounded-2xl shadow-sm border relative overflow-hidden group hover:shadow-md transition-shadow ${
-          isAuditClean ? 'bg-white border-gray-100' : 'bg-amber-50 border-amber-200'
-        }`}>
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`p-2 rounded-lg ${isAuditClean ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-200 text-amber-800'}`}>
-                <TrendingUp className="w-5 h-5" />
-              </div>
-              <p className={`font-medium text-sm uppercase tracking-wider ${isAuditClean ? 'text-gray-500' : 'text-amber-800'}`}>
-                Variación (Tiempo Ocioso / Subsidios)
-              </p>
-            </div>
-            <h3 className={`text-3xl font-bold ${isAuditClean ? 'text-gray-900' : 'text-amber-900'}`}>
-              {formatCurrency(kpis.variacion)}
-            </h3>
-            <p className={`text-sm mt-2 font-medium ${isAuditClean ? 'text-emerald-600' : 'text-amber-700'}`}>
-              {variacionPercentage}% respecto a la nómina
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Costos por Lote Bar Chart */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <Map className="w-5 h-5 text-indigo-500" />
-            Distribución del Costo Operativo por Lote
-          </h3>
-          <div className="h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={lotes} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="lote" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
-                <YAxis 
-                  axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}}
-                  tickFormatter={(val) => `$${val / 1000}k`}
-                />
-                <RechartsTooltip 
-                  cursor={{fill: '#f3f4f6'}}
-                  contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                  formatter={(val) => [formatCurrency(val), 'Costo']}
-                />
-                <Bar dataKey="costo_total" radius={[6, 6, 0, 0]}>
-                  {lotes.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Action / Contabilizar Card */}
-        <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-8 rounded-2xl border border-indigo-100 flex flex-col justify-center relative overflow-hidden">
-          <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
-          <div className="relative z-10 max-w-md">
-            <div className="bg-indigo-100 w-14 h-14 rounded-xl flex items-center justify-center mb-6">
-              <FileText className="w-7 h-7 text-indigo-600" />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">Integración Contable</h3>
-            <p className="text-gray-600 mb-8 leading-relaxed">
-              La nómina de este periodo está lista para ser transferida a la contabilidad. Se generará un comprobante diario afectando automáticamente las cuentas de Costos de Producción (7105), Gastos y Pasivos.
-            </p>
-            {successMsg && (
-              <div className="mb-4 p-3 bg-emerald-100 text-emerald-800 rounded-lg flex items-center gap-2">
-                <CheckCircle className="w-5 h-5" />
-                <span className="font-medium">{successMsg}</span>
-              </div>
-            )}
-            <div className="flex gap-4">
-              <button 
-                onClick={handleContabilizar}
-                disabled={contabilizando || successMsg}
-                className={`flex-1 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${
-                  successMsg ? 'bg-emerald-600' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-95 shadow-indigo-200'
-                }`}
-              >
-                {contabilizando ? (
-                  <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Procesando...</>
-                ) : successMsg ? (
-                  <><CheckCircle className="w-5 h-5" /> Contabilizado</>
-                ) : (
-                  <>Generar Comprobante Contable</>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabla de Trazabilidad Detallada */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-          <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <Users className="w-5 h-5 text-gray-500" />
-            Trazabilidad Detallada por Empleado
-          </h3>
-          <button className="text-gray-500 hover:text-indigo-600 transition-colors flex items-center gap-2 text-sm font-medium">
-            <Download className="w-4 h-4" /> Exportar CSV
-          </button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-white text-gray-500 text-xs uppercase tracking-wider">
-                <th className="p-4 border-b font-semibold">ID / Empleado</th>
-                <th className="p-4 border-b font-semibold text-right">Nómina Liquidada</th>
-                <th className="p-4 border-b font-semibold text-center">Labores Creadas</th>
-                <th className="p-4 border-b font-semibold text-right">Costo a Lotes</th>
-                <th className="p-4 border-b font-semibold text-right">Variación / Ocio</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {trazabilidad.map((emp, i) => {
-                const diff = (emp.nomina_devengada || 0) - (emp.costo_reportado_labores || 0);
-                const isDiff = Math.abs(diff) > 1000;
-                return (
-                  <tr key={i} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-xs">
-                          {emp.nombres?.charAt(0) || 'E'}
-                        </div>
-                        <div>
-                          <p className="font-bold text-gray-900 text-sm">{emp.nombres} {emp.apellidos}</p>
-                          <p className="text-gray-400 text-xs">ID: {emp.id_empleado}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4 text-right font-medium text-gray-900">
-                      {formatCurrency(emp.nomina_devengada)}
-                    </td>
-                    <td className="p-4 text-center">
-                      <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {emp.cantidad_labores}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right font-medium text-emerald-600">
-                      {formatCurrency(emp.costo_reportado_labores)}
-                    </td>
-                    <td className="p-4 text-right">
-                      <span className={`inline-flex items-center gap-1 font-bold text-sm ${isDiff ? 'text-amber-600' : 'text-gray-400'}`}>
-                        {isDiff && <AlertTriangle className="w-3 h-3" />}
-                        {formatCurrency(diff)}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-              {trazabilidad.length === 0 && !loading && (
-                <tr>
-                  <td colSpan="5" className="p-12 text-center text-gray-500">
-                    No se encontraron registros cruzados para este periodo.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      </Spin>
     </div>
   );
 }

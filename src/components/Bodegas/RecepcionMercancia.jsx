@@ -437,7 +437,7 @@ function RecepcionMercancia({ tenantId, fincaId }) {
                   <td><span className="px-2 py-1 rounded text-xs bg-green-100 text-green-700">{m.tipo_movimiento}</span></td>
                   <td><strong className="text-green-600">{m.cantidad}</strong></td>
                   <td>{fmtM(m.costo_unitario)}</td>
-                  <td>{m.id_bodega}</td>
+                  <td>{bodegas.find(b => String(b.id_bodega) === String(m.id_bodega))?.nombre || `ID: ${m.id_bodega}`}</td>
                   <td><code>{m.documento_referencia}</code></td>
                   <td>{m.observaciones || '-'}</td>
                 </tr>

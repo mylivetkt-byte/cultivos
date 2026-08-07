@@ -7,7 +7,11 @@ const API_URL = '/api';
 
 const JefeCuadrillaApp = ({ tenantId }) => {
   const [cuadrillas, setCuadrillas] = useState([]);
+  const [fincas, setFincas] = useState([]);
   const [selectedCuadrilla, setSelectedCuadrilla] = useState('');
+  const [filterTipo, setFilterTipo] = useState('Todas');
+  const [filterFinca, setFilterFinca] = useState('Todas');
+  
   const [labores, setLabores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('Todas');
@@ -42,18 +46,46 @@ const JefeCuadrillaApp = ({ tenantId }) => {
   });
 
   useEffect(() => {
-    authFetch(`${API_URL}/cuadrilla/list${tenantId ? `?tenantId=${tenantId}` : ''}`)
+    // Fetch fincas
+    authFetch(`${API_URL}/table/fincas/data?pageSize=100${tenantId ? `&tenantId=${tenantId}` : ''}`)
+      .then(res => res.json())
+      .then(data => setFincas(data.data || []))
+      .catch(console.error);
+
+    // Fetch cuadrillas
+    authFetch(`/api/catalogo-cuadrillas?tenantId=${tenantId || 1}`)
       .then(res => res.json())
       .then(data => {
-        setCuadrillas(data);
-        if (data.length > 0) {
-          const first = data[0];
-          const firstId = first.id ?? first.id_cuadrilla ?? Object.values(first)[0];
-          setSelectedCuadrilla(first);
+        if (Array.isArray(data)) {
+          setCuadrillas(data);
+          if (data.length > 0) {
+            setSelectedCuadrilla(data[0]);
+          }
         }
       })
       .catch(console.error);
   }, [tenantId]);
+
+  const filteredCuadrillas = cuadrillas.filter(c => {
+    let match = true;
+    if (filterTipo !== 'Todas' && c.tipo !== filterTipo) match = false;
+    if (filterFinca !== 'Todas') {
+      if (filterFinca === 'Ninguna' && c.id_finca !== null) match = false;
+      if (filterFinca !== 'Ninguna' && String(c.id_finca) !== String(filterFinca)) match = false;
+    }
+    return match;
+  });
+
+  useEffect(() => {
+    if (filteredCuadrillas.length > 0) {
+      const currentValid = filteredCuadrillas.find(c => c.id_cuadrilla === (selectedCuadrilla?.id_cuadrilla || selectedCuadrilla));
+      if (!currentValid) {
+        setSelectedCuadrilla(filteredCuadrillas[0]);
+      }
+    } else {
+      setSelectedCuadrilla('');
+    }
+  }, [filterTipo, filterFinca, cuadrillas]);
 
   useEffect(() => {
     if (!selectedCuadrilla) {
@@ -331,24 +363,54 @@ const JefeCuadrillaApp = ({ tenantId }) => {
         <div style={{ marginBottom: '16px', fontSize: '14px', color: '#94a3b8', textTransform: 'capitalize' }}>
           📅 {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         </div>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+          <select
+            value={filterTipo}
+            onChange={e => setFilterTipo(e.target.value)}
+            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', fontSize: '14px', background: '#334155', color: 'white', outline: 'none' }}
+          >
+            <option value="Todas">Tipo: Todos</option>
+            <option value="Agricola">Agrícola</option>
+            <option value="Ganadera">Ganadera</option>
+            <option value="Acuicola">Acuícola</option>
+            <option value="Bioles">Planta de Bioles</option>
+            <option value="Produccion">Producción</option>
+            <option value="Mantenimiento">Mantenimiento</option>
+            <option value="Otra">Otra</option>
+          </select>
+          <select
+            value={filterFinca}
+            onChange={e => setFilterFinca(e.target.value)}
+            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', fontSize: '14px', background: '#334155', color: 'white', outline: 'none' }}
+          >
+            <option value="Todas">Finca: Todas</option>
+            <option value="Ninguna">Sin Asignar</option>
+            {fincas.map(f => (
+              <option key={f.id_finca} value={f.id_finca}>{f.nombre}</option>
+            ))}
+          </select>
+        </div>
         <select
-          value={typeof selectedCuadrilla === 'string' ? selectedCuadrilla : (selectedCuadrilla?.id ?? selectedCuadrilla?.id_cuadrilla ?? '')}
+          value={typeof selectedCuadrilla === 'string' ? selectedCuadrilla : (selectedCuadrilla?.id_cuadrilla ?? '')}
           onChange={e => {
-            const sel = cuadrillas.find(c => String(typeof c === 'string' ? c : (c.id ?? c.id_cuadrilla)) === e.target.value);
+            const sel = filteredCuadrillas.find(c => String(c.id_cuadrilla) === e.target.value);
             setSelectedCuadrilla(sel || '');
           }}
-          style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', fontSize: '16px', fontWeight: 'bold', background: '#334155', color: 'white', outline: 'none' }}
+          style={{ width: '100%', padding: '14px', borderRadius: '8px', border: '2px solid #3b82f6', fontSize: '15px', fontWeight: 'bold', background: '#0f172a', color: 'white', outline: 'none' }}
         >
-          {cuadrillas.length === 0 ? <option value="">No hay cuadrillas</option> : null}
-          {cuadrillas.map(c => {
-            const id = typeof c === 'string' ? c : (c.id ?? c.id_cuadrilla);
-            const nombre = typeof c === 'string' ? c : (c.nombre ?? c.nombre_cuadrilla);
-            return (
-              <option key={id} value={id}>
-                {nombre}
-              </option>
-            );
-          })}
+          {filteredCuadrillas.length === 0 ? <option value="">No hay cuadrillas</option> : null}
+          {
+            // Eliminar nombres duplicados para limpiar datos de prueba erróneos
+            Array.from(new Map(filteredCuadrillas.map(c => [c.nombre, c])).values()).map(c => {
+              const jefe = c.empleados_nombres ? c.empleados_nombres.split(',')[0].trim() : 'Sin asignar';
+              const finca = c.finca_nombre || 'Global / Sin Asignar';
+              return (
+                <option key={c.id_cuadrilla} value={c.id_cuadrilla}>
+                  {c.nombre} | Finca: {finca} | Jefe: {jefe}
+                </option>
+              );
+            })
+          }
         </select>
       </div>
 

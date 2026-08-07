@@ -79,7 +79,11 @@ router.get('/dashboard', async (req, res) => {
     const [animalesGps] = await pool.query(animalesQuery, animalesParams);
 
     res.json({ censo: censo[0], potreros, piscinas, animalesGps });
-
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // 1b. KPIs Alta Gerencia
 router.get('/kpis', async (req, res) => {
@@ -254,12 +258,6 @@ router.get('/kpis', async (req, res) => {
       visitas
     });
   } catch(error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-  } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
   }

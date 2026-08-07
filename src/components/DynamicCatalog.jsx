@@ -27,8 +27,10 @@ import HistorialMantenimientosModal from './Inventory/HistorialMantenimientosMod
 import HojaDeVidaModal from './Inventory/HojaDeVidaModal';
 import HistoriaClinicaModal from './Ganado/HistoriaClinicaModal';
 import { authFetch } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
+  const { user } = useAuth();
   const [structure, setStructure] = useState(null);
   const [data, setData] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0, totalPages: 0 });
@@ -62,6 +64,10 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
   const [fkLoading, setFkLoading] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
+
+  // Geo state for dependent dropdowns
+  const [geoDepartamentos, setGeoDepartamentos] = useState([]);
+  const [geoMunicipios, setGeoMunicipios] = useState([]);
 
   // Delete confirm
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -186,6 +192,36 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
       cancelled = true;
     };
   }, [tableName]);
+
+  // Fetch departments
+  useEffect(() => {
+    let cancelled = false;
+    authFetch('/api/municipios/departamentos')
+      .then(res => res.json())
+      .then(data => {
+        if (!cancelled && Array.isArray(data)) setGeoDepartamentos(data);
+      })
+      .catch(console.error);
+    return () => { cancelled = true; };
+  }, []);
+
+  // Fetch municipalities when department changes
+  useEffect(() => {
+    let cancelled = false;
+    if (formData.departamento) {
+      authFetch(`/api/municipios/departamentos/${formData.departamento}/municipios`)
+        .then(res => res.json())
+        .then(data => {
+          if (!cancelled && Array.isArray(data)) {
+             setGeoMunicipios(data.map(m => m.municipio));
+          }
+        })
+        .catch(console.error);
+    } else {
+      setGeoMunicipios([]);
+    }
+    return () => { cancelled = true; };
+  }, [formData.departamento]);
 
   const handleSearch = (e) => {
     const val = e.target.value;
@@ -412,14 +448,22 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
     }
   };
 
+  const getExportMetadata = () => ({
+    empresa: 'SAS Agrícolas', // Ideally from context or config
+    finca: fincaId ? `Finca ID ${fincaId}` : 'Todas las Fincas',
+    usuario: user?.nombre || user?.username || 'Usuario del Sistema',
+    rol: user?.rol || 'No asignado',
+    reportName: tableName.replace(/_/g, ' ').toUpperCase()
+  });
+
   const handleExportPdf = () => {
     if (!structure || data.length === 0) return;
-    exportToPdf(tableName, structure.columns, data);
+    exportToPdf(tableName, structure.columns, data, getExportMetadata());
   };
 
   const handleExportExcel = () => {
     if (!structure || data.length === 0) return;
-    exportToExcel(tableName, structure.columns, data);
+    exportToExcel(tableName, structure.columns, data, getExportMetadata());
   };
 
   const handleExportWhatsApp = () => {
@@ -594,6 +638,48 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
           <label style={{ marginBottom: 0 }}>
             {formatColumnName(col.name)}
           </label>
+          {error && <span className="form-error">{error}</span>}
+        </div>
+      );
+    }
+
+    // Special geo fields
+    if (col.name === 'departamento' || col.name === 'departamento_fiscal') {
+      return (
+        <div key={col.name} className="form-group">
+          <label>
+            {formatColumnName(col.name)}
+            {!col.isNullable && <span className="required">*</span>}
+          </label>
+          <select value={value || ''} onChange={(e) => handleFormChange(col.name, e.target.value)}>
+            <option value="">-- Seleccionar --</option>
+            {geoDepartamentos.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+          {error && <span className="form-error">{error}</span>}
+        </div>
+      );
+    }
+
+    if (col.name === 'municipio' || col.name === 'municipio_fiscal') {
+      const parentDepto = formData.departamento || formData.departamento_fiscal;
+      return (
+        <div key={col.name} className="form-group">
+          <label>
+            {formatColumnName(col.name)}
+            {!col.isNullable && <span className="required">*</span>}
+          </label>
+          <select 
+            value={value || ''} 
+            onChange={(e) => handleFormChange(col.name, e.target.value)}
+            disabled={!parentDepto}
+          >
+            <option value="">-- Seleccionar --</option>
+            {geoMunicipios.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
           {error && <span className="form-error">{error}</span>}
         </div>
       );

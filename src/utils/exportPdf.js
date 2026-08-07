@@ -34,32 +34,33 @@ export async function exportToPdf(tableName, columns, data, metadata = {}) {
 
     let startX = 14;
     if (logoBase64) {
-      try { doc.addImage(logoBase64, 'PNG', 14, 15, 25, 25); } catch(e) {
-        try { doc.addImage(logoBase64, 'JPEG', 14, 15, 25, 25); } catch(err) {}
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const logoWidth = 25;
+      const logoX = pageWidth - 14 - logoWidth;
+      try { doc.addImage(logoBase64, 'PNG', logoX, 15, logoWidth, 25); } catch(e) {
+        try { doc.addImage(logoBase64, 'JPEG', logoX, 15, logoWidth, 25); } catch(err) {}
       }
-      startX = 45;
     }
 
     // Title
     doc.setFontSize(16);
     doc.setTextColor(26, 35, 50);
-    doc.text(`${metadata.empresa || 'SAS Agrícolas'} - ${title}`, startX, 20);
+    doc.text(`${metadata.empresa || 'SAS Agrícolas'}`, startX, 20);
+    
+    // Report Name
+    doc.setFontSize(14);
+    doc.setTextColor(50, 50, 50);
+    doc.text(`Reporte: ${metadata.reportName || title}`, startX, 26);
 
     // Metadata
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Finca Operativa: ${metadata.finca || 'Todas las Fincas'}`, startX, 28);
-    doc.text(`Generado por: ${metadata.usuario || 'Usuario del Sistema'}`, startX, 33);
-    doc.text(`Fecha y Hora: ${new Date().toLocaleString('es-ES')}`, startX, 38);
-    doc.text(`Total de Registros: ${data.length}`, startX, 43);
-
-    // Metadata
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Finca Operativa: ${metadata.finca || 'Todas las Fincas'}`, 14, 28);
-    doc.text(`Generado por: ${metadata.usuario || 'Usuario del Sistema'}`, 14, 33);
-    doc.text(`Fecha y Hora: ${new Date().toLocaleString('es-ES')}`, 14, 38);
-    doc.text(`Total de Registros: ${data.length}`, 14, 43);
+    doc.text(`Finca Operativa: ${metadata.finca || 'Todas las Fincas'}`, startX, 32);
+    
+    const rolStr = metadata.rol ? ` (Rol: ${metadata.rol})` : '';
+    doc.text(`Generado por: ${metadata.usuario || 'Usuario del Sistema'}${rolStr}`, startX, 37);
+    doc.text(`Fecha y Hora: ${new Date().toLocaleString('es-ES')}`, startX, 42);
+    doc.text(`Total de Registros: ${data.length}`, startX, 47);
 
     // Filter out huge/unprintable columns
     const excludedTypes = ['json', 'polygon', 'point', 'longtext', 'mediumtext', 'blob'];
@@ -114,7 +115,7 @@ export async function exportToPdf(tableName, columns, data, metadata = {}) {
     doc.autoTable({
       head: [headers],
       body: rows,
-      startY: 48,
+      startY: 52,
       styles: {
         fontSize: 7,
         cellPadding: 3,
@@ -149,6 +150,9 @@ export async function exportToPdf(tableName, columns, data, metadata = {}) {
       );
     }
 
+    if (metadata.returnBase64) {
+      return doc.output('datauristring');
+    }
     doc.save(`${tableName}_${new Date().toISOString().slice(0, 10)}.pdf`);
   } catch (err) {
     console.error('Error exporting PDF:', err);

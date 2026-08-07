@@ -16,6 +16,10 @@ import {
 } from 'chart.js';
 import './dashboard.css';
 import { authFetch } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
 
 ChartJS.register(
   CategoryScale,
@@ -35,7 +39,7 @@ ChartJS.defaults.color = '#94a3b8';
 ChartJS.defaults.font.family = "'Inter', sans-serif";
 ChartJS.defaults.plugins.legend.labels.usePointStyle = true;
 
-function GerenciaDashboard({ tenantId }) {
+function GerenciaDashboard({ tenantId, fincaId, startDate, endDate }) {
   const [data, setData] = useState({
     timeline: null,
     salud: null,
@@ -43,9 +47,12 @@ function GerenciaDashboard({ tenantId }) {
     abonos: null,
     siembras: null,
     ganado: null,
-    acuicola: null
+    acuicola: null,
+    almacenes: null
   });
   const [loading, setLoading] = useState(true);
+  const dashboardRef = React.useRef(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,7 +60,14 @@ function GerenciaDashboard({ tenantId }) {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const base = `${API_BASE}/dashboard-gerencia`;
-      const tQ = tenantId ? `?tenantId=${tenantId}` : '';
+      
+      const queryParams = new URLSearchParams();
+      if (tenantId) queryParams.append('tenantId', tenantId);
+      if (fincaId) queryParams.append('fincaId', fincaId);
+      if (startDate) queryParams.append('startDate', startDate);
+      if (endDate) queryParams.append('endDate', endDate);
+      
+      const tQ = `?${queryParams.toString()}`;
 
       const safeFetch = async (url) => {
         try {
@@ -66,17 +80,18 @@ function GerenciaDashboard({ tenantId }) {
       };
 
       try {
-        const [timeline, salud, cosechas, abonos, siembras, ganado, acuicola] = await Promise.all([
+        const [timeline, salud, cosechas, abonos, siembras, ganado, acuicola, almacenes] = await Promise.all([
           safeFetch(`${base}/cultivos-timeline${tQ}`),
           safeFetch(`${base}/lotes-salud${tQ}`),
           safeFetch(`${base}/cosechas-ciclo${tQ}`),
           safeFetch(`${base}/abonos-produccion${tQ}`),
           safeFetch(`${base}/siembras-inventario${tQ}`),
           safeFetch(`${base}/ganado-stats${tQ}`),
-          safeFetch(`${base}/acuicola-stats${tQ}`)
+          safeFetch(`${base}/acuicola-stats${tQ}`),
+          safeFetch(`${base}/almacenes-valoracion${tQ}`)
         ]);
 
-        setData({ timeline, salud, cosechas, abonos, siembras, ganado, acuicola });
+        setData({ timeline, salud, cosechas, abonos, siembras, ganado, acuicola, almacenes });
       } catch (err) {
         console.error('Error fetching gerencia stats', err);
       } finally {
@@ -84,11 +99,107 @@ function GerenciaDashboard({ tenantId }) {
       }
     };
     fetchData();
-  }, [tenantId]);
+  }, [tenantId, fincaId, startDate, endDate]);
 
   if (loading || !Array.isArray(data.salud) || data.salud.length === 0) {
     return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando inteligencia de negocio...</div>;
   }
+
+  const exportToPDF = async () => {
+    if (!dashboardRef.current) return;
+    try {
+      const canvas = await html2canvas(dashboardRef.current, { scale: 2, useCORS: true, backgroundColor: '#0f172a' });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      
+      // Fetch Logo
+      let logoBase64 = null;
+      try {
+        const resPath = await fetch(`${API_BASE}/config/logo`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+        if (resPath.ok) {
+          const { logo_path } = await resPath.json();
+          if (logo_path) {
+            const imgUrl = logo_path.startsWith('http') ? logo_path : `${API_BASE.replace('/api', '')}${logo_path.startsWith('/') ? '' : '/'}${logo_path}`;
+            const imgRes = await fetch(imgUrl);
+            if (imgRes.ok) {
+               const blob = await imgRes.blob();
+               logoBase64 = await new Promise((resolve) => {
+                 const reader = new FileReader();
+                 reader.onloadend = () => resolve(reader.result);
+                 reader.readAsDataURL(blob);
+               });
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Could not load logo", e);
+      }
+
+      let startX = 14;
+      if (logoBase64) {
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const logoWidth = 25;
+        const logoX = pageWidth - 14 - logoWidth;
+        try { pdf.addImage(logoBase64, 'PNG', logoX, 15, logoWidth, 25); } catch(e) {
+          try { pdf.addImage(logoBase64, 'JPEG', logoX, 15, logoWidth, 25); } catch(err) {}
+        }
+      }
+
+      const rolStr = user?.rol ? ` (Rol: ${user.rol})` : '';
+      pdf.setFontSize(16);
+      pdf.text('SAS Agrícolas', startX, 20);
+      pdf.setFontSize(14);
+      pdf.text('Reporte: Dashboard Alta Gerencia', startX, 26);
+      pdf.setFontSize(10);
+      pdf.text(`Finca Operativa: ${fincaId ? `Finca ID ${fincaId}` : 'Todas las Fincas'}`, startX, 32);
+      pdf.text(`Generado por: ${user?.nombre || user?.username || 'Usuario del Sistema'}${rolStr}`, startX, 37);
+      pdf.text(`Fecha y Hora: ${new Date().toLocaleString('es-ES')}`, startX, 42);
+
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      // Draw dashboard image below the header
+      pdf.addImage(imgData, 'PNG', 0, 50, pdfWidth, pdfHeight);
+      pdf.save('Dashboard_Gerencia.pdf');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert('Hubo un error al exportar el PDF');
+    }
+  };
+
+  const exportToExcel = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+      
+      const rolStr = user?.rol ? ` (Rol: ${user.rol})` : '';
+      const headerRows = [
+        ['Empresa: SAS Agrícolas'],
+        ['Reporte: Dashboard Alta Gerencia'],
+        [`Finca Operativa: ${fincaId ? `Finca ID ${fincaId}` : 'Todas las Fincas'}`],
+        [`Generado por: ${user?.nombre || user?.username || 'Usuario del Sistema'}${rolStr}`],
+        [`Fecha y Hora: ${new Date().toLocaleString('es-ES')}`],
+        []
+      ];
+
+      const addSheet = (dataList, name) => {
+         const ws = XLSX.utils.aoa_to_sheet(headerRows);
+         XLSX.utils.sheet_add_json(ws, dataList, { origin: 'A7' });
+         XLSX.utils.book_append_sheet(wb, ws, name);
+      };
+
+      if (data.salud) addSheet(data.salud.map(s => ({ Categoría: s.name, Cantidad: s.value })), 'Salud Fitosanitaria');
+      if (data.cosechas) addSheet(data.cosechas.map(c => ({ Mes: c.mes, 'Proyectado (kg)': c.proyectado_kg, 'Real (kg)': c.real_kg })), 'Cosechas');
+      if (data.abonos) addSheet(data.abonos, 'Abonos Orgánicos');
+      if (data.siembras) addSheet(data.siembras, 'Inventario Semillas');
+      if (data.ganado && data.ganado.length > 0) addSheet(data.ganado.map(g => ({ Categoría: g.name, Cantidad: g.value })), 'Ganado');
+      if (data.acuicola && data.acuicola.length > 0) addSheet(data.acuicola, 'Acuícola');
+      if (data.almacenes && data.almacenes.length > 0) addSheet(data.almacenes, 'Almacenes Valoración');
+
+      XLSX.writeFile(wb, 'Dashboard_Datos.xlsx');
+    } catch (error) {
+      console.error('Error exporting Excel:', error);
+      alert('Hubo un error al exportar Excel');
+    }
+  };
 
   // 1. Salud (Doughnut)
   const chartSalud = {
@@ -238,11 +349,47 @@ function GerenciaDashboard({ tenantId }) {
     }
   };
 
+  // 7. Almacenes Valoración (Bar)
+  const totalValorAlmacen = data.almacenes?.reduce((acc, curr) => acc + (curr.valor_total || 0), 0) || 0;
+  const chartAlmacenes = {
+    labels: data.almacenes?.map(d => d.bodega) || [],
+    datasets: [{
+      label: 'Valoración Actual ($)',
+      data: data.almacenes?.map(d => d.valor_total) || [],
+      backgroundColor: '#10b981',
+      borderRadius: 4
+    }]
+  };
+
+  const optionsAlmacenes = {
+    responsive: true,
+    scales: {
+      y: { grid: { color: 'rgba(255,255,255,0.05)' } },
+      x: { grid: { display: false } }
+    }
+  };
+
   return (
-    <div className="gerencia-dashboard" style={{ marginTop: '30px' }}>
-      
-      {/* KPI Header Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+    <div style={{ marginTop: '30px' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '20px' }}>
+        <button 
+          onClick={exportToExcel}
+          style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #10b981', background: 'transparent', color: '#10b981', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+          <span>📊</span> Exportar Excel
+        </button>
+        <button 
+          onClick={exportToPDF}
+          style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #ef4444', background: 'transparent', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+          <span>📄</span> Exportar PDF
+        </button>
+      </div>
+
+      <div className="gerencia-dashboard" ref={dashboardRef} style={{ background: 'var(--bg-main)', padding: '20px', borderRadius: '16px' }}>
+        
+        {/* KPI Header Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '30px' }}>
         
         {/* Salud Fitosanitaria */}
         <div className="glass-card" style={{ padding: '24px', background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -331,6 +478,29 @@ function GerenciaDashboard({ tenantId }) {
         
       </div>
 
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', marginTop: '20px' }}>
+        {/* Almacenes Valoración */}
+        <div className="glass-card" style={{ padding: '24px', background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '18px' }}>📦</span> Valorización de Almacenes e Inventario
+            </h3>
+            <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', padding: '4px 12px', borderRadius: '20px', color: '#10b981', fontWeight: 'bold' }}>
+              Total Valorizado: ${totalValorAlmacen.toLocaleString()}
+            </div>
+          </div>
+          <div style={{ height: '220px' }}>
+            {data.almacenes && data.almacenes.length > 0 ? (
+              <Bar data={chartAlmacenes} options={optionsAlmacenes} />
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)' }}>
+                No hay datos de almacenes
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Gantt de Cultivos */}
       <div className="glass-card" style={{ padding: '24px', background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', marginTop: '20px' }}>
         <h3 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text)', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -356,7 +526,7 @@ function GerenciaDashboard({ tenantId }) {
           ))}
         </div>
       </div>
-
+    </div>
     </div>
   );
 }

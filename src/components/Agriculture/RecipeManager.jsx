@@ -318,12 +318,17 @@ const RecipeManager = () => {
                   </div>
                   <div style={{ flex: 1 }}>
                     <label>Unidad</label>
-                    <select value={currentDetalle.unidad_medida} onChange={e => setCurrentDetalle({...currentDetalle, unidad_medida: e.target.value})}>
-                      <option>Lts/Ha</option>
-                      <option>Kg/Ha</option>
-                      <option>Gr/Planta</option>
-                      <option>ml/Ltr</option>
-                    </select>
+                    <PremiumSelect 
+                      value={currentDetalle.unidad_medida} 
+                      onChange={e => setCurrentDetalle({...currentDetalle, unidad_medida: e.target.value})}
+                      options={[
+                        { value: 'Lts/Ha', label: 'Lts/Ha' },
+                        { value: 'Kg/Ha', label: 'Kg/Ha' },
+                        { value: 'Gr/Planta', label: 'Gr/Planta' },
+                        { value: 'ml/Ltr', label: 'ml/Ltr' }
+                      ]}
+                      isClearable={false}
+                    />
                   </div>
                   <button type="button" className="btn btn-outline" onClick={handleAddDetalle}>Añadir</button>
                 </div>

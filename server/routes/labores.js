@@ -59,7 +59,8 @@ router.post('/', async (req, res) => {
   const { 
     tenantId, categoria, descripcion_labor, fecha_planificada, 
     id_empleado, id_lote, id_arbol, id_vehiculo, id_maquinaria,
-    id_potrero, id_vivero, id_etapa_produccion, id_bodega, id_sede, id_camino
+    id_potrero, id_vivero, id_etapa_produccion, id_bodega, id_sede, id_camino,
+    id_siembra, id_etapa_fenologica, insumos_utilizados
   } = req.body;
   const tid = tenantId || 1;
 
@@ -69,18 +70,43 @@ router.post('/', async (req, res) => {
 
   try {
     const db = getDb(req);
+    // Start transaction for creating labor and associating inputs
+    await db.query('START TRANSACTION');
+
     const [result] = await db.query(`
       INSERT INTO labores_diarias (
         id_tenant, categoria, descripcion_labor, fecha_planificada,
         id_empleado, id_lote, id_arbol, id_vehiculo, id_maquinaria,
         id_potrero, id_vivero, id_etapa_produccion, id_bodega, id_sede, id_camino,
+        id_siembra, id_etapa_fenologica,
         estado
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Planificada')
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Planificada')
     `, [
       tid, categoria, descripcion_labor, fecha_planificada,
       id_empleado || null, id_lote || null, id_arbol || null, id_vehiculo || null, id_maquinaria || null,
-      id_potrero || null, id_vivero || null, id_etapa_produccion || null, id_bodega || null, id_sede || null, id_camino || null
+      id_potrero || null, id_vivero || null, id_etapa_produccion || null, id_bodega || null, id_sede || null, id_camino || null,
+      id_siembra || null, id_etapa_fenologica || null
     ]);
+
+    const idLabor = result.insertId;
+
+    // Save planned inputs (optional, inventory is not deducted here)
+    if (insumos_utilizados && Array.isArray(insumos_utilizados)) {
+      for (const ins of insumos_utilizados) {
+        // Fetch current cost for planning
+        const [insRows] = await db.query('SELECT costo_unitario FROM insumos WHERE id_insumo = ?', [ins.id_insumo]);
+        const costoUnit = insRows.length > 0 ? insRows[0].costo_unitario : 0;
+        await db.query(`
+          INSERT INTO labores_insumos_aplicados (
+            id_labor, id_insumo, id_siembra, cantidad_aplicada, costo_unitario, costo_total
+          ) VALUES (?, ?, ?, ?, ?, ?)
+        `, [
+          idLabor, ins.id_insumo, id_siembra || null, ins.cantidad, costoUnit, costoUnit * ins.cantidad
+        ]);
+      }
+    }
+
+    await db.query('COMMIT');
 
     // Intentar notificar por WhatsApp
     if (id_empleado) {
@@ -241,14 +267,18 @@ router.post('/auto-generate', async (req, res) => {
 // 4. Audit & Evaluate labor compliance (cumplió o no cumplió)
 router.put('/:id/evaluar', async (req, res) => {
   const laborId = parseInt(req.params.id);
-  const { estado, observaciones, evaluador } = req.body;
+  const { estado, observaciones, evaluador, insumos_utilizados } = req.body;
 
   if (!estado || !['Completada', 'Incumplida'].includes(estado)) {
     return res.status(400).json({ error: 'Estado inválido. Debe ser Completada o Incumplida.' });
   }
 
   try {
-    await getDb(req).query(`
+    const db = getDb(req);
+    await db.query('START TRANSACTION');
+
+    // 1. Marcar labor como completada
+    await db.query(`
       UPDATE labores_diarias 
       SET 
         estado = ?,
@@ -258,11 +288,66 @@ router.put('/:id/evaluar', async (req, res) => {
       WHERE id_labor = ?
     `, [estado, observaciones || null, evaluador || 'Supervisor Finca', laborId]);
 
+    if (estado === 'Completada') {
+      // 2. Traer información de la labor para trazabilidad
+      const [laborRows] = await db.query('SELECT * FROM labores_diarias WHERE id_labor = ?', [laborId]);
+      const labor = laborRows[0];
+
+      let costo_total_insumos = 0;
+
+      // 3. Manejar insumos finales
+      if (insumos_utilizados && Array.isArray(insumos_utilizados)) {
+        // Borrar los planeados originales
+        await db.query('DELETE FROM labores_insumos_aplicados WHERE id_labor = ?', [laborId]);
+
+        for (const ins of insumos_utilizados) {
+          // Obtener costo unitario actual y descontar inventario
+          const [insRows] = await db.query('SELECT costo_unitario, stock_actual FROM insumos WHERE id_insumo = ?', [ins.id_insumo]);
+          if (insRows.length > 0) {
+            const costoUnit = insRows[0].costo_unitario;
+            const costoLinea = costoUnit * ins.cantidad;
+            costo_total_insumos += costoLinea;
+
+            // Descontar del inventario
+            await db.query('UPDATE insumos SET stock_actual = stock_actual - ? WHERE id_insumo = ?', [ins.cantidad, ins.id_insumo]);
+
+            // Guardar el registro final aplicado
+            await db.query(`
+              INSERT INTO labores_insumos_aplicados (
+                id_labor, id_insumo, id_siembra, cantidad_aplicada, costo_unitario, costo_total
+              ) VALUES (?, ?, ?, ?, ?, ?)
+            `, [laborId, ins.id_insumo, labor.id_siembra || null, ins.cantidad, costoUnit, costoLinea]);
+          }
+        }
+      }
+
+      // 4. Registrar en trazabilidad_lotes
+      if (labor.id_lote) {
+        await db.query(`
+          INSERT INTO trazabilidad_lotes (
+            id_tenant, id_lote, id_siembra, id_tipo_actividad, fecha_actividad,
+            cantidad, unidad_medida, id_maquinaria, id_usuario_responsable,
+            duracion_horas, observaciones, costo_mano_obra, costo_insumos
+          ) VALUES (?, ?, ?, ?, NOW(), 1, 'Labor', ?, ?, ?, ?, ?, ?)
+        `, [
+          labor.id_tenant, labor.id_lote, labor.id_siembra || null, null, // id_tipo_actividad could map to labor category
+          labor.id_maquinaria || null, labor.id_empleado || null,
+          labor.horas_trabajadas || 0,
+          observaciones || 'Labor completada ' + labor.categoria,
+          labor.costo_mano_obra || 0,
+          costo_total_insumos
+        ]);
+      }
+    }
+
+    await db.query('COMMIT');
+
     res.json({
       success: true,
-      message: `Labor calificada como "${estado}" exitosamente.`
+      message: `Labor calificada como "${estado}" exitosamente y trazabilidad registrada.`
     });
   } catch (error) {
+    try { await getDb(req).query('ROLLBACK'); } catch(e) {}
     res.status(500).json({ error: error.message });
   }
 });

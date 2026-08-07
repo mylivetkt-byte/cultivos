@@ -173,7 +173,15 @@ function SatelliteCommandCenter() {
                 if (ndvi < 0.4) color = '#d98e1b';
                 if (ndvi < 0.3) color = '#b00218';
                 if (ndvi > 0.7) color = '#4a90e2';
-                return { id: f.properties.id, name: f.properties.nombre || `Lote ${f.properties.id}`, color, coordinates: coords, ndvi, ndmi };
+                return { 
+                  id: f.properties.id, 
+                  name: f.properties.nombre || `Lote ${f.properties.id}`, 
+                  codigo: f.properties.codigo,
+                  nucleo_nombre: f.properties.nucleo_nombre,
+                  hectareas: f.properties.hectareas,
+                  cultivo_actual: f.properties.cultivo_actual,
+                  color, coordinates: coords, ndvi, ndmi 
+                };
               }).filter(l => l.coordinates.length > 0);
               setLotes(parsed);
             });
@@ -306,12 +314,21 @@ function SatelliteCommandCenter() {
                 <option value="" disabled>-- Elegir lote --</option>
                 {lotesRaw.map(l => (
                   <option key={l.properties.id} value={l.properties.id}>
+                    {l.properties.codigo ? `[${l.properties.codigo}] ` : ''}
                     {l.properties.nombre}
+                    {l.properties.nucleo_nombre ? ` (${l.properties.nucleo_nombre})` : ''}
+                    {l.properties.hectareas ? ` - ${l.properties.hectareas} Ha` : ''}
+                    {!l.properties.tiene_poligono ? ' ⚠️ Sin polígono' : ''}
                   </option>
                 ))}
               </select>
               {selectedFincaId && lotesRaw.length > 0 && (
-                <small className="lotes-count">{lotesRaw.length} lotes disponibles</small>
+                <small className="lotes-count">
+                  {lotesRaw.length} lotes — {lotesRaw.filter(l => l.properties.tiene_poligono).length} con polígono GPS
+                </small>
+              )}
+              {selectedFincaId && lotesRaw.length === 0 && (
+                <small style={{ color: '#f97316' }}>⚠️ No se encontraron lotes para esta finca. Verifique que los lotes tengan id_finca o núcleo asignado.</small>
               )}
             </div>
             
@@ -444,7 +461,11 @@ function SatelliteCommandCenter() {
                       }}
                     >
                       <Popup>
-                        <strong>{lote.name}</strong><br/>NDVI: {lote.ndvi}<br/>NDMI: {lote.ndmi}<br/>{ecoInfo}
+                        <strong>{lote.name}</strong><br/>
+                        {lote.nucleo_nombre && <><em>{lote.nucleo_nombre}</em><br/></>}
+                        {lote.hectareas && <>Área: {lote.hectareas} Ha<br/></>}
+                        {lote.cultivo_actual && <>Cultivo: {lote.cultivo_actual}<br/></>}
+                        NDVI: {lote.ndvi} | NDMI: {lote.ndmi}<br/>{ecoInfo}
                       </Popup>
                     </Polygon>
                   );

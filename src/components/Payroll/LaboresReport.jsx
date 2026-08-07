@@ -1,14 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import { 
+  Card, Row, Col, Statistic, Table, Input, Select, 
+  Button, DatePicker, Tag, Typography, Empty, Space 
+} from 'antd';
+import { 
+  Search, Briefcase, Clock, DollarSign, Download, Settings2, FileText, Pickaxe, Tractor
+} from 'lucide-react';
+import moment from 'moment';
+
+const { Title, Text } = Typography;
+const { RangePicker } = DatePicker;
+const { Option } = Select;
+
 export default function LaboresReport({ tenantId }) {
   const [labores, setLabores] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState('');
+  const [dateRange, setDateRange] = useState(null);
 
   useEffect(() => {
     const fetchLabores = async () => {
       try {
+        setLoading(true);
         const res = await axios.get(`/api/rrhh/labores-historial?tenantId=${tenantId || 1}`);
-        setLabores(res.data);
+        setLabores(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
         console.error(err);
       } finally {
@@ -18,102 +34,182 @@ export default function LaboresReport({ tenantId }) {
     fetchLabores();
   }, [tenantId]);
 
-  if (loading) return <div className="p-6 text-center">Cargando reporte de labores...</div>;
+  // Aplicar filtros locales
+  const filteredData = useMemo(() => {
+    return labores.filter(item => {
+      let matchesSearch = true;
+      if (searchText) {
+        const lowerSearch = searchText.toLowerCase();
+        matchesSearch = 
+          (item.empleado && item.empleado.toLowerCase().includes(lowerSearch)) ||
+          (item.labor && item.labor.toLowerCase().includes(lowerSearch)) ||
+          (item.lote && item.lote.toLowerCase().includes(lowerSearch));
+      }
+
+      let matchesDate = true;
+      if (dateRange && dateRange[0] && dateRange[1]) {
+        const itemDate = moment(item.fecha);
+        matchesDate = itemDate.isBetween(dateRange[0], dateRange[1], 'day', '[]');
+      }
+
+      return matchesSearch && matchesDate;
+    });
+  }, [labores, searchText, dateRange]);
+
+  // KPIs
+  const totalLabores = filteredData.length;
+  const totalHoras = filteredData.reduce((acc, curr) => acc + (Number(curr.horas) || 0), 0);
+  const totalCosto = filteredData.reduce((acc, curr) => acc + (Number(curr.costo_estimado) || 0), 0);
+
+  const columns = [
+    {
+      title: 'Fecha',
+      dataIndex: 'fecha',
+      key: 'fecha',
+      sorter: (a, b) => new Date(a.fecha) - new Date(b.fecha),
+      render: (val) => val ? moment(val).format('YYYY-MM-DD') : '',
+    },
+    {
+      title: 'Responsable',
+      dataIndex: 'empleado',
+      key: 'empleado',
+      sorter: (a, b) => (a.empleado || '').localeCompare(b.empleado || ''),
+      render: (text, record) => (
+        <div>
+          <div style={{ fontWeight: 'bold' }}>{text || 'Sin asignar'}</div>
+          <Text type="secondary" style={{ fontSize: '12px' }}>{record.cargo || 'Sin cargo'}</Text>
+        </div>
+      )
+    },
+    {
+      title: 'Actividad / Labor',
+      dataIndex: 'labor',
+      key: 'labor',
+      render: (text) => (
+        <Tag color="blue" icon={<Pickaxe size={12} style={{marginRight: 4}}/>} style={{ display: 'flex', alignItems: 'center', width: 'fit-content' }}>
+          {text || 'N/A'}
+        </Tag>
+      )
+    },
+    {
+      title: 'Lote / Área',
+      dataIndex: 'lote',
+      key: 'lote',
+      render: (text) => text || 'Sin lote'
+    },
+    {
+      title: 'Duración',
+      dataIndex: 'horas',
+      key: 'horas',
+      align: 'right',
+      sorter: (a, b) => (Number(a.horas) || 0) - (Number(b.horas) || 0),
+      render: (val) => `${Number(val || 0)} hrs`
+    },
+    {
+      title: 'Costo (COP)',
+      dataIndex: 'costo_estimado',
+      key: 'costo_estimado',
+      align: 'right',
+      sorter: (a, b) => (Number(a.costo_estimado) || 0) - (Number(b.costo_estimado) || 0),
+      render: (val) => `$${Number(val || 0).toLocaleString()}`
+    },
+  ];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-          <span className="text-green-600 text-3xl">🚜</span>
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+        <Title level={2} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Tractor size={32} color="#16a34a" /> 
           Reporte de Labores y Jornales
-        </h1>
-        <div className="flex gap-2">
-          <button className="btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors">
-            <span>⚙️</span>
-            Filtros
-          </button>
-          <button className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm">
-            <span>⬇️</span>
+        </Title>
+        <Space>
+          <Button icon={<Download size={16} />} type="primary" style={{ backgroundColor: '#16a34a', borderColor: '#16a34a' }}>
             Exportar Excel
-          </button>
-        </div>
+          </Button>
+        </Space>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-          <div className="bg-indigo-50 p-4 rounded-full text-indigo-600 text-2xl">
-            📅
-          </div>
-          <div>
-            <p className="text-gray-500 text-sm font-medium">Labores Registradas</p>
-            <h3 className="text-2xl font-bold text-gray-800">{labores.length}</h3>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-          <div className="bg-green-50 p-4 rounded-full text-green-600 text-2xl">
-            🚜
-          </div>
-          <div>
-            <p className="text-gray-500 text-sm font-medium">Horas Máquina/Hombre</p>
-            <h3 className="text-2xl font-bold text-gray-800">
-              {labores.reduce((acc, l) => acc + (l.horas || 0), 0)} hrs
-            </h3>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-          <div className="bg-blue-50 p-4 rounded-full text-blue-600 text-2xl">
-            👥
-          </div>
-          <div>
-            <p className="text-gray-500 text-sm font-medium">Costo Estimado</p>
-            <h3 className="text-2xl font-bold text-gray-800">
-              ${labores.reduce((acc, l) => acc + (l.costo_estimado || 0), 0).toLocaleString()}
-            </h3>
-          </div>
-        </div>
-      </div>
+      {/* Indicadores */}
+      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+        <Col xs={24} sm={8}>
+          <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', height: '100%' }}>
+            <Statistic
+              title={<span style={{ fontWeight: 500, color: '#6b7280' }}>Labores Registradas</span>}
+              value={totalLabores}
+              prefix={<FileText size={20} color="#4f46e5" style={{ marginRight: 8, background: '#e0e7ff', padding: 4, borderRadius: '50%' }}/>}
+              valueStyle={{ fontSize: '28px', fontWeight: 600, color: '#1f2937' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', height: '100%' }}>
+            <Statistic
+              title={<span style={{ fontWeight: 500, color: '#6b7280' }}>Horas Máquina / Hombre</span>}
+              value={totalHoras}
+              suffix="hrs"
+              prefix={<Clock size={20} color="#16a34a" style={{ marginRight: 8, background: '#dcfce7', padding: 4, borderRadius: '50%' }}/>}
+              valueStyle={{ fontSize: '28px', fontWeight: 600, color: '#1f2937' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', height: '100%' }}>
+            <Statistic
+              title={<span style={{ fontWeight: 500, color: '#6b7280' }}>Costo Estimado</span>}
+              value={totalCosto}
+              prefix={<DollarSign size={20} color="#2563eb" style={{ marginRight: 8, background: '#dbeafe', padding: 4, borderRadius: '50%' }}/>}
+              valueStyle={{ fontSize: '28px', fontWeight: 600, color: '#1f2937' }}
+            />
+          </Card>
+        </Col>
+      </Row>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 text-gray-600 text-sm uppercase tracking-wider">
-                <th className="p-4 border-b font-semibold">Fecha</th>
-                <th className="p-4 border-b font-semibold">Responsable</th>
-                <th className="p-4 border-b font-semibold">Cargo</th>
-                <th className="p-4 border-b font-semibold">Actividad</th>
-                <th className="p-4 border-b font-semibold">Lote/Área</th>
-                <th className="p-4 border-b font-semibold text-right">Duración</th>
-                <th className="p-4 border-b font-semibold text-right">Costo (COP)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {labores.map((l, i) => (
-                <tr key={i} className="hover:bg-green-50/50 transition-colors">
-                  <td className="p-4 text-gray-600 font-medium">{l.fecha}</td>
-                  <td className="p-4 font-bold text-gray-800">{l.empleado}</td>
-                  <td className="p-4 text-gray-500">{l.cargo}</td>
-                  <td className="p-4">
-                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">
-                      {l.labor}
-                    </span>
-                  </td>
-                  <td className="p-4 text-gray-600">{l.lote}</td>
-                  <td className="p-4 text-right font-medium text-gray-700">{l.horas} hrs</td>
-                  <td className="p-4 text-right font-bold text-gray-800">${l.costo_estimado.toLocaleString()}</td>
-                </tr>
-              ))}
-              {labores.length === 0 && (
-                <tr>
-                  <td colSpan="7" className="p-8 text-center text-gray-500">
-                    No se encontraron labores registradas para el periodo seleccionado.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Buscador / Filtros */}
+      <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', marginBottom: '24px' }} bodyStyle={{ padding: '16px 24px' }}>
+        <Row gutter={[16, 16]} align="middle">
+          <Col xs={24} md={8}>
+            <Input 
+              placeholder="Buscar por empleado, labor o lote..." 
+              prefix={<Search size={16} color="#9ca3af" />}
+              allowClear
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              size="large"
+              style={{ borderRadius: '8px' }}
+            />
+          </Col>
+          <Col xs={24} md={8}>
+            <RangePicker 
+              style={{ width: '100%', borderRadius: '8px' }} 
+              size="large"
+              value={dateRange}
+              onChange={(val) => setDateRange(val)}
+              placeholder={['Fecha inicial', 'Fecha final']}
+            />
+          </Col>
+        </Row>
+      </Card>
+
+      {/* Tabla de Resultados */}
+      <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }} bodyStyle={{ padding: 0 }}>
+        <Table 
+          columns={columns} 
+          dataSource={filteredData}
+          rowKey={(record, index) => record.id_labor || index}
+          loading={loading}
+          pagination={{
+            defaultPageSize: 15,
+            showSizeChanger: true,
+            pageSizeOptions: ['15', '30', '50', '100'],
+            showTotal: (total) => `Total ${total} labores`
+          }}
+          locale={{ emptyText: <Empty description="No se encontraron labores" /> }}
+          style={{ width: '100%' }}
+        />
+      </Card>
+
     </div>
   );
 }

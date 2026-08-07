@@ -2,11 +2,49 @@ import React, { useState, useEffect } from 'react';
 import { fetchDashboardStats } from '../utils/api';
 import GerenciaDashboard from './GerenciaDashboard';
 import './dashboard.css';
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    this.setState({ errorInfo });
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '20px', background: '#fee2e2', color: '#991b1b', borderRadius: '8px', margin: '20px' }}>
+          <h2>Algo salió mal en el Dashboard</h2>
+          <details style={{ whiteSpace: 'pre-wrap' }}>
+            <summary>Ver detalles del error</summary>
+            {this.state.error && this.state.error.toString()}
+            <br />
+            {this.state.errorInfo && this.state.errorInfo.componentStack}
+          </details>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
-function Dashboard({ modules, loading, onSelectTable, tenantId, fincaId, nucleoId }) {
+function DashboardComponent({ modules, loading, onSelectTable, tenantId, fincaId, nucleoId }) {
   const [stats, setStats] = useState(null);
   const [statsError, setStatsError] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [appliedStartDate, setAppliedStartDate] = useState('');
+  const [appliedEndDate, setAppliedEndDate] = useState('');
+
+  const handleApplyFilters = () => {
+    setAppliedStartDate(startDate);
+    setAppliedEndDate(endDate);
+  };
 
   useEffect(() => {
     setLoadingStats(true);
@@ -38,6 +76,33 @@ function Dashboard({ modules, loading, onSelectTable, tenantId, fincaId, nucleoI
             🔍 Filtros Activos
           </span>
         )}
+      </div>
+
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', alignItems: 'flex-end' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Fecha Desde</label>
+          <input 
+            type="date" 
+            value={startDate} 
+            onChange={e => setStartDate(e.target.value)}
+            style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
+          />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Fecha Hasta</label>
+          <input 
+            type="date" 
+            value={endDate} 
+            onChange={e => setEndDate(e.target.value)}
+            style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
+          />
+        </div>
+        <button 
+          onClick={handleApplyFilters}
+          style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: '#4a90e2', color: 'white', fontWeight: 'bold', cursor: 'pointer', height: '37px' }}
+        >
+          Cargar Datos
+        </button>
       </div>
 
       {statsError && (
@@ -76,10 +141,18 @@ function Dashboard({ modules, loading, onSelectTable, tenantId, fincaId, nucleoI
       )}
 
       {/* Premium Agriculture Stats from Gerencia */}
-      <GerenciaDashboard tenantId={tenantId} />
+      <ErrorBoundary>
+        <GerenciaDashboard tenantId={tenantId} fincaId={fincaId} startDate={appliedStartDate} endDate={appliedEndDate} />
+      </ErrorBoundary>
 
     </div>
   );
 }
 
-export default Dashboard;
+export default function Dashboard(props) {
+  return (
+    <ErrorBoundary>
+      <DashboardComponent {...props} />
+    </ErrorBoundary>
+  );
+}

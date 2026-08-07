@@ -1,10 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, PanelLeftClose, PanelLeftOpen, Search, Activity } from 'lucide-react';
+import { ChevronRight, PanelLeftClose, PanelLeftOpen, Search, Activity, LogOut } from 'lucide-react';
 import { STATIC_NAVIGATION } from '../config/navigation.jsx';
 import '../styles/Sidebar.css';
+import '../styles/Sidebar.css';
+import { useAuth } from '../context/AuthContext';
 
 function Sidebar({ modules, loading, selectedTable, onSelectTable, onNavigateHome, open, onToggle, permisos = [] }) {
+  const { logout } = useAuth();
   const [search, setSearch] = useState('');
   const [expandedModules, setExpandedModules] = useState({});
   const [expandedSubModules, setExpandedSubModules] = useState({});
@@ -299,6 +302,23 @@ function Sidebar({ modules, loading, selectedTable, onSelectTable, onNavigateHom
           );
         })}
       </nav>
+
+      {/* Logout Button */}
+      <div className="sidebar-footer" style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '10px 0' }}>
+        <div 
+          className="sidebar-menu-item" 
+          onClick={() => {
+            if(window.confirm('¿Seguro que deseas cerrar sesión?')) {
+              logout();
+            }
+          }}
+          style={{ color: '#ef4444' }}
+        >
+          <span className="menu-icon"><LogOut size={20} /></span>
+          <span className="menu-text">Cerrar Sesión</span>
+          <div className="sidebar-tooltip">Cerrar Sesión</div>
+        </div>
+      </div>
     </aside>
   );
 }

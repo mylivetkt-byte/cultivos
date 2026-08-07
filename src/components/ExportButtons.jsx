@@ -3,15 +3,19 @@ import { Dropdown, Button, Space } from 'antd';
 import { DownloadOutlined, DownOutlined, FileExcelOutlined, FilePdfOutlined, WhatsAppOutlined } from '@ant-design/icons';
 import { exportToExcel } from '../utils/exportExcel';
 import { exportToPdf } from '../utils/exportPdf';
+import { useAuth } from '../context/AuthContext';
 
 const ExportButtons = ({ data, columns, filename = 'Reporte' }) => {
+  const { user, tenantId } = useAuth();
   const hasData = data && data.length > 0;
 
   const getMetadata = () => {
     return {
       empresa: 'SAS Agrícolas',
       finca: 'Finca Operativa', // Fallback, context can be used if available
-      usuario: JSON.parse(localStorage.getItem('user') || '{}')?.nombre || 'Administrador'
+      usuario: user?.nombre || user?.username || 'Administrador',
+      rol: user?.rol || 'No asignado',
+      reportName: filename
     };
   };
 

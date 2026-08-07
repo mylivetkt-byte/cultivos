@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { GlobalSelectorsProvider } from './context/GlobalSelectorsContext.jsx';
 import { useAuth } from './context/AuthContext';
 import LoginPage from './components/LoginPage';
@@ -140,6 +140,7 @@ import DashboardGerencial from './components/Contabilidad_y_Finanzas/DashboardGe
 import MotorContable from './components/Contabilidad_y_Finanzas/MotorContable';
 import TenantManager from './components/Sistemas/TenantManager';
 import GlobalStats from './components/Sistemas/GlobalStats';
+import AuditoriaFincaDetalle from './components/Sistemas/AuditoriaFincaDetalle';
 import DistribucionContable from './components/Payroll/DistribucionContable';
 import UnicidadReglasAdmin from './components/UnicidadReglasAdmin';
 import CRMDashboard from './components/CRM/CRMDashboard';
@@ -157,11 +158,19 @@ import LogoUploader from './components/LogoUploader';
 function AppContent() {
   const { user, loading, logout, tenantId, permisos } = useAuth();
   const publicEmployeePortal = window.location.pathname.startsWith('/portal/empleado');
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = React.useState(window.innerWidth > 768);
   const [selectedTable, setSelectedTable] = React.useState(null);
   const [modules, setModules] = React.useState(null);
   const [loadingModules, setLoadingModules] = React.useState(true);
   const [globalSolicitudModal, setGlobalSolicitudModal] = React.useState(false);
+
+  // Clear selectedTable when navigating to system management routes to avoid unwanted dashboard rendering
+  React.useEffect(() => {
+    if (location.pathname.startsWith('/sistemas')) {
+      setSelectedTable(null);
+    }
+  }, [location.pathname]);
 
   const [selectedFinca, setSelectedFinca] = React.useState(localStorage.getItem('selectedFinca') || '');
   const [selectedNucleo, setSelectedNucleo] = React.useState(localStorage.getItem('selectedNucleo') || '');
@@ -243,21 +252,16 @@ function AppContent() {
   if (!user && !publicEmployeePortal) {
     if (showRegister) {
       return (
-        <Router>
-          <RegisterPage onBack={() => setShowRegister(false)} />
-        </Router>
+        <RegisterPage onBack={() => setShowRegister(false)} />
       );
     }
     return (
-      <Router>
-        <LoginPage onRegister={() => setShowRegister(true)} />
-      </Router>
+      <LoginPage onRegister={() => setShowRegister(true)} />
     );
   }
 
   return (
-    <Router>
-      <GlobalSelectorsProvider>
+    <GlobalSelectorsProvider>
         {publicEmployeePortal ? (
           <Routes>
             <Route path="/portal/empleado" element={<EmpleadoApp tenantId={tenantId} />} />
@@ -269,8 +273,6 @@ function AppContent() {
           </Routes>
         ) : (
           <Routes>
-            <Route path="/sistemas" element={<TenantManager />} />
-            <Route path="/sistemas/stats" element={<GlobalStats />} />
             <Route path="ganado/sanidad" element={<PhytosanitaryLibrary />} />
             <Route path="ganado/reproduccion" element={<ProgramadorPrenez />} />
             <Route path="ganado/comercio" element={<ComercioGanado />} />
@@ -313,6 +315,9 @@ function AppContent() {
                   
                 <div className="content-area">
                   <Routes>
+                    <Route path="/sistemas" element={<TenantManager />} />
+                    <Route path="/sistemas/stats" element={<GlobalStats />} />
+                    <Route path="/sistemas/auditoria-finca" element={<AuditoriaFincaDetalle />} />
                     <Route path="/satelite" element={<SatelliteMonitor />} />
                     <Route path="/agricultura/biblioteca" element={<PhytosanitaryLibrary />} />
                     <Route path="/agricultura/programador" element={<ApplicationPlanner />} />
@@ -323,8 +328,9 @@ function AppContent() {
                     <Route path="/labores" element={<TaskPlanner tenantId={tenantId} fincaId={selectedFinca} nucleoId={selectedNucleo} />} />
                     <Route path="/rrhh/ubicacion" element={<RRHHUbicacionPersonal tenantId={tenantId} fincaId={selectedFinca} />} />
                   </Routes>
-                  {selectedTable === 'saldos_bodega' || selectedTable === 'inv_existencias' ? (
-                    <InventarioSaldosReport tenantId={tenantId} />
+                  {location.pathname === '/' && (
+                    (selectedTable === 'saldos_bodega' || selectedTable === 'inv_existencias') ? (
+                      <InventarioSaldosReport tenantId={tenantId} />
                   ) : selectedTable === 'movimientos_inventario' ? (
                     <InventarioMovimientosReport tenantId={tenantId} />
                   ) : selectedTable === 'agricultura_biblioteca' ? (
@@ -477,7 +483,7 @@ function AppContent() {
                     <ComprasDashboard tenantId={tenantId} />
                   ) : selectedTable === 'analisis-compras' ? (
                     <AnalisisCompras tenantId={tenantId} />
-                  ) : selectedTable === 'validador-compras' || selectedTable === 'solicitudes_pedido' ? (
+                  ) : (selectedTable === 'validador-compras' || selectedTable === 'solicitudes_pedido') ? (
                     <ValidadorCompras tenantId={tenantId} />
                   ) : selectedTable === 'programador-compras' ? (
                     <ProgramadorCompras tenantId={tenantId} />
@@ -574,21 +580,7 @@ function AppContent() {
                   ) : selectedTable === 'cartera_dashboard' ? (
                     <CarteraDashboard tenantId={tenantId} />
                   ) : selectedTable === 'cartera_pagos' ? (
-                    <PaymentCapturer tenantId={tenantId} fincaId={selectedFinca} />
-                  ) : selectedTable === 'tesoreria_pagos_nomina' ? (
-                    <PagosNomina tenantId={tenantId} fincaId={selectedFinca} />
-                  ) : selectedTable === 'cartera_prestamos' ? (
-                    <div className="placeholder">Préstamos (en construcción)</div>
-                  ) : selectedTable === 'cartera_historico' ? (
-                    <AccountStatement tenantId={tenantId} />
-                  ) : selectedTable === 'traslados_bodegas' ? (
-                    <TrasladosBodegas tenantId={tenantId} />
-                  ) : selectedTable === 'config_alertas_seguridad' ? (
-                    <ConfiguracionAlertas tenantId={tenantId} />
-                  ) : selectedTable === 'config_logo' ? (
-                    <LogoUploader />
-                  ) : selectedTable === 'agua' ? (
-                    <WaterManagement tenantId={tenantId} fincaId={selectedFinca} nucleoId={selectedNucleo} />
+                    <></>
                   ) : selectedTable ? (
                     <DynamicCatalog
                       tableName={selectedTable}
@@ -597,45 +589,33 @@ function AppContent() {
                       fincaId={selectedFinca}
                       nucleoId={selectedNucleo}
                     />
-                  ) : (
-                    <Dashboard
-                      modules={modules}
-                      loading={loadingModules}
-                      onSelectTable={handleSelectTable}
-                      tenantId={tenantId}
-                      fincaId={selectedFinca}
-                      nucleoId={selectedNucleo}
-                    />
+                    ) : (
+                      <Dashboard
+                        modules={modules}
+                        loading={loadingModules}
+                        onSelectTable={handleSelectTable}
+                        tenantId={tenantId}
+                        fincaId={selectedFinca}
+                        nucleoId={selectedNucleo}
+                      />
+                    )
                   )}
                 </div>
-              </main>
-
-              {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
-
-              {globalSolicitudModal && (
-                <SolicitudCompraModal
-                  isOpen={true}
-                  onClose={() => setGlobalSolicitudModal(false)}
-                  onSuccess={(newId) => {
-                    alert(`¡Solicitud enviada! Se ha notificado al Jefe de Compras en su celular.`);
-                    setGlobalSolicitudModal(false);
-                  }}
-                  tenantId={tenantId}
-                  fincaId={selectedFinca}
-                  nucleoId={selectedNucleo}
-                />
-              )}
-            </div>
-          } />
-        </Routes>
-      )}
-    </GlobalSelectorsProvider>
-    </Router>
+                </main>
+              </div>
+            } />
+          </Routes>
+        )}
+      </GlobalSelectorsProvider>
   );
 }
 
 function App() {
-  return <AppContent />;
+  return (
+    <Router>
+      <AppContent />
+    </Router>
+  );
 }
 
 export default App;

@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>SAS - Alta Gerencia</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/black.min.css" id="theme">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #00E676;
+      --secondary: #00B0FF;
+    }
+    
+    body { font-family: 'Outfit', sans-serif; background: #000; }
+    .reveal { font-family: 'Outfit', sans-serif; }
+    
+    /* Contenedor transparente: NO MÁS CAJAS QUE TAPEN LA IMAGEN */
+    .content-container {
+      width: 100%;
+      text-align: left;
+      padding: 0 40px;
+    }
+
+    /* Sombras fuertes para garantizar lectura sobre la foto sin usar cajas negras */
+    .text-shadow {
+      text-shadow: 2px 2px 8px rgba(0,0,0,1), -1px -1px 4px rgba(0,0,0,0.8);
+    }
+
+    /* Tamaños de letra REAJUSTADOS para que toda la info quepa perfecto */
+    .reveal h1, .reveal h2, .reveal h3 { 
+      font-family: 'Outfit', sans-serif; 
+      font-weight: 800; 
+      text-transform: none; 
+      margin: 0 0 10px 0;
+    }
+
+    .reveal h1 { 
+      font-size: 2.8em; 
+      background: -webkit-linear-gradient(45deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(2px 4px 6px rgba(0,0,0,1));
+    }
+
+    .reveal h2 { 
+      font-size: 1.6em; /* Letra reducida para evitar que salte de página */
+      color: #FFF; 
+      border-bottom: 2px solid var(--primary);
+      display: inline-block;
+      padding-bottom: 5px;
+      margin-bottom: 20px;
+    }
+
+    .module-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      color: var(--primary);
+      font-size: 0.8em;
+      font-weight: 800;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .feature-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 20px 0;
+      max-width: 95%;
+    }
+
+    /* Letra más pequeña y menor margen para encajar toda la descripción */
+    .feature-list li {
+      font-size: 1em; 
+      line-height: 1.3;
+      margin-bottom: 15px;
+      color: #FFF;
+      display: flex;
+      align-items: flex-start;
+      font-weight: 600;
+    }
+
+    .feature-list li i {
+      color: var(--primary);
+      font-size: 1.2em;
+      margin-top: 3px;
+      margin-right: 15px;
+      width: 30px;
+      text-align: center;
+    }
+
+    /* Caja de impacto gerencial */
+    .impact-box {
+      margin-top: 25px;
+      border-left: 4px solid var(--secondary);
+      padding-left: 20px;
+    }
+
+    .impact-box .impact-title {
+      color: var(--secondary);
+      font-size: 0.85em;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 5px;
+    }
+
+    .impact-box .impact-text {
+      color: #FFF;
+      font-size: 1.1em;
+      font-weight: 600;
+      font-style: italic;
+      line-height: 1.3;
+      font-family: 'Playfair Display', serif;
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- Usamos data-background-opacity="0.35" para que la foto se vea hermosa pero el texto blanco brille -->
+
+      <!-- PORTADA -->
+      <section data-background-image="https://images.pexels.com/photos/259648/pexels-photo-259648.jpeg?auto=compress&cs=tinysrgb&w=1920" data-background-opacity="0.35">
+        <div style="text-align: center;">
+          <img src="https://cdn-icons-png.flaticon.com/512/2103/2103893.png" alt="Logo" style="width: 100px; filter: invert(1); margin-bottom: 20px;">
+          <h1 class="text-shadow">SAS Ecosistema</h1>
+          <h3 class="text-shadow" style="color: #FFF; font-weight: 600; font-size: 1.6em; margin-bottom: 20px;">Sistema de Administración Agroindustrial</h3>
+          <p class="text-shadow" style="font-size: 1.2em; color: #FFF; font-weight: 400; margin-bottom: 40px;">Control Total. Auditoría Satelital. Eficiencia 360°.</p>
+          <span class="text-shadow" style="font-size: 0.9em; color: var(--primary); font-weight: 800; letter-spacing: 2px; text-transform: uppercase; border: 2px solid var(--primary); padding: 10px 25px; border-radius: 40px;">Alta Gerencia</span>
+        </div>
+      </section>
+
+      <!-- CAPITULO 1: CENTRO DE CONTROL -->
+      <section data-background-image="https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=1920" data-background-opacity="0.35">
+        <div class="content-container">
+          <div class="module-badge text-shadow">Módulo 1 / 14</div>
+          <br>
+          <h2 class="text-shadow">Centro de Control y Alertas</h2>
+          <ul class="feature-list text-shadow">
+            <li><i class="fa-solid fa-satellite-dish"></i> <span><strong>Torre Unificada:</strong> Recepción y emisión de notificaciones en tiempo real para toda la hacienda.</span></li>
+            <li><i class="fa-solid fa-bolt"></i> <span><strong>Gestión de Urgencias:</strong> Requisiciones inmediatas y alertas de stock crítico.</span></li>
+            <li><i class="fa-solid fa-check-double"></i> <span><strong>Aprobaciones en Vivo:</strong> Autorizaciones gerenciales al instante, desde el celular.</span></li>
+          </ul>
+          <div class="impact-box text-shadow">
+            <div class="impact-title">Impacto Gerencial</div>
+            <div class="impact-text">"La gerencia recupera la visibilidad total del pulso diario de la operación, garantizando un flujo ininterrumpido."</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAPITULO 2: SATELITAL / GPS -->
+      <section data-background-image="https://images.pexels.com/photos/2165688/pexels-photo-2165688.jpeg?auto=compress&cs=tinysrgb&w=1920" data-background-opacity="0.35">
+        <div class="content-container">
+          <div class="module-badge text-shadow">Módulo 2 / 14</div>
+          <br>
+          <h2 class="text-shadow">Monitoreo Satelital y GPS</h2>
+          <ul class="feature-list text-shadow">
+            <li><i class="fa-solid fa-earth-americas"></i> <span><strong>Visión Espacial:</strong> Cartografía GIS y mapas interactivos de cultivos (NDVI).</span></li>
+            <li><i class="fa-solid fa-tractor"></i> <span><strong>Telemetría de Flota:</strong> Rastro exacto y métricas de maquinaria en tiempo real.</span></li>
+            <li><i class="fa-solid fa-users-viewfinder"></i> <span><strong>Auditoría de Personal:</strong> Geolocalización de cuadrillas de campo.</span></li>
+          </ul>
+          <div class="impact-box text-shadow">
+            <div class="impact-title">Impacto Gerencial</div>
+            <div class="impact-text">"El 'Ojo de la Gerencia'. Detectamos anomalías satelitales y evitamos fugas millonarias de combustible e insumos."</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAPITULO 3: AGRÍCOLA -->
+      <section data-background-image="https://images.pexels.com/photos/1072824/pexels-photo-1072824.jpeg?auto=compress&cs=tinysrgb&w=1920" data-background-opacity="0.35">
+        <div class="content-container">
+          <div class="module-badge text-shadow">Módulo 3 / 14</div>
+          <br>
+          <h2 class="text-shadow">Gestión Agrícola y Semilleros</h2>
+          <ul class="feature-list text-shadow">
+            <li><i class="fa-solid fa-seedling"></i> <span><strong>Trazabilidad:</strong> Seguimiento estricto desde la semilla hasta el lote productivo.</span></li>
+            <li><i class="fa-solid fa-bug-slash"></i> <span><strong>MIPE y Fenología:</strong> Manejo Integrado de Plagas y control de desarrollo vegetal.</span></li>
+            <li><i class="fa-solid fa-flask"></i> <span><strong>Formulación:</strong> Dosificación exacta respetando periodos de carencia.</span></li>
+          </ul>
+          <div class="impact-box text-shadow">
+            <div class="impact-title">Impacto Gerencial</div>
+            <div class="impact-text">"Audite que cada peso invertido en insumos se aplique en el momento agronómico óptimo, maximizando el rendimiento."</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAPITULO 4: COSECHA Y BÁSCULAS -->
+      <section data-background-image="https://images.pexels.com/photos/2255938/pexels-photo-2255938.jpeg?auto=compress&cs=tinysrgb&w=1920" data-background-opacity="0.35">
+        <div class="content-container">
+          <div class="module-badge text-shadow">Módulo 4 / 14</div>
+          <br>
+          <h2 class="text-shadow">Automatización de Cosecha</h2>
+          <ul class="feature-list text-shadow">
+            <li><i class="fa-solid fa-scale-balanced"></i> <span><strong>Básculas:</strong> Integración directa del hardware, sin digitación humana.</span></li>
+            <li><i class="fa-solid fa-shield-halved"></i> <span><strong>Control de Acopio:</strong> Registro exacto de mermas, rechazos y calidades.</span></li>
+            <li><i class="fa-solid fa-hand-holding-dollar"></i> <span><strong>Destajo Seguro:</strong> Liquidación automática del pago a recolectores según peso.</span></li>
+          </ul>
+          <div class="impact-box text-shadow">
+            <div class="impact-title">Impacto Gerencial</div>
+            <div class="impact-text">"Fin del 'dedo en la báscula'. Erradicamos el fraude interno en la recolección protegiendo el capital de la empresa."</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAPITULO 5: BIOFÁBRICA -->
+      <section data-background-image="https://images.pexels.com/photos/256198/pexels-photo-256198.jpeg?auto=compress&cs=tinysrgb&w=1920" data-background-opacity="0.35">
+        <div class="content-container">
+          <div class="module-badge text-shadow">Módulo 5 / 14</div>
+          <br>
+          <h2 class="text-shadow">Biofábrica y Bioles</h2>
+          <ul class="feature-list text-shadow">
+            <li><i class="fa-solid fa-vial"></i> <span><strong>Fórmulas Maestras:</strong> Gestión industrial de recetas para abonos orgánicos.</span></li>
+            <li><i class="fa-solid fa-temperature-half"></i> <span><strong>Proceso Controlado:</strong> Monitoreo de tiempos, temperaturas y materia prima.</span></li>
+            <li><i class="fa-solid fa-chart-pie"></i> <span><strong>Costeo Real:</strong> Determinación milimétrica del costo por litro producido.</span></li>
+          </ul>
+          <div class="impact-box text-shadow">
+            <div class="impact-title">Impacto Gerencial</div>
+            <div class="impact-text">"Transformamos desechos en activos millonarios. Sustituimos agroquímicos costosos garantizando estándares industriales."</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAPITULO 6: GANADERÍA -->
+      <section data-background-image="https://images.pexels.com/photos/422218/pexels-photo-422218.jpeg?auto=compress&cs=tinysrgb&w=1920" data-background-opacity="0.35">
+        <div class="content-container">
+          <div class="module-badge text-shadow">Módulo 6 / 14</div>
+          <br>
+          <h2 class="text-shadow">Gestión Ganadera y Pecuaria</h2>
+          <ul class="feature-list text-shadow">
+            <li><i class="fa-solid fa-cow"></i> <span><strong>Trazabilidad Individual:</strong> Control de chips, caravanas y genética bovina.</span></li>
+            <li><i class="fa-solid fa-weight-scale"></i> <span><strong>Productividad:</strong> Análisis de curvas de lactancia y pesajes diarios en ceba.</span></li>
+            <li><i class="fa-solid fa-map-location-dot"></i> <span><strong>Rotación Estratégica:</strong> Optimización de pasturas y calendario sanitario estricto.</span></li>
+          </ul>
+          <div class="impact-box text-shadow">
+            <div class="impact-title">Impacto Gerencial</div>
+            <div class="impact-text">"La ganadería como industria de precisión. Auditamos la ganancia real e identificamos de inmediato a los animales improductivos."</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAPITULO 7: ACUICULTURA -->
+      <section data-background-image="https://images.pexels.com/photos/3220368/pexels-photo-3220368.jpeg?auto=compress&cs=tinysrgb&w=1920" data-background-opacity="0.35">
+        <div class="content-container">
+          <div class="module-badge text-shadow">Módulo 7 / 14</div>
+          <br>
+          <h2 class="text-shadow">Gestión Acuícola (Piscicultura)</h2>
+          <ul class="feature-list text-shadow">
+            <li><i class="fa-solid fa-water"></i> <span><strong>Control de Piscinas:</strong> Monitoreo de oxígeno, pH, temperatura y biomasa viva.</span></li>
+            <li><i class="fa-solid fa-fish"></i> <span><strong>Factor de Conversión:</strong> Relación exacta entre alimento suministrado y crecimiento.</span></li>
+            <li><i class="fa-solid fa-fan"></i> <span><strong>Aireación Inteligente:</strong> Automatización tecnológica para evitar emergencias.</span></li>
+          </ul>
+          <div class="impact-box text-shadow">
+            <div class="impact-title">Impacto Gerencial</div>
+            <div class="impact-text">"Blindamos el costo del concentrado y minimizamos drásticamente el riesgo de pérdida económica por mortalidad masiva."</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAPITULO 8: BODEGAS -->
+      <section data-background-image="https://images.pexels.com/photos/1797428/pexels-photo-1797428.jpeg?auto=compress&cs=tinysrgb&w=1920" data-background-opacity="0.35">
+        <div class="content-container">
+          <div class="module-badge text-shadow">Módulo 8 / 14</div>
+          <br>
+          <h2 class="text-shadow">Control de Bodegas e Inventarios</h2>
+          <ul class="feature-list text-shadow">
+            <li><i class="fa-solid fa-boxes-stacked"></i> <span><strong>Multisectorial:</strong> Unificación de agroinsumos, veterinaria y repuestos.</span></li>
+            <li><i class="fa-solid fa-barcode"></i> <span><strong>Control PEPS:</strong> Trazabilidad con código de barras, lotes y caducidad.</span></li>
+            <li><i class="fa-solid fa-truck-moving"></i> <span><strong>Logística Inter-Finca:</strong> Transferencias seguras y blindadas entre sedes.</span></li>
+          </ul>
+          <div class="impact-box text-shadow">
+            <div class="impact-title">Impacto Gerencial</div>
+            <div class="impact-text">"El capital líquido protegido bajo llave digital. Erradicamos las pérdidas por vencimiento y el robo hormiga interdepartamental."</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAPITULO 9: COMPRAS -->
+      <section data-background-image="https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=1920" data-background-opacity="0.35">
+        <div class="content-container">
+          <div class="module-badge text-shadow">Módulo 9 / 14</div>
+          <br>
+          <h2 class="text-shadow">Logística y Compras</h2>
+          <ul class="feature-list text-shadow">
+            <li><i class="fa-solid fa-file-invoice-dollar"></i> <span><strong>Flujo Transparente:</strong> Cotización paralela y aprobación remota documentada.</span></li>
+            <li><i class="fa-solid fa-chart-line"></i> <span><strong>Inteligencia de Mercado:</strong> Historial de fluctuación de precios de insumos.</span></li>
+            <li><i class="fa-solid fa-ban"></i> <span><strong>Bloqueo de Gasto:</strong> Imposibilidad de ejecutar compras no presupuestadas.</span></li>
+          </ul>
+          <div class="impact-box text-shadow">
+            <div class="impact-title">Impacto Gerencial</div>
+            <div class="impact-text">"Forzamos la competencia sana, destruimos monopolios de proveedores y transparentamos cada peso gastado en abastecimiento."</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAPITULO 10: MAQUINARIA -->
+      <section data-background-image="https://images.pexels.com/photos/162639/digger-machine-machinery-construction-162639.jpeg?auto=compress&cs=tinysrgb&w=1920" data-background-opacity="0.35">
+        <div class="content-container">
+          <div class="module-badge text-shadow">Módulo 10 / 14</div>
+          <br>
+          <h2 class="text-shadow">Maquinaria y Mantenimiento</h2>
+          <ul class="feature-list text-shadow">
+            <li><i class="fa-solid fa-gears"></i> <span><strong>Hoja de Vida:</strong> Control estricto de tractores, motores de riego y vehículos pesados.</span></li>
+            <li><i class="fa-solid fa-stopwatch"></i> <span><strong>Mantenimiento:</strong> Alertas automáticas programadas por horómetros reales.</span></li>
+            <li><i class="fa-solid fa-gas-pump"></i> <span><strong>Auditoría Combustible:</strong> Cruce de datos GPS vs suministro para detección.</span></li>
+          </ul>
+          <div class="impact-box text-shadow">
+            <div class="impact-title">Impacto Gerencial</div>
+            <div class="impact-text">"Aseguramos el retorno operativo de cada gota de diésel y prevenimos paradas costosas en tiempos críticos de cosecha."</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAPITULO 11: RRHH -->
+      <section data-background-image="https://images.pexels.com/photos/1205128/pexels-photo-1205128.jpeg?auto=compress&cs=tinysrgb&w=1920" data-background-opacity="0.35">
+        <div class="content-container">
+          <div class="module-badge text-shadow">Módulo 11 / 14</div>
+          <br>
+          <h2 class="text-shadow">RRHH y Nómina Agrícola</h2>
+          <ul class="feature-list text-shadow">
+            <li><i class="fa-solid fa-fingerprint"></i> <span><strong>Control Biométrico:</strong> Validación in situ de la asistencia del trabajador de campo.</span></li>
+            <li><i class="fa-solid fa-coins"></i> <span><strong>Destajos Conectados:</strong> Pago exacto ligado al módulo de cosechas y básculas.</span></li>
+            <li><i class="fa-solid fa-landmark"></i> <span><strong>Protección Legal:</strong> Cálculo automático de seguridad social y prestaciones laborales.</span></li>
+          </ul>
+          <div class="impact-box text-shadow">
+            <div class="impact-title">Impacto Gerencial</div>
+            <div class="impact-text">"Blindaje legal absoluto ante entidades como la UGPP. Usted pagará de forma justa, exactamente por la productividad demostrada."</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAPITULO 12: VENTAS -->
+      <section data-background-image="https://images.pexels.com/photos/265086/pexels-photo-265086.jpeg?auto=compress&cs=tinysrgb&w=1920" data-background-opacity="0.35">
+        <div class="content-container">
+          <div class="module-badge text-shadow">Módulo 12 / 14</div>
+          <br>
+          <h2 class="text-shadow">Comercialización y Ventas</h2>
+          <ul class="feature-list text-shadow">
+            <li><i class="fa-solid fa-file-invoice"></i> <span><strong>Integración DIAN:</strong> Emisión de facturas electrónicas y documentos soporte.</span></li>
+            <li><i class="fa-solid fa-globe"></i> <span><strong>Trazabilidad:</strong> Historia completa del lote vendido hasta llegar al cliente final.</span></li>
+            <li><i class="fa-solid fa-wallet"></i> <span><strong>Cartera:</strong> Control estricto de cuentas por cobrar, anticipos y despachos diarios.</span></li>
+          </ul>
+          <div class="impact-box text-shadow">
+            <div class="impact-title">Impacto Gerencial</div>
+            <div class="impact-text">"El acelerador del flujo de caja. Convertimos rápidamente el esfuerzo de meses en el campo en liquidez financiera."</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAPITULO 13: CONTABILIDAD -->
+      <section data-background-image="https://images.pexels.com/photos/590016/pexels-photo-590016.jpeg?auto=compress&cs=tinysrgb&w=1920" data-background-opacity="0.35">
+        <div class="content-container">
+          <div class="module-badge text-shadow">Módulo 13 / 14</div>
+          <br>
+          <h2 class="text-shadow">Contabilidad Financiera y DIAN</h2>
+          <ul class="feature-list text-shadow">
+            <li><i class="fa-solid fa-book-journal-whills"></i> <span><strong>Motor NIIF:</strong> Comprobantes contables generados en tiempo real automáticamente.</span></li>
+            <li><i class="fa-solid fa-building-columns"></i> <span><strong>Automatización Tributaria:</strong> Cálculo de retenciones y creación de Medios Magnéticos.</span></li>
+            <li><i class="fa-solid fa-file-signature"></i> <span><strong>Cierres Seguros:</strong> Balances de prueba y estados de resultados sin retrasos de fin de mes.</span></li>
+          </ul>
+          <div class="impact-box text-shadow">
+            <div class="impact-title">Impacto Gerencial</div>
+            <div class="impact-text">"La contabilidad como radar financiero en tiempo real. Garantizamos consistencia extrema y evitamos onerosas multas tributarias."</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAPITULO 14: AUDITORÍA -->
+      <section data-background-image="https://images.pexels.com/photos/669615/pexels-photo-669615.jpeg?auto=compress&cs=tinysrgb&w=1920" data-background-opacity="0.35">
+        <div class="content-container">
+          <div class="module-badge text-shadow">Módulo 14 / 14</div>
+          <br>
+          <h2 class="text-shadow">Auditoría y Revisoría Fiscal</h2>
+          <ul class="feature-list text-shadow">
+            <li><i class="fa-solid fa-lock"></i> <span><strong>Logs Inmutables:</strong> Registro IP, usuario, hora y bloqueos estrictos de periodos fiscales.</span></li>
+            <li><i class="fa-solid fa-magnifying-glass-chart"></i> <span><strong>Drill-Down de Revisoría:</strong> Rastreabilidad desde el asiento contable hasta la báscula origen.</span></li>
+            <li><i class="fa-solid fa-chart-network"></i> <span><strong>Motor de Costeo (BI):</strong> Distribución inteligente de costos para calcular el costo por kilogramo.</span></li>
+          </ul>
+          <div class="impact-box text-shadow">
+            <div class="impact-title">Impacto Gerencial</div>
+            <div class="impact-text">"La cima del Gobierno Corporativo. Desnuda la rentabilidad real de cada unidad y blinda a los dueños contra fraudes internos."</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RESUMEN FINAL -->
+      <section data-background-image="https://images.pexels.com/photos/265216/pexels-photo-265216.jpeg?auto=compress&cs=tinysrgb&w=1920" data-background-opacity="0.35">
+        <div style="text-align: center; padding: 0 40px;">
+          <h2 class="text-shadow" style="font-size: 2.2em; margin-bottom: 10px;">SAS: La Única Opción</h2>
+          <p class="text-shadow" style="color: #FFF; font-size: 1.2em; margin-bottom: 40px;">La Arquitectura Operativa Definitiva.</p>
+          
+          <div style="display: flex; justify-content: space-between; text-align: left; gap: 20px;">
+            <div style="flex: 1;">
+              <h4 class="text-shadow" style="color: var(--primary); font-size: 1.2em; margin-bottom: 10px;">1. Ecosistema 360°</h3>
+              <p class="text-shadow" style="font-size: 1em; color: #FFF; line-height: 1.3;">Conecta agro, ganadería, peces y bioles inteligentemente.</p>
+            </div>
+            <div style="flex: 1;">
+              <h4 class="text-shadow" style="color: var(--primary); font-size: 1.2em; margin-bottom: 10px;">2. Antifraude</h3>
+              <p class="text-shadow" style="font-size: 1em; color: #FFF; line-height: 1.3;">GPS y captura directa desde básculas. Cero intervención.</p>
+            </div>
+            <div style="flex: 1;">
+              <h4 class="text-shadow" style="color: var(--primary); font-size: 1.2em; margin-bottom: 10px;">3. Auditoría</h3>
+              <p class="text-shadow" style="font-size: 1em; color: #FFF; line-height: 1.3;">Normas NIIF y logs inmutables para la Revisoría Fiscal.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      transition: 'fade', 
+      backgroundTransition: 'fade',
+      controls: true,
+      progress: true,
+      center: true
+    });
+  </script>
+</body>
+</html>

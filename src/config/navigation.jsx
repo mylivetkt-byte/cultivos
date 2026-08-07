@@ -43,7 +43,8 @@ export const STATIC_NAVIGATION = [
     icon: <Wrench size={20} />,
     items: [
       { id: 'sistemas-tenants', name: 'Gestión de Empresas', icon: <Building2 size={18} />, path: '/sistemas' },
-      { id: 'sistemas-stats', name: 'Estadísticas Globales', icon: <LineChart size={18} />, path: '/sistemas/stats' }
+      { id: 'sistemas-stats', name: 'Estadísticas Globales', icon: <LineChart size={18} />, path: '/sistemas/stats' },
+      { id: 'sistemas-auditoria', name: 'Auditoría por Finca', icon: <ShieldCheck size={18} />, path: '/sistemas/auditoria-finca' }
     ]
   },
   {
@@ -61,6 +62,9 @@ export const STATIC_NAVIGATION = [
         items: [
           { id: 'cultivos', name: 'Especies de Cultivos' },
           { id: 'cultivos_catalogo', name: 'Catálogo de Cultivos' },
+          { id: 'fincas', name: 'Haciendas / Fincas' },
+          { id: 'nucleos', name: 'Zonas / Núcleos' },
+          { id: 'lotes', name: 'Catálogo de Lotes' },
           { id: 'variedades', name: 'Variedades' },
           { id: 'calendario_agricola', name: 'Calendario Agrícola' },
           { id: 'calendario_cultivo', name: 'Calendario de Cultivo' },

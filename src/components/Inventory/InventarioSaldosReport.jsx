@@ -3,9 +3,9 @@ import { Table, Button, Card, Typography, Select, Row, Col, Space, DatePicker, I
 import { FileExcelOutlined, FilePdfOutlined, SearchOutlined } from '@ant-design/icons';
 import { fetchTableData, authFetch } from '../../utils/api';
 import dayjs from 'dayjs';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { exportToPdf } from '../../utils/exportPdf';
+import { exportToExcel } from '../../utils/exportExcel';
+import { useAuth } from '../../context/AuthContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -15,6 +15,7 @@ export default function InventarioSaldosReport({ tenantId }) {
   const [bodegas, setBodegas] = useState([]);
   const [saldos, setSaldos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
   // Filtros
   const [filtros, setFiltros] = useState({
@@ -69,42 +70,31 @@ export default function InventarioSaldosReport({ tenantId }) {
     }
   };
 
-  const exportToExcel = () => {
+  const getMetadata = () => ({
+    empresa: 'SAS Agrícolas',
+    finca: filtros.fincaId === 'Todas' ? 'Todas las fincas' : fincas.find(f => f.id_finca === filtros.fincaId)?.nombre,
+    usuario: user?.nombre || user?.username || 'Usuario del Sistema',
+    rol: user?.rol || 'No asignado',
+    reportName: `Saldos de Inventario al ${filtros.fechaCorte.format('YYYY-MM-DD')}`
+  });
+
+  const exportData = saldos.map(s => ({
+    'Finca': s.finca_nombre || 'Sin Asignar',
+    'Bodega': s.bodega_nombre,
+    'Código': s.codigo,
+    'Descripción': s.insumo_nombre,
+    'Saldo a la Fecha': Number(s.saldo)
+  }));
+  const exportColumns = [{ name: 'Finca' }, { name: 'Bodega' }, { name: 'Código' }, { name: 'Descripción' }, { name: 'Saldo a la Fecha' }];
+
+  const handleExportExcel = () => {
     if (saldos.length === 0) return message.warning('No hay datos para exportar');
-    const data = saldos.map(s => ({
-      'Finca': s.finca_nombre || 'Sin Asignar',
-      'Bodega': s.bodega_nombre,
-      'Cód Insumo': s.codigo,
-      'Descripción': s.insumo_nombre,
-      'Saldo a la Fecha': Number(s.saldo)
-    }));
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Saldos');
-    XLSX.writeFile(wb, `Saldos_Corte_${dayjs().format('YYYYMMDD')}.xlsx`);
+    exportToExcel(`Saldos_Corte_${dayjs().format('YYYYMMDD')}`, exportColumns, exportData, getMetadata());
   };
 
-  const exportToPDF = () => {
+  const handleExportPDF = async () => {
     if (saldos.length === 0) return message.warning('No hay datos para exportar');
-    const doc = new jsPDF();
-    doc.text(`Saldos de Inventario al ${filtros.fechaCorte.format('YYYY-MM-DD')}`, 14, 20);
-    const tableColumn = ["Finca", "Bodega", "Código", "Insumo", "Saldo"];
-    const tableRows = [];
-    saldos.forEach(s => {
-      tableRows.push([
-        s.finca_nombre || 'Sin Asignar',
-        s.bodega_nombre,
-        s.codigo,
-        s.insumo_nombre,
-        Number(s.saldo).toFixed(2)
-      ]);
-    });
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 30,
-    });
-    doc.save(`Saldos_Corte_${dayjs().format('YYYYMMDD')}.pdf`);
+    await exportToPdf(`Saldos_Corte_${dayjs().format('YYYYMMDD')}`, exportColumns, exportData, getMetadata());
   };
 
   const columns = [
@@ -124,8 +114,8 @@ export default function InventarioSaldosReport({ tenantId }) {
             <Text type="secondary">Consulta el stock real de los productos hasta el día exacto que selecciones.</Text>
           </div>
           <Space>
-            <Button icon={<FileExcelOutlined />} onClick={exportToExcel} style={{ color: '#52c41a', borderColor: '#52c41a' }}>Excel</Button>
-            <Button icon={<FilePdfOutlined />} onClick={exportToPDF} danger>PDF</Button>
+            <Button icon={<FileExcelOutlined />} onClick={handleExportExcel} style={{ color: '#52c41a', borderColor: '#52c41a' }}>Excel</Button>
+            <Button icon={<FilePdfOutlined />} onClick={handleExportPDF} danger>PDF</Button>
           </Space>
         </div>
 

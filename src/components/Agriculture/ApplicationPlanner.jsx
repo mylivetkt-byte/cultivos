@@ -290,11 +290,17 @@ const ApplicationPlanner = ({ tenantId = 1 }) => {
                             {isShort ? (
                               <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                 <span style={{ color: '#ef4444', fontSize: '1.2em' }}>⚠️ Falta</span>
-                                <select className="form-control" value={ins.prioridad} onChange={e => handleInsumoChange(i, 'prioridad', e.target.value)} style={{ padding: '2px', width: '100px' }}>
-                                  <option value="Baja">Prioridad Baja</option>
-                                  <option value="Media">Prioridad Media</option>
-                                  <option value="Alta">URGENTE</option>
-                                </select>
+                                <div style={{ minWidth: '130px' }}>
+                                  <PremiumSelect 
+                                    value={ins.prioridad} 
+                                    onChange={e => handleInsumoChange(i, 'prioridad', e.target.value)} 
+                                    options={[
+                                      { value: 'Alta', label: 'Alta' },
+                                      { value: 'Media', label: 'Media' },
+                                      { value: 'Baja', label: 'Baja' }
+                                    ]}
+                                  />
+                                </div>
                               </div>
                             ) : (
                               <span style={{ color: '#10b981' }}>✅ Suficiente</span>

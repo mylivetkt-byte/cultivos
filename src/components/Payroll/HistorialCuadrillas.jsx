@@ -10,38 +10,63 @@ const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 const HistorialCuadrillas = () => {
-  const { tenantId, selectedFinca } = useGlobalSelectors();
+  const { state: globalState } = useGlobalSelectors();
+  const tenantId = 1; // Assuming tenantId 1 for now or pull from auth context
+  const selectedFinca = globalState?.finca || 'Todas';
+  
   const [form] = Form.useForm();
   const [historial, setHistorial] = useState([]);
   const [loading, setLoading] = useState(false);
   const [cuadrillas, setCuadrillas] = useState([]);
   const [fincas, setFincas] = useState([]);
   const [lotes, setLotes] = useState([]);
+  const [empleados, setEmpleados] = useState([]);
 
   useEffect(() => {
     fetchFincas();
     fetchCuadrillas();
     fetchLotes();
+    fetchEmpleados();
+    handleSearch({});
   }, [tenantId]);
 
   const fetchFincas = async () => {
     try {
-      const res = await authFetch(`/api/table/fincas?tenantId=${tenantId || 1}`);
-      if (res.ok) setFincas(await res.json());
+      const res = await authFetch(`/api/table/fincas/data?id_tenant=${tenantId || 1}`);
+      if (res.ok) {
+        const data = await res.json();
+        setFincas(Array.isArray(data) ? data : data.data || []);
+      }
     } catch (err) {}
   };
 
   const fetchCuadrillas = async () => {
     try {
-      const res = await authFetch(`/api/rrhh-cuadrillas?tenantId=${tenantId || 1}`);
-      if (res.ok) setCuadrillas(await res.json());
+      const res = await authFetch(`/api/catalogo-cuadrillas?tenantId=${tenantId || 1}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCuadrillas(Array.isArray(data) ? data : data.data || []);
+      }
     } catch (err) {}
   };
 
   const fetchLotes = async () => {
     try {
-      const res = await authFetch(`/api/table/lotes?tenantId=${tenantId || 1}`);
-      if (res.ok) setLotes(await res.json());
+      const res = await authFetch(`/api/table/lotes/data?id_tenant=${tenantId || 1}`);
+      if (res.ok) {
+        const data = await res.json();
+        setLotes(Array.isArray(data) ? data : data.data || []);
+      }
+    } catch (err) {}
+  };
+
+  const fetchEmpleados = async () => {
+    try {
+      const res = await authFetch(`/api/table/rrhh_empleados/data?id_tenant=${tenantId || 1}`);
+      if (res.ok) {
+        const data = await res.json();
+        setEmpleados(Array.isArray(data) ? data : data.data || []);
+      }
     } catch (err) {}
   };
 
@@ -50,17 +75,18 @@ const HistorialCuadrillas = () => {
     try {
       const params = new URLSearchParams({ tenantId: tenantId || 1 });
       
-      if (values.rangoFechas && values.rangoFechas.length === 2) {
+      if (values?.rangoFechas && values.rangoFechas.length === 2) {
         params.append('fecha_inicio', values.rangoFechas[0].format('YYYY-MM-DD'));
         params.append('fecha_fin', values.rangoFechas[1].format('YYYY-MM-DD'));
       }
-      if (values.id_finca) params.append('id_finca', values.id_finca);
-      else if (selectedFinca !== 'Todas' && selectedFinca !== 'Ninguna') params.append('id_finca', selectedFinca);
+      if (values?.id_finca) params.append('id_finca', values.id_finca);
+      else if (selectedFinca && selectedFinca !== 'Todas' && selectedFinca !== 'Ninguna') params.append('id_finca', selectedFinca);
 
-      if (values.id_cuadrilla) params.append('id_cuadrilla', values.id_cuadrilla);
-      if (values.id_lote) params.append('id_lote', values.id_lote);
+      if (values?.id_cuadrilla) params.append('id_cuadrilla', values.id_cuadrilla);
+      if (values?.id_lote) params.append('id_lote', values.id_lote);
+      if (values?.id_empleado) params.append('id_empleado', values.id_empleado);
 
-      const res = await authFetch(`/api/rrhh-cuadrillas/historial?${params.toString()}`);
+      const res = await authFetch(`/api/catalogo-cuadrillas/historial?${params.toString()}`);
       if (res.ok) {
         setHistorial(await res.json());
       } else {
@@ -167,10 +193,17 @@ const HistorialCuadrillas = () => {
                 </Select>
               </Form.Item>
             </Col>
-            <Col xs={24} md={4}>
+            <Col xs={24} md={3}>
               <Form.Item name="id_lote" label="Lote / Potrero">
                 <Select placeholder="Todos" allowClear showSearch optionFilterProp="children">
                   {lotes.map(l => <Option key={l.id_lote} value={l.id_lote}>{l.nombre}</Option>)}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={4}>
+              <Form.Item name="id_empleado" label="Trabajador">
+                <Select placeholder="Todos" allowClear showSearch optionFilterProp="children">
+                  {empleados.map(e => <Option key={e.id_empleado} value={e.id_empleado}>{e.nombres} {e.apellidos}</Option>)}
                 </Select>
               </Form.Item>
             </Col>

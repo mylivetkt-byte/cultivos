@@ -266,7 +266,79 @@ router.post('/tenant/:id/reset-admin', async (req, res) => {
   }
 });
 
-// GET /api/sistemas/stats - Global stats
+// GET /api/sistemas/tenant/:id/resoluciones - List resolutions
+router.get('/tenant/:id/resoluciones', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await getDb(req).query('SELECT * FROM dian_resoluciones WHERE id_tenant = ? ORDER BY created_at DESC', [id]);
+    res.json({ data: rows });
+  } catch (err) {
+    console.error('Error fetching resoluciones:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/sistemas/tenant/:id/resoluciones - Create resolution
+router.post('/tenant/:id/resoluciones', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tipo_resolucion, numero_resolucion, prefijo, consecutivo_inicial, consecutivo_final, consecutivo_actual, fecha_inicial, fecha_vence, estado } = req.body;
+    
+    if (!tipo_resolucion || !numero_resolucion || !prefijo || !consecutivo_inicial || !consecutivo_final || !fecha_inicial || !fecha_vence) {
+      return res.status(400).json({ error: 'Faltan campos obligatorios para la resolución.' });
+    }
+
+    const currentActual = consecutivo_actual || consecutivo_inicial;
+    const finalEstado = estado || 'Activa';
+
+    if (finalEstado === 'Activa') {
+      await getDb(req).query('UPDATE dian_resoluciones SET estado = ? WHERE id_tenant = ? AND tipo_resolucion = ? AND estado = ?', ['Inactiva', id, tipo_resolucion, 'Activa']);
+    }
+    
+    const [result] = await getDb(req).query(`
+      INSERT INTO dian_resoluciones (id_tenant, tipo_resolucion, numero_resolucion, prefijo, consecutivo_inicial, consecutivo_final, consecutivo_actual, fecha_inicial, fecha_vence, estado)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [id, tipo_resolucion, numero_resolucion, prefijo, consecutivo_inicial, consecutivo_final, currentActual, fecha_inicial, fecha_vence, finalEstado]);
+    
+    res.status(201).json({ success: true, message: 'Resolución creada exitosamente', id_resolucion: result.insertId });
+  } catch (err) {
+    console.error('Error creating resolucion:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/sistemas/tenant/:id/resoluciones/:idRes - Update resolution
+router.put('/tenant/:id/resoluciones/:idRes', async (req, res) => {
+  try {
+    const { id, idRes } = req.params;
+    const { tipo_resolucion, numero_resolucion, prefijo, consecutivo_inicial, consecutivo_final, consecutivo_actual, fecha_inicial, fecha_vence, estado } = req.body;
+    
+    if (estado === 'Activa') {
+      const typeToUse = tipo_resolucion || (await getDb(req).query('SELECT tipo_resolucion FROM dian_resoluciones WHERE id_resolucion = ?', [idRes]))[0][0].tipo_resolucion;
+      await getDb(req).query('UPDATE dian_resoluciones SET estado = ? WHERE id_tenant = ? AND tipo_resolucion = ? AND id_resolucion != ? AND estado = ?', ['Inactiva', id, typeToUse, idRes, 'Activa']);
+    }
+
+    await getDb(req).query(`
+      UPDATE dian_resoluciones SET
+        tipo_resolucion = COALESCE(?, tipo_resolucion),
+        numero_resolucion = COALESCE(?, numero_resolucion),
+        prefijo = COALESCE(?, prefijo),
+        consecutivo_inicial = COALESCE(?, consecutivo_inicial),
+        consecutivo_final = COALESCE(?, consecutivo_final),
+        consecutivo_actual = COALESCE(?, consecutivo_actual),
+        fecha_inicial = COALESCE(?, fecha_inicial),
+        fecha_vence = COALESCE(?, fecha_vence),
+        estado = COALESCE(?, estado)
+      WHERE id_resolucion = ? AND id_tenant = ?
+    `, [tipo_resolucion, numero_resolucion, prefijo, consecutivo_inicial, consecutivo_final, consecutivo_actual, fecha_inicial, fecha_vence, estado, idRes, id]);
+    
+    res.json({ success: true, message: 'Resolución actualizada' });
+  } catch (err) {
+    console.error('Error updating resolucion:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/stats', async (req, res) => {
   try {
     const [tenants] = await getDb(req).query("SELECT COUNT(*) as total, SUM(activo = 1) as activos, SUM(estado_suscripcion = 'Pendiente') as pendientes FROM tenants");

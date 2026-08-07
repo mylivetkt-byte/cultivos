@@ -3,9 +3,9 @@ import { Table, Button, Card, Typography, Select, Row, Col, Space, Input, messag
 import { FileExcelOutlined, FilePdfOutlined, SearchOutlined, WhatsAppOutlined } from '@ant-design/icons';
 import { fetchTableData, authFetch } from '../../utils/api';
 import dayjs from 'dayjs';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { exportToPdf } from '../../utils/exportPdf';
+import { exportToExcel } from '../../utils/exportExcel';
+import { useAuth } from '../../context/AuthContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -21,6 +21,7 @@ export default function InventarioMovimientosReport({ tenantId }) {
   
   const [movimientos, setMovimientos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
   // Modal WhatsApp
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
@@ -102,68 +103,41 @@ export default function InventarioMovimientosReport({ tenantId }) {
     }
   };
 
-  const exportToExcel = () => {
-    if (movimientos.length === 0) return message.warning('No hay datos para exportar');
-    const data = movimientos.map(s => ({
+  const getMetadata = (returnBase64 = false) => ({
+    empresa: 'SAS Agrícolas',
+    finca: filtros.fincaId === 'Todas' ? 'Todas las fincas' : fincas.find(f => f.id_finca === filtros.fincaId)?.nombre,
+    usuario: user?.nombre || user?.username || 'Usuario del Sistema',
+    rol: user?.rol || 'No asignado',
+    reportName: `Movimientos de Inventario - ${dayjs().format('YYYY-MM-DD')}`,
+    returnBase64
+  });
+
+  const exportData = movimientos.map(s => ({
       'Fecha': dayjs(s.fecha_movimiento).format('YYYY-MM-DD HH:mm'),
       'Tipo': s.tipo_movimiento,
       'Finca': s.finca_nombre || 'N/A',
       'Bodega': s.bodega_nombre || 'N/A',
-      'Cód': s.codigo,
+      'Cód Insumo': s.codigo,
       'Insumo': s.insumo_nombre,
       'Cantidad': Number(s.cantidad),
       'Costo Uni': Number(s.costo_unitario),
       'Destino': s.destino,
       'Observaciones': s.observaciones
-    }));
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Movimientos');
-    XLSX.writeFile(wb, `Movimientos_Inv_${dayjs().format('YYYYMMDD')}.xlsx`);
-  };
+  }));
+  const exportColumns = [{ name: 'Fecha' }, { name: 'Tipo' }, { name: 'Finca' }, { name: 'Bodega' }, { name: 'Cód Insumo' }, { name: 'Insumo' }, { name: 'Cantidad' }, { name: 'Costo Uni' }, { name: 'Destino' }];
 
-  const generatePDFBase64 = () => {
-    const doc = new jsPDF('landscape');
-    doc.setFontSize(16);
-    doc.text(`Reporte de Movimientos de Inventario - ${dayjs().format('YYYY-MM-DD')}`, 14, 20);
-    const tableColumn = ["Fecha", "Tipo", "Bodega", "Insumo", "Cant", "Destino"];
-    const tableRows = movimientos.map(s => [
-      dayjs(s.fecha_movimiento).format('DD/MM/YYYY'),
-      s.tipo_movimiento,
-      s.bodega_nombre?.substring(0,15) || 'N/A',
-      s.insumo_nombre?.substring(0,30),
-      Number(s.cantidad).toFixed(2),
-      s.destino?.substring(0,25)
-    ]);
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 30,
-      styles: { fontSize: 8 },
-    });
-    return doc.output('datauristring');
-  };
-
-  const exportToPDF = () => {
+  const exportToExcel = () => {
     if (movimientos.length === 0) return message.warning('No hay datos para exportar');
-    const doc = new jsPDF('landscape');
-    doc.setFontSize(16);
-    doc.text(`Reporte de Movimientos de Inventario - ${dayjs().format('YYYY-MM-DD')}`, 14, 20);
-    const tableColumn = ["Fecha", "Tipo", "Bodega", "Insumo", "Cant", "Destino"];
-    const tableRows = movimientos.map(s => [
-      dayjs(s.fecha_movimiento).format('DD/MM/YYYY HH:mm'),
-      s.tipo_movimiento,
-      s.bodega_nombre || 'N/A',
-      s.insumo_nombre,
-      Number(s.cantidad).toFixed(2),
-      s.destino
-    ]);
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 30,
-    });
-    doc.save(`Movimientos_Inv_${dayjs().format('YYYYMMDD')}.pdf`);
+    exportToExcel(`Movimientos_Inv_${dayjs().format('YYYYMMDD')}`, exportColumns, exportData, getMetadata());
+  };
+
+  const generatePDFBase64 = async () => {
+    return await exportToPdf(`Movimientos_Inv_${dayjs().format('YYYYMMDD')}`, exportColumns, exportData, getMetadata(true));
+  };
+
+  const exportToPDF = async () => {
+    if (movimientos.length === 0) return message.warning('No hay datos para exportar');
+    await exportToPdf(`Movimientos_Inv_${dayjs().format('YYYYMMDD')}`, exportColumns, exportData, getMetadata());
   };
 
   const handleSendWhatsApp = async () => {
@@ -173,7 +147,7 @@ export default function InventarioMovimientosReport({ tenantId }) {
 
     setSendingWs(true);
     try {
-      const pdfBase64 = generatePDFBase64();
+      const pdfBase64 = await generatePDFBase64();
       const base64Data = pdfBase64.split('base64,')[1];
       
       const payload = {

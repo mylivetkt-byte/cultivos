@@ -4582,4 +4582,23 @@ CREATE TABLE `viveros` (
   CONSTRAINT `viveros_ibfk_1` FOREIGN KEY (`id_tenant`) REFERENCES `tenants` (`id_tenant`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `dian_resoluciones` (
+  `id_resolucion` INT NOT NULL AUTO_INCREMENT,
+  `id_tenant` INT NOT NULL,
+  `tipo_resolucion` ENUM('Facturación Electrónica', 'Punto de Venta POS', 'Papel') NOT NULL,
+  `numero_resolucion` VARCHAR(100) NOT NULL,
+  `prefijo` VARCHAR(20) NOT NULL,
+  `consecutivo_inicial` INT NOT NULL,
+  `consecutivo_final` INT NOT NULL,
+  `consecutivo_actual` INT DEFAULT NULL,
+  `fecha_inicial` DATE NOT NULL,
+  `fecha_vence` DATE NOT NULL,
+  `estado` ENUM('Activa', 'Vencida', 'Agotada', 'Inactiva') DEFAULT 'Activa',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_resolucion`),
+  KEY `fk_dian_resoluciones_tenant` (`id_tenant`),
+  CONSTRAINT `fk_dian_resoluciones_tenant` FOREIGN KEY (`id_tenant`) REFERENCES `tenants` (`id_tenant`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;

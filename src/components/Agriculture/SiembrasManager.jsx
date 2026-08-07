@@ -343,40 +343,32 @@ const SiembrasManager = () => {
               <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
                 <div className="form-group">
                   <label>Lote / Potrero <span style={{ color: '#EF4444' }}>*</span></label>
-                  <select 
-                    className="form-control" 
+                  <PremiumSelect
                     value={newRecord.id_lote} 
                     onChange={e => setNewRecord({...newRecord, id_lote: e.target.value})} 
-                    required
-                  >
-                    <option value="">-- Seleccione Lote --</option>
-                    {lotes.map(l => <option key={l.id_lote} value={l.id_lote}>{l.nombre}</option>)}
-                  </select>
+                    options={lotes.map(l => ({ value: l.id_lote, label: l.nombre }))}
+                    placeholder="-- Seleccione Lote --"
+                  />
                 </div>
 
                 <div className="form-group">
                   <label>Cultivo <span style={{ color: '#EF4444' }}>*</span></label>
-                  <select 
-                    className="form-control" 
+                  <PremiumSelect
                     value={newRecord.id_cultivo} 
                     onChange={e => setNewRecord({...newRecord, id_cultivo: e.target.value})} 
-                    required
-                  >
-                    <option value="">-- Seleccione Cultivo --</option>
-                    {cultivos.map(c => <option key={c.id_cultivo} value={c.id_cultivo}>{c.nombre}</option>)}
-                  </select>
+                    options={cultivos.map(c => ({ value: c.id_cultivo, label: c.nombre }))}
+                    placeholder="-- Seleccione Cultivo --"
+                  />
                 </div>
 
                 <div className="form-group">
                   <label>Variedad (Opcional)</label>
-                  <select 
-                    className="form-control" 
+                  <PremiumSelect
                     value={newRecord.id_variedad} 
                     onChange={e => setNewRecord({...newRecord, id_variedad: e.target.value})}
-                  >
-                    <option value="">-- Seleccione Variedad --</option>
-                    {variedades.map(v => <option key={v.id_variedad} value={v.id_variedad}>{v.nombre}</option>)}
-                  </select>
+                    options={variedades.map(v => ({ value: v.id_variedad, label: v.nombre }))}
+                    placeholder="-- Seleccione Variedad --"
+                  />
                 </div>
 
                 <div className="form-group">
@@ -427,44 +419,42 @@ const SiembrasManager = () => {
 
                 <div className="form-group">
                   <label>Sistema de Riego (Opcional)</label>
-                  <select 
-                    className="form-control" 
+                  <PremiumSelect
                     value={newRecord.sistema_riego_establecido} 
                     onChange={e => setNewRecord({...newRecord, sistema_riego_establecido: e.target.value})}
-                  >
-                    <option value="">-- Sin Definir --</option>
-                    <option value="Goteo">Goteo</option>
-                    <option value="Aspersion">Aspersión</option>
-                    <option value="Surcos">Surcos</option>
-                    <option value="Gravitacional">Gravitacional</option>
-                    <option value="Secano">Secano</option>
-                  </select>
+                    options={[
+                      { value: 'Goteo', label: 'Goteo' },
+                      { value: 'Aspersion', label: 'Aspersión' },
+                      { value: 'Surcos', label: 'Surcos' },
+                      { value: 'Gravitacional', label: 'Gravitacional' },
+                      { value: 'Secano', label: 'Secano' }
+                    ]}
+                    placeholder="-- Sin Definir --"
+                  />
                 </div>
 
                 <div className="form-group">
                   <label>Lote Procedencia Plántulas (Opcional)</label>
-                  <select 
-                    className="form-control" 
+                  <PremiumSelect
                     value={newRecord.lote_procedencia_plantulas} 
                     onChange={e => setNewRecord({...newRecord, lote_procedencia_plantulas: e.target.value})}
-                  >
-                    <option value="">-- Externo / No aplica --</option>
-                    {lotes.map(l => <option key={l.id_lote} value={l.id_lote}>{l.nombre}</option>)}
-                  </select>
+                    options={lotes.map(l => ({ value: l.id_lote, label: l.nombre }))}
+                    placeholder="-- Externo / No aplica --"
+                  />
                 </div>
 
                 <div className="form-group">
                   <label>Estado</label>
-                  <select 
-                    className="form-control" 
+                  <PremiumSelect
                     value={newRecord.estado} 
                     onChange={e => setNewRecord({...newRecord, estado: e.target.value})}
-                  >
-                    <option value="Activo">Activo</option>
-                    <option value="Cosechado">Cosechado</option>
-                    <option value="Perdido">Perdido</option>
-                    <option value="Abandonado">Abandonado</option>
-                  </select>
+                    options={[
+                      { value: 'Activo', label: 'Activo' },
+                      { value: 'Cosechado', label: 'Cosechado' },
+                      { value: 'Perdido', label: 'Perdido' },
+                      { value: 'Abandonado', label: 'Abandonado' }
+                    ]}
+                  />
                 </div>
               </div>
               
