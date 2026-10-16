@@ -16,7 +16,7 @@ import 'dotenv/config';
    password: DB_PASSWORD,
    database: DB_NAME,
    waitForConnections: true,
-   connectionLimit: 10,
+   connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT, 10) || 150,
    queueLimit: 0,
    enableKeepAlive: true,
    connectTimeout: 10000,

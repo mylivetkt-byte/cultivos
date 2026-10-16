@@ -1,0 +1,36 @@
+// Organigrama del proyecto SAS Agrícolas
+flowchart TD
+    %% Módulos principales
+    subgraph Backend[Backend (API Express)]
+        BAS[Router Básculas]
+        TAB[Router Tablas]
+        CRUD[Router CRUD General]
+        GIS[Router GIS]
+        DASH[Endpoints Dashboards]
+        WH[Bot WhatsApp]
+    end
+
+    subgraph Frontend[Frontend (React + Vite)]
+        NAV[Barra de Navegación]
+        GRD[Grillas y Tablas]
+        FRM[Formularios]
+        RPT[Reportes]
+        DB[Dashboards UI]
+    end
+
+    subgraph DB[Base de Datos MySQL]
+        SCHEMA[Esquema & ER]
+        UNIQ[Restricciones de unicidad]
+    end
+
+    subgraph Deploy[Despliegue]
+        DOCKER[Docker & Compose]
+        CI[CI/CD (opcional)]
+    end
+
+    %% Conexiones
+    Backend --> DB
+    Frontend --> Backend
+    Frontend --> DB
+    Deploy --> Backend
+    Deploy --> Frontend

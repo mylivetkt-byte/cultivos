@@ -52,7 +52,7 @@ const PhytosanitaryLibrary = () => {
       <div className="dashboard-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <img src="https://www.ica.gov.co/getattachment/5f80b985-78e8-4663-bd43-2c1b820fb726/logo-ica.png.aspx" alt="ICA" style={{ height: '40px', background: '#fff', padding: '5px', borderRadius: '8px' }} />
+            <img src="https://www.ica.gov.co/getattachment/5f80b985-78e8-4663-bd43-2c1b820fb726/logo-ica.png.aspx" alt="ICA" style={{ height: '40px', background: 'var(--bg-card)', padding: '5px', borderRadius: '8px' }} />
             Biblioteca Fitosanitaria (ICA)
           </h1>
           <p style={{ color: 'var(--text-muted)' }}>Catálogo Técnico de Plagas, Enfermedades y Agentes Causales</p>
@@ -182,7 +182,7 @@ const PhytosanitaryLibrary = () => {
 
               <div style={{ marginTop: '25px', padding: '20px', background: 'linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '12px' }}>
                 <h4 style={{ color: '#60A5FA', margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2em' }}>
-                  <img src="https://www.ica.gov.co/getattachment/5f80b985-78e8-4663-bd43-2c1b820fb726/logo-ica.png.aspx" alt="ICA" style={{ height: '24px', background: '#fff', padding: '2px', borderRadius: '4px' }} />
+                  <img src="https://www.ica.gov.co/getattachment/5f80b985-78e8-4663-bd43-2c1b820fb726/logo-ica.png.aspx" alt="ICA" style={{ height: '24px', background: 'var(--bg-card)', padding: '2px', borderRadius: '4px' }} />
                   Recomendaciones Oficiales del Instituto Colombiano Agropecuario
                 </h4>
                 <p style={{ margin: 0, lineHeight: '1.6', color: '#E5E7EB', fontSize: '1.05em' }}>{selectedItem.recomendaciones_ica}</p>
@@ -191,7 +191,7 @@ const PhytosanitaryLibrary = () => {
             </div>
           ) : (
             <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', opacity: 0.5 }}>
-              <img src="https://www.ica.gov.co/getattachment/5f80b985-78e8-4663-bd43-2c1b820fb726/logo-ica.png.aspx" alt="ICA" style={{ height: '120px', background: '#fff', padding: '15px', borderRadius: '20px', marginBottom: '20px', filter: 'grayscale(100%)' }} />
+              <img src="https://www.ica.gov.co/getattachment/5f80b985-78e8-4663-bd43-2c1b820fb726/logo-ica.png.aspx" alt="ICA" style={{ height: '120px', background: 'var(--bg-card)', padding: '15px', borderRadius: '20px', marginBottom: '20px', filter: 'grayscale(100%)' }} />
               <h2 style={{ margin: '0 0 10px 0' }}>Biblioteca Técnica Fitosanitaria</h2>
               <p style={{ fontSize: '1.1em' }}>Selecciona una plaga o enfermedad del catálogo lateral para ver su ficha técnica detallada.</p>
             </div>

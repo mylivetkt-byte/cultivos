@@ -91,7 +91,7 @@ function ModalNuevoPedido({ isOpen, onClose, onRefresh, fincaId, fincas }) {
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#fff', padding: '30px', borderRadius: '12px', width: '700px', maxWidth: '95%', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+      <div style={{ background: 'var(--bg-card)', padding: '30px', borderRadius: '12px', width: '700px', maxWidth: '95%', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
         <h3 style={{ margin: '0 0 20px 0', color: '#d97706', fontSize: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>Solicitar Insumos a Central</h3>
         
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>

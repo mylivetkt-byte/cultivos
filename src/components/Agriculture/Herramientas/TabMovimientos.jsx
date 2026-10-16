@@ -89,11 +89,21 @@ function TabMovimientos({ fincaId, fincas }) {
     }));
   };
 
-  const getMetadata = () => ({
-    empresa: 'SAS Agrícolas',
-    finca: fincas?.find(f => f.id_finca == fincaId)?.nombre || 'Todas las Fincas',
-    usuario: JSON.parse(localStorage.getItem('user') || '{}')?.nombre || 'Administrador'
-  });
+  const getMetadata = () => {
+    const extraFiltros = [];
+    if (searchTool) extraFiltros.push({ label: 'Herramienta', value: searchTool });
+    if (searchResp) extraFiltros.push({ label: 'Responsable', value: searchResp });
+
+    return {
+      empresa: 'AgroPaccioli',
+      finca: fincaId ? fincas?.find(f => String(f.id_finca) === String(fincaId))?.nombre : 'Todas las Fincas',
+      fechaDesde: dates && dates[0] ? dates[0].format('YYYY-MM-DD') : '',
+      fechaHasta: dates && dates[1] ? dates[1].format('YYYY-MM-DD') : '',
+      extraFiltros,
+      usuario: JSON.parse(localStorage.getItem('user') || '{}')?.nombre || 'Administrador',
+      reportName: 'Movimientos de Herramientas Acuícolas'
+    };
+  };
 
   const handleExportExcel = () => {
     const d = getExportData();

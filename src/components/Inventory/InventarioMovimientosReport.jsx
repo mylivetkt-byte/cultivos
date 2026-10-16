@@ -103,14 +103,23 @@ export default function InventarioMovimientosReport({ tenantId }) {
     }
   };
 
-  const getMetadata = (returnBase64 = false) => ({
-    empresa: 'SAS Agrícolas',
-    finca: filtros.fincaId === 'Todas' ? 'Todas las fincas' : fincas.find(f => f.id_finca === filtros.fincaId)?.nombre,
-    usuario: user?.nombre || user?.username || 'Usuario del Sistema',
-    rol: user?.rol || 'No asignado',
-    reportName: `Movimientos de Inventario - ${dayjs().format('YYYY-MM-DD')}`,
-    returnBase64
-  });
+  const getMetadata = (returnBase64 = false) => {
+    const extraFiltros = [];
+    if (filtros.bodegaId !== 'Todas') extraFiltros.push({ label: 'Bodega', value: bodegas.find(b => b.id_bodega === filtros.bodegaId)?.nombre });
+    if (filtros.tipoMovimiento !== 'Todos') extraFiltros.push({ label: 'Tipo Movimiento', value: filtros.tipoMovimiento });
+    if (filtros.empleadoId !== 'Todos') extraFiltros.push({ label: 'Empleado', value: empleados.find(e => e.id_empleado === filtros.empleadoId)?.nombres });
+    if (filtros.maquinaId !== 'Todas') extraFiltros.push({ label: 'Máquina', value: maquinas.find(m => m.id_maq_agro === filtros.maquinaId)?.marca_modelo });
+
+    return {
+      empresa: 'AgroPaccioli',
+      finca: filtros.fincaId === 'Todas' ? 'Todas las fincas' : fincas.find(f => f.id_finca === filtros.fincaId)?.nombre,
+      extraFiltros,
+      usuario: user?.nombre || user?.username || 'Usuario del Sistema',
+      rol: user?.rol || 'No asignado',
+      reportName: `Movimientos de Inventario - ${dayjs().format('YYYY-MM-DD')}`,
+      returnBase64
+    };
+  };
 
   const exportData = movimientos.map(s => ({
       'Fecha': dayjs(s.fecha_movimiento).format('YYYY-MM-DD HH:mm'),
@@ -201,8 +210,8 @@ export default function InventarioMovimientosReport({ tenantId }) {
               if (movimientos.length === 0) return message.warning('Consulte primero los datos antes de enviarlos.');
               setShowWhatsAppModal(true);
             }} style={{ background: '#25D366', color: 'white', borderColor: '#25D366' }}>Enviar por WhatsApp</Button>
-            <Button icon={<FileExcelOutlined />} onClick={exportToExcel} style={{ color: '#52c41a', borderColor: '#52c41a' }}>Excel</Button>
-            <Button icon={<FilePdfOutlined />} onClick={exportToPDF} danger>PDF</Button>
+            <Button className="btn-action-base btn-excel" icon={<FileExcelOutlined />} onClick={exportToExcel}>Excel</Button>
+            <Button className="btn-action-base btn-pdf" icon={<FilePdfOutlined />} onClick={exportToPDF}>PDF</Button>
           </Space>
         </div>
 

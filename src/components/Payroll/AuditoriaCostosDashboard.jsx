@@ -182,7 +182,7 @@ export default function AuditoriaCostosDashboard({ tenantId }) {
           </Text>
         </div>
         
-        <Space size="middle" style={{ backgroundColor: '#fff', padding: '12px', borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+        <Space size="middle" style={{ backgroundColor: 'var(--bg-card)', padding: '12px', borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
           <Text strong>Finca:</Text>
           <Tag color="green">{selectedFinca === 'Todas' ? 'Todas las Fincas' : `ID Finca: ${selectedFinca}`}</Tag>
           

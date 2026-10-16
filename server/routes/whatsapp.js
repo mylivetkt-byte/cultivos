@@ -1,20 +1,17 @@
 import express from 'express';
 import { getStatus, logoutWhatsApp, sendTextMessage, sendDocumentMessage } from '../services/whatsappService.js';
 import db from '../db.js';
+import { getDb } from '../utils/db.js';
 import { generatePedidoPDF } from '../utils/pdfGenerator.js';
 
 const router = express.Router();
 
-function getDb(req) {
-  return req.tenantPool || db;
-}
-
-router.get('/status', (req, res) => {
+router.get('/status', async (req, res) => {
     try {
-        const status = getStatus();
+        const status = await getStatus();
         res.json({ success: true, ...status });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        res.status(503).json({ success: false, error: error.message });
     }
 });
 
@@ -223,6 +220,55 @@ router.post('/alertar-gerencia', async (req, res) => {
         
         await sendTextMessage(formattedPhone, textMessage);
         res.json({ success: true, message: 'Gerencia alertada correctamente.' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+router.post('/alertar-novedad-equipo', async (req, res) => {
+    try {
+        const { lote, codigo_arbol, diagnostico, nombre_cientifico, tratamiento, reportado_por } = req.body;
+        
+        // Buscar a todos los dueños, administradores, agrónomos y técnicos
+        const [emps] = await getDb(req).query(`
+            SELECT telefono FROM rrhh_empleados e
+            JOIN rrhh_cargos rc ON e.id_cargo = rc.id_cargo
+            WHERE rc.descripcion LIKE '%Dueño%' 
+               OR rc.descripcion LIKE '%Administrad%'
+               OR rc.descripcion LIKE '%Agrónomo%'
+               OR rc.descripcion LIKE '%Agronomo%'
+               OR rc.descripcion LIKE '%Técnico%'
+               OR rc.descripcion LIKE '%Tecnico%'
+        `);
+        
+        if (emps.length === 0) return res.status(404).json({ success: false, error: 'No hay personal registrado en la cadena de mando.' });
+        
+        const uniquePhones = [...new Set(emps.map(e => e.telefono).filter(Boolean))];
+        
+        const textMessage = `🚨 *NUEVA ALERTA FITOSANITARIA* 🚨
+📍 *Lote/Área:* ${lote}
+🌳 *Árbol (Placa):* ${codigo_arbol}
+
+🔬 *Diagnóstico:* ${diagnostico}
+${nombre_cientifico && nombre_cientifico !== 'Indeterminado' ? `🧬 *Nombre Científico:* ${nombre_cientifico}\n` : ''}
+🛠️ *Tratamiento / Acción:* ${tratamiento || 'Solo reporte, sin receta aún.'}
+
+👤 *Reportado por:* ${reportado_por || 'Personal de Campo / Oficina'}
+
+⚠️ Por favor tomar las medidas preventivas correspondientes en la zona.`;
+
+        // Enviar a todos de manera asíncrona (sin bloquear)
+        uniquePhones.forEach(async (phone) => {
+            try {
+                let formattedPhone = phone.replace(/\\D/g, '');
+                if (formattedPhone.length === 10) formattedPhone = '57' + formattedPhone;
+                await sendTextMessage(formattedPhone, textMessage);
+            } catch(e) {
+                console.error(`Error enviando WhatsApp a ${phone}`, e);
+            }
+        });
+        
+        res.json({ success: true, message: `Alerta enviada a ${uniquePhones.length} personas.` });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }

@@ -6,7 +6,7 @@ import * as XLSX from 'xlsx';
 import '../dashboard.css';
 
 const BioFabrica = ({ tenantId = 1 }) => {
-  const [activeTab, setActiveTab] = useState('saldos'); // saldos, produccion, mov_materias, mov_violes
+  const [activeTab, setActiveTab] = useState('saldos'); // saldos, produccion, mov_materias, mov_bioles
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState([]);
   const [filters, setFilters] = useState({
@@ -18,10 +18,10 @@ const BioFabrica = ({ tenantId = 1 }) => {
     setLoading(true);
     try {
       let endpoint = '';
-      if (activeTab === 'saldos') endpoint = `/api/biofabrica/saldos-violes?tenantId=${tenantId}`;
+      if (activeTab === 'saldos') endpoint = `/api/biofabrica/saldos-bioles?tenantId=${tenantId}`;
       if (activeTab === 'produccion') endpoint = `/api/biofabrica/produccion?tenantId=${tenantId}&startDate=${filters.startDate}&endDate=${filters.endDate}`;
       if (activeTab === 'mov_materias') endpoint = `/api/biofabrica/movimientos-materias-primas?tenantId=${tenantId}&startDate=${filters.startDate}&endDate=${filters.endDate}`;
-      if (activeTab === 'mov_violes') endpoint = `/api/biofabrica/movimientos-violes?tenantId=${tenantId}&startDate=${filters.startDate}&endDate=${filters.endDate}`;
+      if (activeTab === 'mov_bioles') endpoint = `/api/biofabrica/movimientos-bioles?tenantId=${tenantId}&startDate=${filters.startDate}&endDate=${filters.endDate}`;
 
       const res = await authFetch(endpoint);
       if (res.ok) {
@@ -91,15 +91,15 @@ const BioFabrica = ({ tenantId = 1 }) => {
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
-        <h1>Auditoría: Bio-fábrica (Violes)</h1>
+        <h1>Auditoría: Bio-fábrica (Bioles)</h1>
         <p style={{ color: 'var(--text-muted)' }}>Módulo avanzado de producción, inventario y movimientos orgánicos</p>
       </div>
 
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <button className={`btn ${activeTab === 'saldos' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('saldos')}>📦 Saldos de Violes</button>
+        <button className={`btn ${activeTab === 'saldos' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('saldos')}>📦 Saldos de Bioles</button>
         <button className={`btn ${activeTab === 'produccion' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('produccion')}>🏭 Historial Producción</button>
         <button className={`btn ${activeTab === 'mov_materias' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('mov_materias')}>🔄 Mov. Materias Primas</button>
-        <button className={`btn ${activeTab === 'mov_violes' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('mov_violes')}>🔄 Mov. Violes (Terminados)</button>
+        <button className={`btn ${activeTab === 'mov_bioles' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('mov_bioles')}>🔄 Mov. Bioles (Terminados)</button>
       </div>
 
       <div className="card" style={{ marginBottom: '25px' }}>
@@ -121,7 +121,7 @@ const BioFabrica = ({ tenantId = 1 }) => {
           )}
 
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px' }}>
-            <button className="btn btn-success" onClick={handleExportExcel} disabled={loading || data.length === 0}>📊 Excel</button>
+            <button className="btn-action-base btn-excel" onClick={handleExportExcel}>📊 Excel</button>
             <button className="btn btn-danger" onClick={handleExportPDF} disabled={loading || data.length === 0}>📄 PDF</button>
             <button className="btn" style={{ background: '#25D366', color: '#fff' }} onClick={handleSendWhatsApp} disabled={loading || data.length === 0}>💬 WhatsApp</button>
           </div>
@@ -153,7 +153,7 @@ const BioFabrica = ({ tenantId = 1 }) => {
                   <th>Receta/Detalle (Materias Primas)</th>
                 </tr>
               )}
-              {(activeTab === 'mov_materias' || activeTab === 'mov_violes') && (
+              {(activeTab === 'mov_materias' || activeTab === 'mov_bioles') && (
                 <tr>
                   <th>Fecha</th>
                   <th>Código</th>
@@ -197,7 +197,7 @@ const BioFabrica = ({ tenantId = 1 }) => {
                       </td>
                     </>
                   )}
-                  {(activeTab === 'mov_materias' || activeTab === 'mov_violes') && (
+                  {(activeTab === 'mov_materias' || activeTab === 'mov_bioles') && (
                     <>
                       <td>{new Date(item.fecha_movimiento).toLocaleDateString()} {new Date(item.fecha_movimiento).toLocaleTimeString()}</td>
                       <td>{item.codigo}</td>

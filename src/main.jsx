@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { registerSW } from 'virtual:pwa-register';
 import axios from 'axios';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -24,3 +25,15 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </ErrorBoundary>
   </React.StrictMode>
 );
+
+// Register PWA Service Worker
+const updateSW = registerSW({
+  onNeedRefresh() {
+    if (confirm('Nueva versión disponible. ¿Deseas actualizar ahora?')) {
+      updateSW(true);
+    }
+  },
+  onOfflineReady() {
+    console.log('App lista para trabajar offline');
+  },
+});

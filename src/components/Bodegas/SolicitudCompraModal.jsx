@@ -4,6 +4,7 @@ import AsyncSelect from 'react-select/async';
 import Modal from '../Modal';
 import { fetchFKLookup } from '../../utils/api';
 import { authFetch } from '../../utils/api';
+import { customStyles } from '../PremiumSelect';
 
 function SolicitudCompraModal({ isOpen, onClose, onSuccess, tenantId, fincaId, nucleoId }) {
   const [loading, setLoading] = useState(false);
@@ -151,7 +152,7 @@ function SolicitudCompraModal({ isOpen, onClose, onSuccess, tenantId, fincaId, n
   const renderDropdown = (options, value, onChange, placeholder) => {
     const selected = options.find(o => String(o.id) === String(value));
     return (
-      <Select
+      <Select styles={customStyles}
         placeholder={placeholder}
         options={options.map(o => ({ value: o.id, label: o.display || String(o.id) }))}
         value={selected ? { value: selected.id, label: selected.display } : null}
@@ -198,7 +199,7 @@ function SolicitudCompraModal({ isOpen, onClose, onSuccess, tenantId, fincaId, n
               </div>
               <div className="form-group">
                 <label>Empleado Solicitante *</label>
-                <Select
+                <Select styles={customStyles}
                   placeholder="Buscar empleado..."
                   options={empleados.map(o => ({ value: o.id, label: o.display }))}
                   value={headerData.id_empleado_solicitante ? { value: headerData.id_empleado_solicitante, label: empleados.find(e => String(e.id) === String(headerData.id_empleado_solicitante))?.display } : null}

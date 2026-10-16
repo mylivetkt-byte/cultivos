@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { authFetch } from '../../utils/api.js';
+import { authFetch, API_BASE } from '../../utils/api.js';
 import { formatCurrency } from '../../utils/format';
+import { useAuth } from '../../context/AuthContext';
+import { Select, ConfigProvider, theme } from 'antd';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -15,6 +17,19 @@ export default function InventarioCamadas({ tenantId = 1 }) {
   const [loadingMovimientos, setLoadingMovimientos] = useState(false);
   const [activeTab, setActiveTab] = useState('inventario');
   const [hasSearchedMovimientos, setHasSearchedMovimientos] = useState(false);
+  
+  // Vivero & Lotes selection state
+  const [viverosList, setViverosList] = useState([]);
+  const [lotesList, setLotesList] = useState([]);
+  const [selectedVivero, setSelectedVivero] = useState('Todos');
+
+  // Bodega state
+  const [showBodegaModal, setShowBodegaModal] = useState(false);
+  const [bodegaInsumos, setBodegaInsumos] = useState([]);
+  const [bodegaForm, setBodegaForm] = useState({ id_insumo: '', cantidad: '', id_empleado: '', observaciones: '' });
+  const [logoBase64, setLogoBase64] = useState(null);
+
+  const { user } = useAuth();
 
   // Filters state
   const [filters, setFilters] = useState({
@@ -26,10 +41,52 @@ export default function InventarioCamadas({ tenantId = 1 }) {
 
   // Form states
   const [showInvModal, setShowInvModal] = useState(false);
-  const [invForm, setInvForm] = useState({ tipo: 'Semilla', nombre: '', proveedor: '', cantidad: 0, unidad: 'kg', costo: 0 });
+  const [invForm, setInvForm] = useState({ tipo: 'Semilla', nombre: '', proveedor: '', cantidad: '', unidad: '', costo: '', id_vivero: '' });
 
   const [showMovModal, setShowMovModal] = useState(false);
-  const [movForm, setMovForm] = useState({ id_camada: '', tipo_movimiento: 'Salida_Siembra', cantidad: 0, precio_venta_total: 0, id_empleado: '', observaciones: '' });
+  const [movForm, setMovForm] = useState({ id_camada: '', tipo_movimiento: 'Salida_Siembra', cantidad: 0, precio_venta_total: 0, id_empleado: '', id_empleado_recibe: '', observaciones: '' });
+
+  // Helper to add Company Header to PDF
+  const addPdfHeader = (doc, title) => {
+    if (logoBase64) {
+      try {
+        doc.addImage(logoBase64, 'PNG', 165, 8, 30, 20); // Top Right corner
+      } catch (e) {
+        try { doc.addImage(logoBase64, 'JPEG', 165, 8, 30, 20); } catch (err) { console.warn(err); }
+      }
+    }
+    
+    doc.setFontSize(16);
+    doc.setTextColor(30, 41, 59);
+    doc.text('AGROPECUARIA LLANOS ORIENTALES S.A.S.', 14, 15);
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text('NIT: 900.XXX.XXX-X', 14, 21);
+    doc.text(`Fecha y Hora de Impresión: ${new Date().toLocaleString()}`, 14, 26);
+    
+    doc.setDrawColor(226, 232, 240);
+    doc.line(14, 30, 196, 30);
+    
+    doc.setFontSize(14);
+    doc.setTextColor(15, 23, 42);
+    doc.text(title, 14, 40);
+  };
+
+  const renderHeaderActions = () => (
+    <div className="ic-header-actions">
+      <button onClick={() => {
+        setInvForm({ tipo: 'Semilla', nombre: '', proveedor: '', cantidad: '', unidad: '', costo: '', id_vivero: '' });
+        setShowInvModal(true);
+      }} className="ic-btn ic-btn-primary">+ Nuevo Insumo</button>
+      <button onClick={handleAbrirBodega} className="ic-btn ic-btn-outline" style={{ borderColor: '#8b5cf6', color: '#8b5cf6', margin: '0 8px' }}>
+        📦 Solicitar a Bodega
+      </button>
+      <button onClick={() => {
+        setMovForm({ id_camada: '', tipo_movimiento: 'Salida_Siembra', cantidad: '', precio_venta_total: 0, id_empleado: '', id_empleado_recibe: '', observaciones: '', id_lote_destino: '' });
+        setShowMovModal(true);
+      }} className="ic-btn ic-btn-secondary" style={{ background: '#10b981' }}>Registrar Salida</button>
+    </div>
+  );
 
   const loadData = async () => {
     setLoading(true);
@@ -38,16 +95,71 @@ export default function InventarioCamadas({ tenantId = 1 }) {
         const json = await res.json();
         return Array.isArray(json) ? json : [];
       };
+      
+      // Fetch filters first if not loaded
+      if (viverosList.length === 0) {
+        try {
+          const filterRes = await authFetch(`/api/semillero/filtros?tenantId=${tenantId}`);
+          if (filterRes.ok) {
+            const fData = await filterRes.json();
+            setViverosList(fData.viveros || []);
+            setLotesList(fData.lotes || []);
+          }
+        } catch (e) { console.error('Error fetching viveros', e); }
+      }
+
+      const vQuery = selectedVivero !== 'Todos' ? `&viveroId=${selectedVivero}` : '';
+
       const [invRes, camRes, empRes, movRes] = await Promise.all([
-        authFetch(`/api/semillero/inventario?tenantId=${tenantId}`).then(safeJson),
-        authFetch(`/api/semillero/camadas?tenantId=${tenantId}`).then(safeJson),
+        authFetch(`/api/semillero/inventario?tenantId=${tenantId}${vQuery}`).then(safeJson),
+        authFetch(`/api/semillero/camadas?tenantId=${tenantId}${vQuery}`).then(safeJson),
         authFetch(`/api/rrhh/empleados?tenantId=${tenantId}`).then(safeJson),
-        authFetch(`/api/semillero/movimientos?tenantId=${tenantId}`).then(safeJson).catch(() => [])
+        authFetch(`/api/semillero/movimientos?tenantId=${tenantId}${vQuery}`).then(safeJson).catch(() => [])
       ]);
       setInventario(invRes);
       setCamadas(camRes);
       setEmpleados(empRes);
+      
+      // Auto-select logged in user if not set
+      if (!movForm.id_empleado && user && empRes.length > 0) {
+        const match = empRes.find(e => 
+          e.nombres.toLowerCase().includes(user.username.toLowerCase()) || 
+          user.username.toLowerCase().includes(e.nombres.toLowerCase())
+        );
+        if (match) {
+          setMovForm(prev => ({ ...prev, id_empleado: match.id_empleado }));
+        }
+      }
+
       setMovimientos(movRes);
+      
+      // Cargar Logo de Empresa para PDFs
+      try {
+        const logoReq = await authFetch(`/api/config/logo?tenantId=${tenantId}`);
+        if (logoReq.ok) {
+          const lData = await logoReq.json();
+          if (lData.logo_path) {
+            if (lData.logo_path.startsWith('data:image')) {
+              setLogoBase64(lData.logo_path);
+            } else {
+              const baseHost = API_BASE ? API_BASE.replace('/api', '') : '';
+              const imgUrl = lData.logo_path.startsWith('http') ? lData.logo_path : `${baseHost}${lData.logo_path.startsWith('/') ? '' : '/'}${lData.logo_path}`;
+              const img = new Image();
+              img.crossOrigin = 'Anonymous';
+              img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                setLogoBase64(canvas.toDataURL('image/png'));
+              };
+              img.src = imgUrl;
+            }
+          }
+        }
+      } catch (err) { console.error('Error fetching logo', err); }
+
       setHasSearchedMovimientos(true);
     } catch (err) {
       console.error('Error cargando datos vivero:', err);
@@ -58,7 +170,7 @@ export default function InventarioCamadas({ tenantId = 1 }) {
 
   useEffect(() => {
     loadData();
-  }, [tenantId]);
+  }, [tenantId, selectedVivero]);
 
   const fetchMovimientos = async (e) => {
     if (e) e.preventDefault();
@@ -70,6 +182,7 @@ export default function InventarioCamadas({ tenantId = 1 }) {
       if (filters.fechaFin) query += `&fechaFin=${filters.fechaFin}`;
       if (filters.idSemilla) query += `&idSemilla=${filters.idSemilla}`;
       if (filters.idEmpleado) query += `&idEmpleado=${filters.idEmpleado}`;
+      if (selectedVivero !== 'Todos') query += `&viveroId=${selectedVivero}`;
 
       const res = await authFetch(`/api/semillero/movimientos?${query}`);
       if (!res.ok) {
@@ -98,7 +211,8 @@ export default function InventarioCamadas({ tenantId = 1 }) {
           proveedor: invForm.proveedor,
           cantidad_disponible: invForm.cantidad,
           unidad_medida: invForm.unidad,
-          costo_unitario: invForm.costo
+          costo_unitario: invForm.costo,
+          id_vivero: selectedVivero !== 'Todos' ? selectedVivero : invForm.id_vivero
         })
       });
       setShowInvModal(false);
@@ -120,9 +234,11 @@ export default function InventarioCamadas({ tenantId = 1 }) {
           id_item: null,
           tipo_movimiento: movForm.tipo_movimiento,
           cantidad: movForm.cantidad,
-          id_empleado_responsable: movForm.id_empleado || null,
+          id_empleado_responsable: movForm.id_empleado,
+          id_empleado_recibe: movForm.id_empleado_recibe,
           observaciones: movForm.observaciones,
-          precio_venta_total: movForm.precio_venta_total
+          precio_venta_total: movForm.precio_venta_total,
+          id_lote_destino: movForm.id_lote_destino || null
         })
       });
       setShowMovModal(false);
@@ -132,6 +248,42 @@ export default function InventarioCamadas({ tenantId = 1 }) {
       }
       if(movForm.tipo_movimiento === 'Venta') {
         alert('Movimiento registrado exitosamente. Se ha generado automáticamente el Asiento de Ingreso en Contabilidad.');
+      } else if (movForm.tipo_movimiento === 'Salida_Siembra' || movForm.tipo_movimiento === 'Salida_Resiembra') {
+        // Generar Remisión PDF y WhatsApp
+        const camada = camadas.find(c => String(c.id_camada) === String(movForm.id_camada));
+        const empDespacha = empleados.find(e => String(e.id_empleado) === String(movForm.id_empleado));
+        const empRecibe = empleados.find(e => String(e.id_empleado) === String(movForm.id_empleado_recibe));
+        const lote = lotesList.find(l => String(l.id_lote) === String(movForm.id_lote_destino));
+        
+        const empDespachaName = empDespacha ? `${empDespacha.nombres} ${empDespacha.apellidos}` : 'Sin asignar';
+        const empRecibeName = empRecibe ? `${empRecibe.nombres} ${empRecibe.apellidos}` : 'Sin asignar';
+        const loteName = lote ? `${lote.nombre} (${lote.codigo}) - ${lote.finca_nombre}` : 'Sin asignar';
+        const camadaName = camada ? `${camada.codigo_camada} (${camada.nombre_semilla})` : 'Desconocida';
+
+        // 1. Generar PDF
+        const doc = new jsPDF();
+        addPdfHeader(doc, 'REMISIÓN DE DESPACHO A LOTE');
+        
+        doc.setFontSize(11);
+        doc.text(`Camada Origen: ${camadaName}`, 14, 50);
+        doc.text(`Lote Destino: ${loteName}`, 14, 60);
+        doc.text(`Cantidad Despachada: ${movForm.cantidad} plántulas`, 14, 70);
+        doc.text(`Responsable Despacha: ${empDespachaName}`, 14, 80);
+        doc.text(`Responsable (Recibe): ${empRecibeName}`, 14, 90);
+        doc.text(`Observaciones: ${movForm.observaciones || 'Ninguna'}`, 14, 100);
+        
+        doc.line(14, 130, 90, 130);
+        doc.text('Firma Responsable Vivero', 14, 140);
+        doc.line(120, 130, 196, 130);
+        doc.text('Firma de Quien Recibe', 120, 140);
+
+        doc.save(`Remision_Despacho_${Date.now()}.pdf`);
+
+        // 2. Enviar por WhatsApp
+        const msj = `*REMISIÓN DE DESPACHO (VIVERO)*\n\nHola ${empRecibeName}, te informo que se acaban de despachar *${movForm.cantidad} plántulas* de la camada *${camadaName}* hacia el *${loteName}*.\n\nPor favor, asegúrate de recibirlas y firmar la remisión adjunta.`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(msj)}`, '_blank');
+        
+        alert('Movimiento registrado. Se ha generado la Remisión PDF y se abrirá WhatsApp.');
       } else {
         alert('Movimiento registrado exitosamente.');
       }
@@ -140,29 +292,64 @@ export default function InventarioCamadas({ tenantId = 1 }) {
     }
   };
 
+  const handleAbrirBodega = async () => {
+    setShowBodegaModal(true);
+    try {
+      const res = await authFetch(`/api/semillero/bodega/insumos?tenantId=${tenantId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setBodegaInsumos(data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleRegistrarPedidoBodega = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await authFetch('/api/semillero/bodega/pedido', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantId,
+          ...bodegaForm
+        })
+      });
+      if (res.ok) {
+        alert('Pedido enviado a Bodega exitosamente. Te notificaremos cuando llegue.');
+        setShowBodegaModal(false);
+      } else {
+        alert('Error al crear pedido');
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  };
+
   const handleExportPDF = () => {
     const doc = new jsPDF();
     if (activeTab === 'inventario') {
-      doc.text('Inventario Base (Semillas y Abonos)', 14, 15);
+      addPdfHeader(doc, 'Inventario Base (Semillas y Abonos)');
       doc.autoTable({
-        startY: 20,
+        startY: 45,
         head: [['Tipo', 'Nombre/Variedad', 'Stock Disponible', 'Costo Promedio']],
         body: inventario.map(item => [item.tipo, item.nombre, `${item.cantidad_disponible} ${item.unidad_medida}`, formatCurrency(Number(item.costo_unitario))])
       });
       doc.save('Inventario_Vivero.pdf');
     } else if (activeTab === 'camadas') {
-      doc.text('Camadas en Crecimiento', 14, 15);
+      addPdfHeader(doc, 'Camadas en Crecimiento');
       const activas = camadas.filter(c => c.estado !== 'Agotada' && c.estado !== 'Descartada');
       doc.autoTable({
-        startY: 20,
+        startY: 45,
         head: [['Código', 'Semilla', 'Estado', 'Plántulas Actuales', 'Edad']],
         body: activas.map(camada => [camada.codigo_camada, camada.nombre_semilla, camada.estado, camada.cantidad_actual, `${camada.dias_crecimiento} días`])
       });
       doc.save('Camadas_Activas.pdf');
     } else if (activeTab === 'movimientos') {
-      doc.text('Historial de Movimientos', 14, 15);
+      addPdfHeader(doc, 'Historial de Movimientos');
       doc.autoTable({
-        startY: 20,
+        startY: 45,
         head: [['Fecha', 'Tipo', 'Camada', 'Cantidad', 'Responsable', 'Estado Nómina', 'Observaciones']],
         body: movimientos.map(mov => [
           mov.fecha ? new Date(mov.fecha).toLocaleDateString() : '-',
@@ -246,23 +433,34 @@ export default function InventarioCamadas({ tenantId = 1 }) {
           <h1 className="ic-title">🌱 Control Operativo Vivero</h1>
           <p className="ic-subtitle">Gestión de insumos y camadas (lotes) de plántulas.</p>
         </div>
+        
+        {/* Vivero Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-card)', padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+          <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Filtro Vivero:</span>
+          <select 
+            value={selectedVivero} 
+            onChange={(e) => setSelectedVivero(e.target.value)}
+            style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer' }}
+          >
+            <option value="Todos">-- Todos los Viveros --</option>
+            {viverosList.map(v => (
+              <option key={v.id_vivero} value={v.id_vivero}>{v.nombre} ({v.codigo})</option>
+            ))}
+          </select>
+        </div>
+
         <div className="ic-header-actions">
           <div className="ic-primary-actions">
-            <button onClick={() => setShowInvModal(true)} className="ic-btn ic-btn-primary">
-              + Nuevo Insumo
-            </button>
-            <button onClick={() => setShowMovModal(true)} className="ic-btn ic-btn-secondary">
-              Registrar Salida/Movimiento
-            </button>
+            {renderHeaderActions()}
           </div>
           <div className="ic-export-actions">
             <button onClick={handleExportPDF} className="ic-btn ic-btn-export ic-btn-pdf">
               📄 PDF
             </button>
-            <button onClick={handleExportExcel} className="ic-btn ic-btn-export ic-btn-excel">
+            <button className="btn-action-base btn-excel" onClick={handleExportExcel}>
               📊 Excel
             </button>
-            <button onClick={handleExportWhatsApp} className="ic-btn ic-btn-export ic-btn-whatsapp">
+            <button className="btn-action-base btn-whatsapp" onClick={handleExportWhatsApp}>
               💬 WhatsApp
             </button>
           </div>
@@ -408,7 +606,8 @@ export default function InventarioCamadas({ tenantId = 1 }) {
                   // We simulate the fetch with empty filters immediately
                   setLoadingMovimientos(true);
                   setHasSearchedMovimientos(true);
-                  authFetch(`/api/semillero/movimientos?tenantId=${tenantId}`)
+                  const vQ = selectedVivero !== 'Todos' ? `&viveroId=${selectedVivero}` : '';
+                  authFetch(`/api/semillero/movimientos?tenantId=${tenantId}${vQ}`)
                     .then(res => {
                       if (!res.ok) throw new Error('Error en servidor');
                       return res.json();
@@ -526,6 +725,23 @@ export default function InventarioCamadas({ tenantId = 1 }) {
             </div>
             <form onSubmit={handleCreateInventario} className="ic-modal-body">
               <div className="ic-form-group">
+                <label className="ic-label">Vivero Destino</label>
+                <select 
+                  required 
+                  className="ic-select" 
+                  value={selectedVivero !== 'Todos' ? selectedVivero : (invForm.id_vivero || '')} 
+                  onChange={e => setInvForm({...invForm, id_vivero: e.target.value})}
+                  disabled={selectedVivero !== 'Todos'}
+                  style={selectedVivero !== 'Todos' ? { opacity: 0.7, cursor: 'not-allowed', background: 'var(--bg-main)' } : {}}
+                >
+                  <option value="">Seleccione un vivero...</option>
+                  {viverosList.map(v => (
+                    <option key={v.id_vivero} value={v.id_vivero}>{v.nombre}</option>
+                  ))}
+                </select>
+                {selectedVivero !== 'Todos' && <small style={{color: 'var(--text-secondary)', marginTop: '4px', display: 'block'}}>Autoseleccionado por el filtro global</small>}
+              </div>
+              <div className="ic-form-group">
                 <label className="ic-label">Tipo</label>
                 <select className="ic-select" value={invForm.tipo} onChange={e => setInvForm({...invForm, tipo: e.target.value})}>
                   <option>Semilla</option>
@@ -575,7 +791,7 @@ export default function InventarioCamadas({ tenantId = 1 }) {
                 <select required className="ic-select" value={movForm.id_camada} onChange={e => setMovForm({...movForm, id_camada: e.target.value})}>
                   <option value="">Seleccione una camada activa...</option>
                   {camadas.filter(c => c.cantidad_actual > 0).map(c => (
-                    <option key={c.id_camada} value={c.id_camada}>{c.codigo_camada} ({c.cantidad_actual} disp.)</option>
+                    <option key={c.id_camada} value={c.id_camada}>{c.codigo_camada} - {c.nombre_semilla} ({c.cantidad_actual} disp.)</option>
                   ))}
                 </select>
               </div>
@@ -599,22 +815,169 @@ export default function InventarioCamadas({ tenantId = 1 }) {
                   <p style={{ fontSize: '0.8rem', color: '#2563eb', marginTop: '4px' }}>Este valor generará un Comprobante de Ingreso automático.</p>
                 </div>
               )}
+              <ConfigProvider theme={{ algorithm: theme.darkAlgorithm }}>
+                <div className="ic-form-group">
+                  <label className="ic-label">Responsable Vivero (Despacha)</label>
+                  <Select
+                    showSearch
+                    placeholder="Seleccione responsable..."
+                    optionFilterProp="children"
+                    filterOption={(input, option) =>
+                      (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                    }
+                    value={movForm.id_empleado || undefined}
+                    onChange={val => setMovForm({...movForm, id_empleado: val})}
+                    options={empleados.map(emp => ({
+                      value: emp.id_empleado,
+                      label: `${emp.nombres} ${emp.apellidos}`
+                    }))}
+                    style={{ width: '100%', height: '38px' }}
+                  />
+                </div>
+                {(movForm.tipo_movimiento === 'Salida_Siembra' || movForm.tipo_movimiento === 'Salida_Resiembra') && (
+                  <>
+                    <div className="ic-form-group">
+                      <label className="ic-label" style={{ color: '#8b5cf6' }}>Persona que Recibe (en el Lote)</label>
+                      <Select
+                        showSearch
+                        placeholder="Buscar empleado que recibe..."
+                        optionFilterProp="children"
+                        filterOption={(input, option) =>
+                          (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                        }
+                        value={movForm.id_empleado_recibe || undefined}
+                        onChange={val => setMovForm({...movForm, id_empleado_recibe: val})}
+                        options={empleados.map(emp => ({
+                          value: emp.id_empleado,
+                          label: `${emp.nombres} ${emp.apellidos}`
+                        }))}
+                        style={{ width: '100%', height: '38px' }}
+                      />
+                    </div>
+                    <div className="ic-form-group">
+                      <label className="ic-label">Lote Destino (Siembra)</label>
+                      <Select
+                        showSearch
+                        placeholder="Seleccione el lote destino..."
+                        optionFilterProp="children"
+                        filterOption={(input, option) =>
+                          (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                        }
+                        value={movForm.id_lote_destino || undefined}
+                        onChange={val => setMovForm({...movForm, id_lote_destino: val})}
+                        options={lotesList.map(l => ({
+                          value: l.id_lote,
+                          label: `${l.nombre} (${l.codigo}) - ${l.finca_nombre}`
+                        }))}
+                        style={{ width: '100%', height: '38px' }}
+                      />
+                    </div>
+                  </>
+                )}
+              </ConfigProvider>
               <div className="ic-form-group">
-                <label className="ic-label">Responsable / Empleado</label>
-                <select required className="ic-select" value={movForm.id_empleado} onChange={e => setMovForm({...movForm, id_empleado: e.target.value})}>
-                  <option value="">Seleccione...</option>
-                  {empleados.map(emp => (
-                    <option key={emp.id_empleado} value={emp.id_empleado}>{emp.nombres} {emp.apellidos}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="ic-form-group">
-                <label className="ic-label">Observaciones / Lote Destino</label>
-                <input type="text" className="ic-input" placeholder="Ej: Sembrado en Lote Norte, o Cliente XYZ" value={movForm.observaciones} onChange={e => setMovForm({...movForm, observaciones: e.target.value})} />
+                <label className="ic-label">Observaciones {(!movForm.tipo_movimiento.includes('Siembra')) && '/ Lote Destino'}</label>
+                <input type="text" className="ic-input" placeholder="Ej: Sembrado en Sector Norte, o Cliente XYZ" value={movForm.observaciones || ''} onChange={e => setMovForm({...movForm, observaciones: e.target.value})} />
               </div>
               <div className="ic-modal-footer">
                 <button type="button" onClick={() => setShowMovModal(false)} className="ic-btn ic-btn-outline">Cancelar</button>
-                <button type="submit" className="ic-btn ic-btn-secondary">Ejecutar Despacho</button>
+                <button type="submit" className="ic-btn ic-btn-primary">Ejecutar Despacho</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Solicitar a Bodega */}
+      {showBodegaModal && (
+        <div className="ic-modal-overlay">
+          <div className="ic-modal">
+            <div className="ic-modal-header">
+              <h3 className="ic-modal-title">📦 Solicitar Insumo a Bodega Central</h3>
+              <button onClick={() => setShowBodegaModal(false)} className="ic-modal-close">&times;</button>
+            </div>
+            <form onSubmit={handleRegistrarPedidoBodega} className="ic-modal-body">
+              <ConfigProvider theme={{ algorithm: theme.darkAlgorithm }}>
+                <div className="ic-form-group">
+                  <label className="ic-label">Insumo Requerido</label>
+                  <Select
+                    showSearch
+                    placeholder="Buscar insumo..."
+                    optionFilterProp="children"
+                    filterOption={(input, option) =>
+                      (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                    }
+                    value={bodegaForm.id_insumo || undefined}
+                    onChange={val => setBodegaForm({...bodegaForm, id_insumo: val})}
+                    options={bodegaInsumos.map(ins => ({
+                      value: ins.id_insumo,
+                      label: `${ins.nombre} (Stock Total: ${ins.stockTotal} ${ins.unidad_medida})`
+                    }))}
+                    style={{ width: '100%', height: '38px' }}
+                  />
+                </div>
+              </ConfigProvider>
+              
+              {bodegaForm.id_insumo && (() => {
+                const sel = bodegaInsumos.find(i => i.id_insumo === bodegaForm.id_insumo);
+                if (sel && sel.stockTotal > 0) {
+                  return (
+                    <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>
+                      <p style={{ color: '#10b981', margin: 0, fontSize: '0.9rem' }}>
+                        ✅ <strong>Hay Stock Disponible</strong>
+                      </p>
+                      <ul style={{ margin: '5px 0 0 20px', color: '#94a3b8', fontSize: '0.85rem' }}>
+                        {sel.bodegas.map((b, i) => <li key={i}>{b.bodega}: {b.cantidad} {sel.unidad_medida}</li>)}
+                      </ul>
+                    </div>
+                  );
+                } else if (sel) {
+                  return (
+                    <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '8px', marginBottom: '15px' }}>
+                      <p style={{ color: '#ef4444', margin: 0, fontSize: '0.9rem' }}>
+                        ⚠️ <strong>Sin Stock en Bodega</strong>. Se enviará solicitud de compra al Jefe de Compras.
+                      </p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              <div className="ic-form-row">
+                <div style={{ flex: 1 }}>
+                  <label className="ic-label">Cantidad a Pedir</label>
+                  <input type="number" required min="0.01" step="0.01" className="ic-input" value={bodegaForm.cantidad} onChange={e => setBodegaForm({...bodegaForm, cantidad: e.target.value})} />
+                </div>
+              </div>
+
+              <ConfigProvider theme={{ algorithm: theme.darkAlgorithm }}>
+                <div className="ic-form-group">
+                  <label className="ic-label">Solicitante</label>
+                  <Select
+                    showSearch
+                    placeholder="Seleccione responsable..."
+                    optionFilterProp="children"
+                    filterOption={(input, option) =>
+                      (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                    }
+                    value={bodegaForm.id_empleado || undefined}
+                    onChange={val => setBodegaForm({...bodegaForm, id_empleado: val})}
+                    options={empleados.map(emp => ({
+                      value: emp.id_empleado,
+                      label: `${emp.nombres} ${emp.apellidos}`
+                    }))}
+                    style={{ width: '100%', height: '38px' }}
+                  />
+                </div>
+              </ConfigProvider>
+              
+              <div className="ic-form-group">
+                <label className="ic-label">Justificación / Observaciones</label>
+                <input type="text" className="ic-input" required placeholder="¿Para qué se necesita?" value={bodegaForm.observaciones || ''} onChange={e => setBodegaForm({...bodegaForm, observaciones: e.target.value})} />
+              </div>
+              <div className="ic-modal-footer">
+                <button type="button" onClick={() => setShowBodegaModal(false)} className="ic-btn ic-btn-outline">Cancelar</button>
+                <button type="submit" className="ic-btn ic-btn-primary" style={{ background: '#8b5cf6', borderColor: '#8b5cf6', boxShadow: '0 0 10px rgba(139, 92, 246, 0.4)' }}>Enviar Solicitud</button>
               </div>
             </form>
           </div>

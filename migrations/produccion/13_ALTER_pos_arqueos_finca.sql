@@ -1,0 +1,1 @@
+ALTER TABLE pos_arqueos ADD COLUMN id_finca INT NULL AFTER id_tenant;

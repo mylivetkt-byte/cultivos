@@ -1,0 +1,132 @@
+# Documentación Completa del Sistema SAS Agrícola
+
+## Índice
+1. [Sistemas SAS](#sistemas-sas)
+2. [Agricultura y Cultivos](#agricultura-y-cultivos)
+3. [Inventario](#inventario)
+4. [Compras](#compras)
+5. [RRHH & Labores](#rrhh--labores)
+6. [Taller y Mantenimiento](#taller-y-mantenimiento)
+7. [Aplicaciones Agrícolas](#aplicaciones-agrícolas)
+8. [Comercialización](#comercialización)
+9. [Producción](#producción)
+10. [Contabilidad y Finanzas](#contabilidad-y-finanzas)
+11. [Viveros](#viveros)
+12. [Ganado](#ganado)
+13. [Acuícola](#acuícola)
+14. [Satélite & GPS Tracker](#satélite--gps-tracker)
+15. [Asistente IA](#asistente-ia)
+
+---
+
+## Sistemas SAS {#sistemas-sas}
+Descripción general del módulo de gestión del sistema SAS.
+
+> **Funcionalidades**: administración de usuarios, roles, configuración global.
+
+![Captura de pantalla del módulo Sistemas SAS](file:///C:/Users/USER/.gemini/antigravity-ide/brain/739982ef-64f3-4c6e-8dad-ae2b983ce154/.tempmediaStorage/media_739982ef-64f3-4c6e-8dad-ae2b983ce154_1787518700451.png)
+
+---
+
+## Agricultura y Cultivos {#agricultura-y-cultivos}
+Gestión de cultivos, parcelas, insumos y aplicaciones.
+
+![Captura de pantalla Agricultura y Cultivos](file:///C:/Users/USER/.gemini/antigravity-ide/brain/739982ef-64f3-4c6e-8dad-ae2b983ce154/.tempmediaStorage/media_739982ef-64f3-4c6e-8dad-ae2b983ce154_1787520665299.png)
+
+---
+
+## Inventario {#inventario}
+Control de stock de insumos, herramientas y productos.
+
+![Captura de pantalla Inventario](file:///C:/Users/USER/.gemini/antigravity-ide/brain/739982ef-64f3-4c6e-8dad-ae2b983ce154/.tempmediaStorage/media_739982ef-64f3-4c6e-8dad-ae2b983ce154_1787568543722.png)
+
+---
+
+## Compras {#compras}
+Flujo de órdenes de compra, proveedores y recepciones.
+
+![Captura de pantalla Compras](file:///C:/Users/USER/.gemini/antigravity-ide/brain/739982ef-64f3-4c6e-8dad-ae2b983ce154/.tempmediaStorage/media_739982ef-64f3-4c6e-8dad-ae2b983ce154_1787568951327.png)
+
+---
+
+## RRHH & Labores {#rrhh--labores}
+Gestión de empleados, turnos y tareas agrícolas.
+
+![Captura de pantalla RRHH](file:///C:/Users/USER/.gemini/antigravity-ide/brain/739982ef-64f3-4c6e-8dad-ae2b983ce154/.tempmediaStorage/media_739982ef-64f3-4c6e-8dad-ae2b983ce154_1787568997340.png)
+
+---
+
+## Taller y Mantenimiento {#taller-y-mantenimiento}
+Mantenimiento de maquinaria y registro de reparaciones.
+
+![Captura de pantalla Taller](file:///C:/Users/USER/.gemini/antigravity-ide/brain/739982ef-64f3-4c6e-8dad-ae2b983ce154/.tempmediaStorage/media_739982ef-64f3-4c6e-8dad-ae2b983ce154_1787569569589.png)
+
+---
+
+## Aplicaciones Agrícolas {#aplicaciones-agrícolas}
+Módulo de planificación y seguimiento de aplicaciones de insumos.
+
+![Captura de pantalla Aplicaciones](file:///C:/Users/USER/.gemini/antigravity-ide/brain/739982ef-64f3-4c6e-8dad-ae2b983ce154/.tempmediaStorage/media_739982ef-64f3-4c6e-8dad-ae2b983ce154_1787569628798.png)
+
+---
+
+## Comercialización {#comercialización}
+Gestión de venta, precios de mercado y canales.
+
+![Captura de pantalla Comercialización](file:///C:/Users/USER/.gemini/antigravity-ide/brain/739982ef-64f3-4c6e-8dad-ae2b983ce154/.tempmediaStorage/media_739982ef-64f3-4c6e-8dad-ae2b983ce154_1787569673658.png)
+
+---
+
+## Producción {#producción}
+Control de órdenes de producción, precios de mercado y reportes.
+
+![Captura de pantalla Producción - Precios de Mercado](file:///C:/Users/USER/.gemini/antigravity-ide/brain/739982ef-64f3-4c6e-8dad-ae2b983ce154/.tempmediaStorage/media_739982ef-64f3-4c6e-8dad-ae2b983ce154_1787601185097.webp)
+
+---
+
+## Contabilidad y Finanzas {#contabilidad-y-finanzas}
+Manejo de facturación, cuentas por cobrar y reportes financieros.
+
+![Captura de pantalla Contabilidad](file:///C:/Users/USER/.gemini/antigravity-ide/brain/739982ef-64f3-4c6e-8dad-ae2b983ce154/.tempmediaStorage/media_739982ef-64f3-4c6e-8dad-ae2b983ce154_1787601242450.png)
+
+---
+
+## Viveros {#viveros}
+Control de plantines, germinación y stock de viveros.
+
+![Captura de pantalla Viveros](file:///C:/Users/USER/.gemini/antigravity-ide/brain/739982ef-64f3-4c6e-8dad-ae2b983ce154/.tempmediaStorage/media_739982ef-64f3-4c6e-8dad-ae2b983ce154_1787601343618.png)
+
+---
+
+## Ganado {#ganado}
+Registro de animales, manejos y producción de leche/carne.
+
+![Captura de pantalla Ganado](file:///C:/Users/USER/.gemini/antigravity-ide/brain/739982ef-64f3-4c6e-8dad-ae2b983ce154/.tempmediaStorage/media_739982ef-64f3-4c6e-8dad-ae2b983ce154_1787601456165.png)
+
+---
+
+## Acuícola {#acuícola}
+Gestión de estanques, alimentación y cosecha de especies acuáticas.
+
+![Captura de pantalla Acuícola](file:///C:/Users/USER/.gemini/antigravity-ide/brain/739982ef-64f3-4c6e-8dad-ae2b983ce154/.tempmediaStorage/media_739982ef-64f3-4c6e-8dad-ae2b983ce154_1787602633156.png)
+
+---
+
+## Satélite & GPS Tracker {#satélite--gps-tracker}
+Monitoreo de activos vía GPS y satélite.
+
+![Captura de pantalla GPS Tracker](file:///C:/Users/USER/.gemini/antigravity-ide/brain/739982ef-64f3-4c6e-8dad-ae2b983ce154/.tempmediaStorage/media_739982ef-64f3-4c6e-8dad-ae2b983ce154_1787602673541.png)
+
+---
+
+## Asistente IA {#asistente-ia}
+Chatbot y recomendaciones inteligentes.
+
+![Captura de pantalla Asistente IA](file:///C:/Users/USER/.gemini/antigravity-ide/brain/739982ef-64f3-4c6e-8dad-ae2b983ce154/.tempmediaStorage/media_739982ef-64f3-4c6e-8dad-ae2b983ce154_1787603854615.png)
+
+---
+
+**Notas de uso**
+- Cada sección incluye una breve descripción del módulo y una captura de pantalla representativa.
+- Los perfiles de usuarios (Campesino, Agricultor de término medio, Empresa agroindustrial) pueden encontrar su nivel de acceso y funcionalidades dentro de los textos descriptivos.
+- Para mayor detalle, consulte los documentos Word individuales vinculados en el índice anterior.

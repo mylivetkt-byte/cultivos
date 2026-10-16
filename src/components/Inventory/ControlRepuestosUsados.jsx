@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../utils/api';
+import Pagination from '../Pagination';
 
 export default function ControlRepuestosUsados({ tenantId }) {
   const [repuestos, setRepuestos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     if (tenantId) fetchRepuestos();
@@ -21,6 +23,7 @@ export default function ControlRepuestosUsados({ tenantId }) {
       }
       const data = await res.json();
       setRepuestos(Array.isArray(data) ? data : []);
+      setCurrentPage(1);
     } catch (e) {
       console.error("Fetch exception:", e);
       setRepuestos([]);
@@ -68,7 +71,7 @@ export default function ControlRepuestosUsados({ tenantId }) {
           <tbody>
             {repuestos.length === 0 ? (
               <tr><td colSpan="7" style={{ textAlign: 'center' }}>No hay registros de repuestos extraídos.</td></tr>
-            ) : repuestos.map(r => (
+            ) : repuestos.slice((currentPage - 1) * 20, currentPage * 20).map(r => (
               <tr key={r.id_cambio}>
                 <td style={{ fontWeight: 600 }}>{r.consecutivo}</td>
                 <td>{new Date(r.fecha_salida).toLocaleDateString()}</td>
@@ -97,6 +100,14 @@ export default function ControlRepuestosUsados({ tenantId }) {
             ))}
           </tbody>
         </table>
+        {repuestos.length > 0 && (
+          <Pagination 
+            currentPage={currentPage}
+            totalItems={repuestos.length}
+            pageSize={20}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
     </div>
   );

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../../utils/api';
 import EmpresaManager from './EmpresaManager';
+import { useAuth } from '../../context/AuthContext';
 
 export default function TenantManager() {
+  const { tenantId } = useAuth();
   const [tenant, setTenant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -10,13 +12,16 @@ export default function TenantManager() {
   const loadTenant = async () => {
     setLoading(true);
     try {
-      const res = await fetchApi('/sistemas/tenants');
-      if (res.data && res.data.length > 0) {
-        const tenantId = res.data[0].id_tenant;
-        const detailRes = await fetchApi(`/sistemas/tenant/${tenantId}`);
+      if (!tenantId) {
+        setError('No se pudo identificar tu empresa.');
+        setLoading(false);
+        return;
+      }
+      const detailRes = await fetchApi(`/sistemas/tenant/${tenantId}`);
+      if (detailRes.data) {
         setTenant(detailRes.data);
       } else {
-        setError('No se encontró información de la empresa.');
+        setError('No se encontró información de tu empresa.');
       }
     } catch (err) {
       setError(err.message);

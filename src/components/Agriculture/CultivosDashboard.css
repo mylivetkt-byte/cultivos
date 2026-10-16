@@ -1,6 +1,6 @@
 .cultivos-dashboard-container {
   padding: 2rem;
-  background-color: #f4f6f8;
+  background-color: var(--bg-main);
   min-height: 100vh;
   font-family: 'Inter', sans-serif;
 }
@@ -11,13 +11,13 @@
 
 .dashboard-header h1 {
   font-size: 2.2rem;
-  color: #1a365d;
+  color: var(--text-primary);
   margin: 0;
   font-weight: 700;
 }
 
 .dashboard-header p {
-  color: #4a5568;
+  color: var(--text-secondary);
   margin-top: 0.5rem;
   font-size: 1.1rem;
 }
@@ -30,7 +30,7 @@
 }
 
 .kpi-card {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--bg-card);
   backdrop-filter: blur(10px);
   border-radius: 16px;
   padding: 1.8rem;
@@ -56,23 +56,23 @@
   font-size: 1.8rem;
   margin-right: 1.5rem;
   color: white;
-  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  background: var(--bg-main);
   box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
 }
 
 .kpi-card:nth-child(2) .kpi-icon {
-  background: linear-gradient(135deg, #3498db, #2980b9);
+  background: var(--bg-main);
   box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
 }
 
 .kpi-card:nth-child(3) .kpi-icon {
-  background: linear-gradient(135deg, #e67e22, #d35400);
+  background: var(--bg-main);
   box-shadow: 0 4px 10px rgba(230, 126, 34, 0.3);
 }
 
 .kpi-content h3 {
   font-size: 1rem;
-  color: #718096;
+  color: var(--text-secondary);
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -81,7 +81,7 @@
 .kpi-content p {
   font-size: 2rem;
   font-weight: 800;
-  color: #2d3748;
+  color: var(--text-primary);
   margin: 0.2rem 0 0 0;
 }
 
@@ -93,7 +93,7 @@
 }
 
 .chart-card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 16px;
   padding: 1.5rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
@@ -101,10 +101,10 @@
 
 .chart-card h2 {
   font-size: 1.3rem;
-  color: #2d3748;
+  color: var(--text-primary);
   margin-top: 0;
   margin-bottom: 1.5rem;
-  border-bottom: 2px solid #edf2f7;
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 1rem;
 }
 
@@ -125,7 +125,7 @@
   align-items: center;
   justify-content: center;
   height: 60vh;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 .spinner {

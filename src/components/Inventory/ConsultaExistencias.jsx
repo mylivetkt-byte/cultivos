@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrency } from '../../utils/format';
 import { authFetch } from '../../utils/api';
+import Pagination from '../Pagination';
 
 export default function ConsultaExistencias({ tenantId, fincaId }) {
   const [existencias, setExistencias] = useState([]);
   const [loading, setLoading] = useState(false);
   const [bodegas, setBodegas] = useState([]);
   const [filterBodega, setFilterBodega] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     if (!tenantId) return;
@@ -33,6 +35,7 @@ export default function ConsultaExistencias({ tenantId, fincaId }) {
       const res = await authFetch(url);
       const data = await res.json();
       setExistencias(data);
+      setCurrentPage(1);
     } catch (err) {
       console.error(err);
     } finally {
@@ -100,7 +103,7 @@ export default function ConsultaExistencias({ tenantId, fincaId }) {
           <tbody>
             {existencias.length === 0 ? (
               <tr><td colSpan="7" style={{ textAlign: 'center' }}>No hay existencias registradas.</td></tr>
-            ) : existencias.map(e => (
+            ) : existencias.slice((currentPage - 1) * 20, currentPage * 20).map(e => (
               <tr key={e.id_existencia}>
                 <td>{e.bodega_nombre} {e.es_principal ? '⭐' : ''}</td>
                 <td>{e.codigo}</td>
@@ -127,6 +130,14 @@ export default function ConsultaExistencias({ tenantId, fincaId }) {
             ))}
           </tbody>
         </table>
+        {existencias.length > 0 && (
+          <Pagination 
+            currentPage={currentPage}
+            totalItems={existencias.length}
+            pageSize={20}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
     </div>
   );

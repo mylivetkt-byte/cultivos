@@ -353,15 +353,15 @@ export default function TomaFisicaDashboard({ tenantId }) {
 
   if (currentView === 'auditory') {
     return (
-      <div style={{ padding: 24, background: '#fff', minHeight: '100vh' }}>
+      <div style={{ padding: 24, background: 'var(--bg-card)', minHeight: '100vh' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div>
             <Title level={2} style={{ margin: 0 }}>Mesa de Control y Conciliación</Title>
             <Text type="secondary">Toma Física #{activeToma?.id_toma} - {activeToma?.bodega}</Text>
           </div>
           <Space>
-            <Button icon={<FileExcelOutlined />} onClick={exportToExcel} style={{ color: '#52c41a', borderColor: '#52c41a' }}>Excel</Button>
-            <Button icon={<FilePdfOutlined />} onClick={exportToPDF} danger>PDF</Button>
+            <Button className="btn-action-base btn-excel" icon={<FileExcelOutlined />} onClick={exportToExcel}>Excel</Button>
+            <Button className="btn-action-base btn-pdf" icon={<FilePdfOutlined />} onClick={exportToPDF}>PDF</Button>
             <Button onClick={() => setCurrentView('list')}>Volver</Button>
             {activeToma?.estado !== 'Conciliado' && (
               <Button type="primary" icon={<CheckCircleOutlined />} onClick={handleConciliar} loading={loading} style={{ background: '#52c41a' }}>

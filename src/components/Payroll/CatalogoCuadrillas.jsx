@@ -130,7 +130,8 @@ const CatalogoCuadrillas = () => {
       title: 'ID',
       dataIndex: 'id_cuadrilla',
       key: 'id_cuadrilla',
-      width: 70
+      width: 70,
+      render: id => <b>#{id}</b>
     },
     {
       title: 'Nombre de la Cuadrilla',

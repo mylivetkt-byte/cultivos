@@ -180,7 +180,7 @@ export default function AcuicolaHistoricoCosechas({ tenantId }) {
     data.forEach(item => {
       text += `- *${item.fecha}* | ${item.lago} | ${item.especie}: ${item.kilos} Kg (${item.cantidad} un)\n`;
     });
-    text += "\n_Generado desde SAS Agrícolas_";
+    text += "\n_Generado desde AgroPaccioli_";
     
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');

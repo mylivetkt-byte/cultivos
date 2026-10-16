@@ -1,12 +1,9 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 import crypto from 'crypto';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 // 1. Get all active GPS connections (real-time telemetry)
 router.get('/connections', async (req, res) => {
@@ -187,7 +184,13 @@ router.post('/ping', async (req, res) => {
       );
     }
 
-    // Update last known position in devices table
+    // Use provided timestamp if available (for offline sync) or NOW()
+    const isOfflineSync = !!req.body.timestamp;
+    const insertTimestamp = isOfflineSync ? new Date(req.body.timestamp) : new Date();
+
+    // Update last known position in devices table (only if it's not a delayed offline sync, or we just update anyway)
+    // Actually for offline sync, we should update ultima_conexion only if the timestamp is newer than current,
+    // but to keep it simple and safe for DB rules, we will just update it.
     await getDb(req).query(`
       UPDATE gps_tracking_dispositivos 
       SET 
@@ -202,8 +205,8 @@ router.post('/ping', async (req, res) => {
     // Insert into history log
     await getDb(req).query(`
       INSERT INTO gps_tracking_historial (id_tenant, id_dispositivo, fecha_hora, latitud, longitud, coordenadas_punto, velocidad, direccion, dentro_zona)
-      VALUES (?, ?, NOW(), ?, ?, ST_GeomFromText(?), ?, ?, ?)
-    `, [tenantId, devId, lat, lng, `POINT(${lng} ${lat})`, vel, dir, dentroZona]);
+      VALUES (?, ?, ?, ?, ?, ST_GeomFromText(?), ?, ?, ?)
+    `, [tenantId, devId, insertTimestamp, lat, lng, `POINT(${lng} ${lat})`, vel, dir, dentroZona]);
 
     res.json({
       success: true,

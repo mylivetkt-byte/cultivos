@@ -36,8 +36,8 @@ export default function GlobalStats() {
   if (loading) return <p style={{ padding: '20px' }}>Cargando estadísticas...</p>;
   if (!stats || !gerencia) return <p style={{ padding: '20px' }}>Error cargando estadísticas</p>;
 
-  const cardStyle = { background: '#fff', padding: '20px', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', textAlign: 'center' };
-  const containerStyle = { background: '#fff', padding: '20px', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px' };
+  const cardStyle = { background: 'var(--bg-card)', padding: '20px', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', textAlign: 'center' };
+  const containerStyle = { background: 'var(--bg-card)', padding: '20px', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '20px' };
 
   const exportPdf = async () => {
     const input = document.getElementById('dashboard-gerencia-content');
@@ -108,19 +108,19 @@ export default function GlobalStats() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '32px' }}>
         <div style={{ ...cardStyle, borderLeft: '4px solid #1976d2' }}>
           <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#1976d2' }}>{stats.totalTenants || 0}</div>
-          <div style={{ color: '#666' }}>Total Empresas</div>
+          <div style={{ color: 'var(--text-secondary)' }}>Total Empresas</div>
         </div>
         <div style={{ ...cardStyle, borderLeft: '4px solid #388e3c' }}>
           <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#388e3c' }}>{stats.tenantsActivos || 0}</div>
-          <div style={{ color: '#666' }}>Empresas Activas</div>
+          <div style={{ color: 'var(--text-secondary)' }}>Empresas Activas</div>
         </div>
         <div style={{ ...cardStyle, borderLeft: '4px solid #f57c00' }}>
           <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#f57c00' }}>{stats.tenantsPendientes || 0}</div>
-          <div style={{ color: '#666' }}>Pendientes</div>
+          <div style={{ color: 'var(--text-secondary)' }}>Pendientes</div>
         </div>
         <div style={{ ...cardStyle, borderLeft: '4px solid #7b1fa2' }}>
           <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#7b1fa2' }}>{stats.totalUsuarios || 0}</div>
-          <div style={{ color: '#666' }}>Total Usuarios</div>
+          <div style={{ color: 'var(--text-secondary)' }}>Total Usuarios</div>
         </div>
       </div>
 
@@ -132,34 +132,34 @@ export default function GlobalStats() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', marginBottom: '32px' }}>
         <div style={{ ...cardStyle }}>
           <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2e7d32' }}>{gerencia.kpis.hectareas_sembradas}</div>
-          <div style={{ color: '#666', fontSize: '13px' }}>Hectáreas Sembradas</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Hectáreas Sembradas</div>
         </div>
         <div style={{ ...cardStyle }}>
           <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#c62828' }}>{gerencia.kpis.total_ganado}</div>
-          <div style={{ color: '#666', fontSize: '13px' }}>Cabezas Ganado</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Cabezas Ganado</div>
         </div>
         <div style={{ ...cardStyle }}>
           <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#0277bd' }}>{gerencia.kpis.total_lagos}</div>
-          <div style={{ color: '#666', fontSize: '13px' }}>Lagos Acuícolas</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Lagos Acuícolas</div>
         </div>
         <div style={{ ...cardStyle }}>
           <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#f57f17' }}>{gerencia.kpis.total_maquinas}</div>
-          <div style={{ color: '#666', fontSize: '13px' }}>Máquinas/Equipos</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Máquinas/Equipos</div>
         </div>
         <div style={{ ...cardStyle }}>
           <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#4527a0' }}>{gerencia.kpis.total_empleados}</div>
-          <div style={{ color: '#666', fontSize: '13px' }}>Total Empleados</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Total Empleados</div>
         </div>
         <div style={{ ...cardStyle }}>
           <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#607d8b' }}>{gerencia.kpis.total_bodegas}</div>
-          <div style={{ color: '#666', fontSize: '13px' }}>Bodegas Activas</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Bodegas Activas</div>
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
         {/* Agricultura: Cultivos */}
         <div style={containerStyle}>
-          <h3 style={{ marginBottom: '16px', color: '#333' }}>Área por Cultivo (Hectáreas)</h3>
+          <h3 style={{ marginBottom: '16px', color: 'var(--text-primary)' }}>Área por Cultivo (Hectáreas)</h3>
           {gerencia.agricultura.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={gerencia.agricultura}>
@@ -176,7 +176,7 @@ export default function GlobalStats() {
 
         {/* Agricultura: Viveros */}
         <div style={containerStyle}>
-          <h3 style={{ marginBottom: '16px', color: '#333' }}>Semilleros y Viveros (Plantas en desarrollo)</h3>
+          <h3 style={{ marginBottom: '16px', color: 'var(--text-primary)' }}>Semilleros y Viveros (Plantas en desarrollo)</h3>
           {gerencia.viveros.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={gerencia.viveros}>
@@ -193,7 +193,7 @@ export default function GlobalStats() {
 
         {/* Producción Orgánica (Bioles) */}
         <div style={containerStyle}>
-          <h3 style={{ marginBottom: '16px', color: '#333' }}>Producción Orgánica / Bioles (Litros)</h3>
+          <h3 style={{ marginBottom: '16px', color: 'var(--text-primary)' }}>Producción Orgánica / Bioles (Litros)</h3>
           {gerencia.bioles.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={gerencia.bioles}>
@@ -210,7 +210,7 @@ export default function GlobalStats() {
 
         {/* Ganadería Razas */}
         <div style={containerStyle}>
-          <h3 style={{ marginBottom: '16px', color: '#333' }}>Distribución Ganadera por Raza</h3>
+          <h3 style={{ marginBottom: '16px', color: 'var(--text-primary)' }}>Distribución Ganadera por Raza</h3>
           {gerencia.ganaderia.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -228,7 +228,7 @@ export default function GlobalStats() {
 
         {/* Acuícola Especies */}
         <div style={containerStyle}>
-          <h3 style={{ marginBottom: '16px', color: '#333' }}>Acuícola: Peces en Engorde por Especie</h3>
+          <h3 style={{ marginBottom: '16px', color: 'var(--text-primary)' }}>Acuícola: Peces en Engorde por Especie</h3>
           {gerencia.acuicola.especies.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -246,7 +246,7 @@ export default function GlobalStats() {
         
         {/* Acuícola Alevinos */}
         <div style={containerStyle}>
-          <h3 style={{ marginBottom: '16px', color: '#333' }}>Semillero Acuícola (Inventario Alevinos)</h3>
+          <h3 style={{ marginBottom: '16px', color: 'var(--text-primary)' }}>Semillero Acuícola (Inventario Alevinos)</h3>
           {gerencia.acuicola.alevinos.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={gerencia.acuicola.alevinos}>
@@ -265,7 +265,7 @@ export default function GlobalStats() {
       {/* 5. Fincas y Operaciones */}
       {gerencia.centros_costo && gerencia.centros_costo.length > 0 && (
         <div style={{...containerStyle, marginTop: '20px'}}>
-          <h3 style={{ marginBottom: '16px', color: '#333' }}>Distribución Operativa por Fincas</h3>
+          <h3 style={{ marginBottom: '16px', color: 'var(--text-primary)' }}>Distribución Operativa por Fincas</h3>
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={gerencia.centros_costo}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -283,20 +283,20 @@ export default function GlobalStats() {
       
       {/* Tabla detallada de Agricultura */}
       <div style={{...containerStyle, marginTop: '20px'}}>
-        <h3 style={{ marginBottom: '16px', color: '#333' }}>Detalle de Cosechas (Cultivos)</h3>
+        <h3 style={{ marginBottom: '16px', color: 'var(--text-primary)' }}>Detalle de Cosechas (Cultivos)</h3>
         {gerencia.agricultura.length > 0 ? (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#f5f5f5', textAlign: 'left' }}>
-                <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Cultivo</th>
-                <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Hectáreas Totales</th>
-                <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Última Cosecha</th>
-                <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Próxima Cosecha (Est)</th>
+              <tr style={{ background: 'var(--bg-main)', textAlign: 'left' }}>
+                <th style={{ padding: '12px', borderBottom: '1px solid var(--border-color)' }}>Cultivo</th>
+                <th style={{ padding: '12px', borderBottom: '1px solid var(--border-color)' }}>Hectáreas Totales</th>
+                <th style={{ padding: '12px', borderBottom: '1px solid var(--border-color)' }}>Última Cosecha</th>
+                <th style={{ padding: '12px', borderBottom: '1px solid var(--border-color)' }}>Próxima Cosecha (Est)</th>
               </tr>
             </thead>
             <tbody>
               {gerencia.agricultura.map((c, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
+                <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
                   <td style={{ padding: '12px' }}>{c.nombre_cultivo}</td>
                   <td style={{ padding: '12px' }}>{c.area_total}</td>
                   <td style={{ padding: '12px' }}>{c.ultima_cosecha ? new Date(c.ultima_cosecha).toLocaleDateString() : 'N/A'}</td>

@@ -96,6 +96,7 @@ export default function TallerChecklists({ tenantId }) {
           dataSource={checklists}
           rowKey="id_checklist"
           loading={loading}
+          pagination={{ pageSize: 20 }}
           columns={[
             { title: 'Fecha', dataIndex: 'fecha', render: f => new Date(f).toLocaleDateString() },
             { title: 'Máquina', render: (_, r) => `[${r.placa}] ${r.maquina_nombre}` },

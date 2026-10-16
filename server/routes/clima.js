@@ -1,11 +1,8 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 router.get('/dashboard-stats', async (req, res) => {
   const { tenantId, estacionId } = req.query;

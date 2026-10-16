@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../utils/api';
+import Pagination from '../Pagination';
 
 function HistorialRepuestosModal({ machine, onClose }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   
   // Dictionaries for ID resolution
   const [insumos, setInsumos] = useState({});
@@ -44,6 +46,7 @@ function HistorialRepuestosModal({ machine, onClose }) {
         .then(json => {
           const filtered = (json.data || []).filter(item => String(item.id_maquinaria) === String(machineId));
           setData(filtered);
+          setCurrentPage(1);
           setLoading(false);
         })
         .catch(err => {
@@ -77,30 +80,40 @@ function HistorialRepuestosModal({ machine, onClose }) {
                 <p>No se han registrado cambios de repuestos para esta máquina.</p>
              </div>
           ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>ID Cambio</th>
-                  <th>Insumo / Repuesto</th>
-                  <th>Fecha Entrega</th>
-                  <th>Pieza Vieja</th>
-                  <th>Estado</th>
-                  <th>Mecánico / Empleado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map(row => (
-                  <tr key={row.id_cambio}>
-                    <td>{row.id_cambio}</td>
-                    <td style={{ fontWeight: 'bold' }}>{insumos[row.id_insumo] || `ID: ${row.id_insumo}`}</td>
-                    <td>{row.fecha_entrega_pieza ? new Date(row.fecha_entrega_pieza).toLocaleDateString() : 'N/A'}</td>
-                    <td>{row.pieza_vieja_entregada ? 'Entregada' : 'No'}</td>
-                    <td><span className={`badge ${row.estado_devolucion === 'Entregado_Bodega' ? 'badge-success' : 'badge-warning'}`}>{row.estado_devolucion}</span></td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{empleados[row.id_empleado] || `ID: ${row.id_empleado}`}</td>
+            <>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>ID Cambio</th>
+                    <th>Insumo / Repuesto</th>
+                    <th>Fecha Entrega</th>
+                    <th>Pieza Vieja</th>
+                    <th>Estado</th>
+                    <th>Mecánico / Empleado</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.slice((currentPage - 1) * 20, currentPage * 20).map(row => (
+                    <tr key={row.id_cambio}>
+                      <td>{row.id_cambio}</td>
+                      <td style={{ fontWeight: 'bold' }}>{insumos[row.id_insumo] || `ID: ${row.id_insumo}`}</td>
+                      <td>{row.fecha_entrega_pieza ? new Date(row.fecha_entrega_pieza).toLocaleDateString() : 'N/A'}</td>
+                      <td>{row.pieza_vieja_entregada ? 'Entregada' : 'No'}</td>
+                      <td><span className={`badge ${row.estado_devolucion === 'Entregado_Bodega' ? 'badge-success' : 'badge-warning'}`}>{row.estado_devolucion}</span></td>
+                      <td style={{ color: 'var(--text-secondary)' }}>{empleados[row.id_empleado] || `ID: ${row.id_empleado}`}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {data.length > 0 && (
+                <Pagination 
+                  currentPage={currentPage}
+                  totalItems={data.length}
+                  pageSize={20}
+                  onPageChange={setCurrentPage}
+                />
+              )}
+            </>
           )}
         </div>
       </div>

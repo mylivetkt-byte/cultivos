@@ -37,7 +37,8 @@ const FlujoEfectivo = ({ tenantId }) => {
           <title>Estado de Flujos de Efectivo - ${anio}</title>
           <style>
             @media print {
-              @page { margin: 15mm; size: portrait; }
+              @page { margin: 15mm; size: portrait;   table, th, td { color: black !important; border-color: #ccc !important; }
+}
               body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: system-ui, -apple-system, sans-serif; font-size: 12px; }
               table { page-break-inside: auto; border-collapse: collapse; width: 100%; }
               tr    { page-break-inside: avoid; page-break-after: auto; }
@@ -65,7 +66,7 @@ const FlujoEfectivo = ({ tenantId }) => {
   const formatCurrency = (val) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(val);
 
   return (
-    <div style={{ margin: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+    <div style={{ margin: '20px', background: 'var(--card-bg)', color: 'var(--text)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
       <div className="no-print">
         <div style={{ background: 'linear-gradient(90deg, #047857 0%, #065f46 100%)', padding: '24px', color: 'white', borderTopLeftRadius: '8px', borderTopRightRadius: '8px' }}>
           <h2 style={{ margin: '0 0 8px 0' }}>💸 Estado de Flujos de Efectivo (Método Directo)</h2>
@@ -73,10 +74,10 @@ const FlujoEfectivo = ({ tenantId }) => {
         </div>
 
         <div style={{ padding: '24px' }}>
-          <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '24px', display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
+          <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '24px', display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>Año Fiscal</label>
-              <input type="number" value={anio} onChange={e => setAnio(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', width: '120px' }} />
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '4px' }}>Año Fiscal</label>
+              <input type="number" value={anio} onChange={e => setAnio(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', width: '120px' }} />
             </div>
             <div>
               <button onClick={fetchFlujo} style={{ background: '#3b82f6', color: 'white', padding: '9px 24px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', marginRight: '10px' }}>
@@ -94,65 +95,65 @@ const FlujoEfectivo = ({ tenantId }) => {
       </div>
 
       {data && (
-        <div className="printable-flujo" style={{ padding: '40px', background: 'white' }}>
+        <div className="printable-flujo" style={{ padding: '40px', background: 'var(--card-bg)', color: 'var(--text)' }}>
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-            <h1 style={{ margin: '0 0 8px 0', fontSize: '22px', color: '#0f172a' }}>ESTADO DE FLUJOS DE EFECTIVO (MÉTODO DIRECTO)</h1>
-            <p style={{ margin: '0', color: '#64748b' }}>Por el año terminado el 31 de Diciembre de {anio}</p>
-            <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '11px' }}>Expresado en Pesos Colombianos (COP)</p>
+            <h1 style={{ margin: '0 0 8px 0', fontSize: '22px', color: 'var(--text)' }}>ESTADO DE FLUJOS DE EFECTIVO (MÉTODO DIRECTO)</h1>
+            <p style={{ margin: '0', color: 'var(--text-muted)' }}>Por el año terminado el 31 de Diciembre de {anio}</p>
+            <p style={{ margin: '4px 0 0 0', color: 'var(--text-muted)', fontSize: '11px' }}>Expresado en Pesos Colombianos (COP)</p>
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <tbody>
               {/* OPERACIÓN */}
-              <tr className="header-row" style={{ background: '#f1f5f9' }}>
-                <td colSpan="2" style={{ padding: '12px', fontWeight: 'bold', color: '#0f172a', borderTop: '2px solid #000' }}>Flujos de Efectivo por Actividades de Operación</td>
+              <tr className="header-row" style={{ background: 'var(--bg-main)' }}>
+                <td colSpan="2" style={{ padding: '12px', fontWeight: 'bold', color: 'var(--text)', borderTop: '2px solid #000' }}>Flujos de Efectivo por Actividades de Operación</td>
               </tr>
               {data.operacion.map((item, idx) => (
                 <tr key={'op'+idx}>
-                  <td style={{ padding: '8px 12px', paddingLeft: '24px', borderBottom: '1px solid #f1f5f9' }}>{item.categoria}</td>
-                  <td style={{ padding: '8px 12px', textAlign: 'right', borderBottom: '1px solid #f1f5f9' }}>{formatCurrency(item.flujo_neto)}</td>
+                  <td style={{ padding: '8px 12px', paddingLeft: '24px', borderBottom: '1px solid var(--border)' }}>{item.categoria}</td>
+                  <td style={{ padding: '8px 12px', textAlign: 'right', borderBottom: '1px solid var(--border)' }}>{formatCurrency(item.flujo_neto)}</td>
                 </tr>
               ))}
-              <tr className="total-row" style={{ background: '#e2e8f0', fontWeight: 'bold' }}>
-                <td style={{ padding: '12px', color: '#334155' }}>Flujo Neto de Efectivo por Actividades de Operación</td>
-                <td style={{ padding: '12px', textAlign: 'right', color: '#0f172a' }}>{formatCurrency(data.total_operacion)}</td>
+              <tr className="total-row" style={{ background: 'var(--border)', fontWeight: 'bold' }}>
+                <td style={{ padding: '12px', color: 'var(--text)' }}>Flujo Neto de Efectivo por Actividades de Operación</td>
+                <td style={{ padding: '12px', textAlign: 'right', color: 'var(--text)' }}>{formatCurrency(data.total_operacion)}</td>
               </tr>
               
               {/* INVERSIÓN */}
               <tr><td colSpan="2" style={{ height: '20px' }}></td></tr>
-              <tr className="header-row" style={{ background: '#f1f5f9' }}>
-                <td colSpan="2" style={{ padding: '12px', fontWeight: 'bold', color: '#0f172a', borderTop: '1px solid #cbd5e1' }}>Flujos de Efectivo por Actividades de Inversión</td>
+              <tr className="header-row" style={{ background: 'var(--bg-main)' }}>
+                <td colSpan="2" style={{ padding: '12px', fontWeight: 'bold', color: 'var(--text)', borderTop: '1px solid #cbd5e1' }}>Flujos de Efectivo por Actividades de Inversión</td>
               </tr>
               {data.inversion.map((item, idx) => (
                 <tr key={'inv'+idx}>
-                  <td style={{ padding: '8px 12px', paddingLeft: '24px', borderBottom: '1px solid #f1f5f9' }}>{item.categoria}</td>
-                  <td style={{ padding: '8px 12px', textAlign: 'right', borderBottom: '1px solid #f1f5f9' }}>{formatCurrency(item.flujo_neto)}</td>
+                  <td style={{ padding: '8px 12px', paddingLeft: '24px', borderBottom: '1px solid var(--border)' }}>{item.categoria}</td>
+                  <td style={{ padding: '8px 12px', textAlign: 'right', borderBottom: '1px solid var(--border)' }}>{formatCurrency(item.flujo_neto)}</td>
                 </tr>
               ))}
-              <tr className="total-row" style={{ background: '#e2e8f0', fontWeight: 'bold' }}>
-                <td style={{ padding: '12px', color: '#334155' }}>Flujo Neto de Efectivo por Actividades de Inversión</td>
-                <td style={{ padding: '12px', textAlign: 'right', color: '#0f172a' }}>{formatCurrency(data.total_inversion)}</td>
+              <tr className="total-row" style={{ background: 'var(--border)', fontWeight: 'bold' }}>
+                <td style={{ padding: '12px', color: 'var(--text)' }}>Flujo Neto de Efectivo por Actividades de Inversión</td>
+                <td style={{ padding: '12px', textAlign: 'right', color: 'var(--text)' }}>{formatCurrency(data.total_inversion)}</td>
               </tr>
 
               {/* FINANCIACIÓN */}
               <tr><td colSpan="2" style={{ height: '20px' }}></td></tr>
-              <tr className="header-row" style={{ background: '#f1f5f9' }}>
-                <td colSpan="2" style={{ padding: '12px', fontWeight: 'bold', color: '#0f172a', borderTop: '1px solid #cbd5e1' }}>Flujos de Efectivo por Actividades de Financiación</td>
+              <tr className="header-row" style={{ background: 'var(--bg-main)' }}>
+                <td colSpan="2" style={{ padding: '12px', fontWeight: 'bold', color: 'var(--text)', borderTop: '1px solid #cbd5e1' }}>Flujos de Efectivo por Actividades de Financiación</td>
               </tr>
               {data.financiacion.map((item, idx) => (
                 <tr key={'fin'+idx}>
-                  <td style={{ padding: '8px 12px', paddingLeft: '24px', borderBottom: '1px solid #f1f5f9' }}>{item.categoria}</td>
-                  <td style={{ padding: '8px 12px', textAlign: 'right', borderBottom: '1px solid #f1f5f9' }}>{formatCurrency(item.flujo_neto)}</td>
+                  <td style={{ padding: '8px 12px', paddingLeft: '24px', borderBottom: '1px solid var(--border)' }}>{item.categoria}</td>
+                  <td style={{ padding: '8px 12px', textAlign: 'right', borderBottom: '1px solid var(--border)' }}>{formatCurrency(item.flujo_neto)}</td>
                 </tr>
               ))}
-              <tr className="total-row" style={{ background: '#e2e8f0', fontWeight: 'bold' }}>
-                <td style={{ padding: '12px', color: '#334155' }}>Flujo Neto de Efectivo por Actividades de Financiación</td>
-                <td style={{ padding: '12px', textAlign: 'right', color: '#0f172a' }}>{formatCurrency(data.total_financiacion)}</td>
+              <tr className="total-row" style={{ background: 'var(--border)', fontWeight: 'bold' }}>
+                <td style={{ padding: '12px', color: 'var(--text)' }}>Flujo Neto de Efectivo por Actividades de Financiación</td>
+                <td style={{ padding: '12px', textAlign: 'right', color: 'var(--text)' }}>{formatCurrency(data.total_financiacion)}</td>
               </tr>
 
               {/* RESUMEN */}
               <tr><td colSpan="2" style={{ height: '30px' }}></td></tr>
-              <tr style={{ background: '#f8fafc' }}>
+              <tr style={{ background: 'var(--bg-main)' }}>
                 <td style={{ padding: '12px', fontWeight: 'bold', fontSize: '14px' }}>Aumento (Disminución) Neto de Efectivo</td>
                 <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', fontSize: '14px' }}>{formatCurrency(data.flujo_neto_periodo)}</td>
               </tr>
@@ -167,7 +168,7 @@ const FlujoEfectivo = ({ tenantId }) => {
             </tbody>
           </table>
 
-          <div style={{ marginTop: '50px', display: 'flex', justifyContent: 'space-around', color: '#0f172a' }}>
+          <div style={{ marginTop: '50px', display: 'flex', justifyContent: 'space-around', color: 'var(--text)' }}>
             <div style={{ textAlign: 'center', width: '200px' }}>
               <div style={{ borderBottom: '1px solid #000', height: '40px' }}></div>
               <div style={{ marginTop: '8px', fontWeight: 'bold' }}>Representante Legal</div>

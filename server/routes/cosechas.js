@@ -1,6 +1,7 @@
 // routes/cosechas.js
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 
 const router = express.Router();
@@ -11,9 +12,71 @@ async function logAudit(db, cosechaId, action, userId, payload) {
   await db.query(sql, [cosechaId, action, userId, JSON.stringify(payload)]);
 }
 
+// GET /api/cosechas/avanzado - advanced filtered list
+router.get('/avanzado', async (req, res) => {
+  const db = getDb(req);
+  const { finca, lote, cultivo, fechaInicio, fechaFin, tenantId } = req.query;
+  const tid = req.headers['tenant-id'] || tenantId;
+  
+  if (!tid) return res.status(400).json({ error: 'Tenant ID is required' });
+
+  let baseQuery = `
+    SELECT c.*, 
+           s.id_lote, 
+           s.id_cultivo,
+           l.nombre as nombre_lote,
+           cul.nombre as nombre_cultivo
+    FROM cosechas c
+    JOIN siembras s ON c.id_siembra = s.id_siembra
+    LEFT JOIN lotes l ON s.id_lote = l.id_lote
+    LEFT JOIN cultivos cul ON s.id_cultivo = cul.id_cultivo
+    LEFT JOIN nucleos n ON l.id_nucleo = n.id_nucleo
+    WHERE s.id_tenant = ?
+  `;
+  
+  let params = [tid];
+  
+  if (fechaInicio && fechaFin) {
+     baseQuery += ' AND DATE(c.fecha_cosecha) BETWEEN ? AND ?';
+     params.push(fechaInicio, fechaFin);
+  }
+  
+  if (finca) {
+     baseQuery += ' AND n.id_finca = ?';
+     params.push(finca);
+  }
+  
+  if (lote) {
+     baseQuery += ' AND s.id_lote = ?';
+     params.push(lote);
+  }
+  
+  if (cultivo) {
+     baseQuery += ' AND s.id_cultivo = ?';
+     params.push(cultivo);
+  }
+  
+  baseQuery += ' ORDER BY c.fecha_cosecha DESC, c.id_cosecha DESC';
+  
+  const isFiltered = fechaInicio || fechaFin || finca || lote || cultivo;
+  if (isFiltered) {
+      baseQuery += ' LIMIT 1000';
+  } else {
+      baseQuery += ' LIMIT 20';
+  }
+  
+  try {
+    const [rows] = await db.query(baseQuery, params);
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching advanced cosechas:', err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+});
+
 // GET /api/cosechas - list harvests (optional filters)
 router.get('/', async (req, res) => {
-  const db = req.tenantPool || pool;
+  const db = getDb(req);
   const { parcelaId, cultivoId, fechaDesde, fechaHasta } = req.query;
   let sql = `SELECT * FROM cosechas`;
   const params = [];
@@ -33,7 +96,7 @@ router.get('/', async (req, res) => {
 
 // GET /api/cosechas/:id - get single harvest
 router.get('/:id', async (req, res) => {
-  const db = req.tenantPool || pool;
+  const db = getDb(req);
   const { id } = req.params;
   try {
     const [rows] = await db.query('SELECT * FROM cosechas WHERE id = ?', [id]);
@@ -47,7 +110,7 @@ router.get('/:id', async (req, res) => {
 
 // POST /api/cosechas - create new harvest
 router.post('/', async (req, res) => {
-  const db = req.tenantPool || pool;
+  const db = getDb(req);
   const { id_parcela, id_cultivo, codigoCosecha, fecha_cosecha, peso_total_kg } = req.body;
   const userId = req.user?.id || 0; // assuming auth middleware populates req.user
   if (!id_parcela || !id_cultivo || !codigoCosecha || !fecha_cosecha || !peso_total_kg) {
@@ -73,7 +136,7 @@ router.post('/', async (req, res) => {
 
 // PUT /api/cosechas/:id - update harvest
 router.put('/:id', async (req, res) => {
-  const db = req.tenantPool || pool;
+  const db = getDb(req);
   const { id } = req.params;
   const { id_parcela, id_cultivo, codigoCosecha, fecha_cosecha, peso_total_kg } = req.body;
   const userId = req.user?.id || 0;
@@ -110,7 +173,7 @@ router.put('/:id', async (req, res) => {
 
 // DELETE /api/cosechas/:id - hard delete (could be soft if needed)
 router.delete('/:id', async (req, res) => {
-  const db = req.tenantPool || pool;
+  const db = getDb(req);
   const { id } = req.params;
   const userId = req.user?.id || 0;
   try {

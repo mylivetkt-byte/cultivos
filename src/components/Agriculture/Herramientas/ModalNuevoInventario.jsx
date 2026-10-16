@@ -41,7 +41,7 @@ function ModalNuevoInventario({ isOpen, onClose, onRefresh, fincaId, fincas }) {
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', width: '500px', maxWidth: '90%' }}>
+      <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '8px', width: '500px', maxWidth: '90%' }}>
         <h3 style={{ margin: '0 0 15px 0', color: '#1e293b' }}>Registrar Nueva Herramienta / Insumo</h3>
         
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

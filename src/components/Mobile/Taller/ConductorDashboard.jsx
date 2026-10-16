@@ -6,7 +6,7 @@ export default function ConductorDashboard({ tenantId, activeTab, setActiveTab }
 
   if (activeTab === 'emergencia') {
     return (
-      <div style={{height: '100%', overflow: 'auto', background: '#fff'}}>
+      <div style={{height: '100%', overflow: 'auto', background: 'var(--bg-card)'}}>
         {/* We reuse NuevaOT but pre-filled or simplified if needed */}
         <TallerNuevaOT onBack={() => setActiveTab('home')} tenantId={tenantId} />
       </div>

@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { exportToPdf } from '../../utils/exportPdf';
 import { exportToExcel } from '../../utils/exportExcel';
 import { authFetch } from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
+import Pagination from '../Pagination';
 
 function HistorialMantenimientosModal({ machine, onClose }) {
+  const { user } = useAuth();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const loadData = () => {
     if (!machine) return;
@@ -22,6 +26,7 @@ function HistorialMantenimientosModal({ machine, onClose }) {
       .then(res => res.json())
       .then(json => {
         setData(json.data || []);
+        setCurrentPage(1);
         setLoading(false);
       })
       .catch(err => {
@@ -36,6 +41,18 @@ function HistorialMantenimientosModal({ machine, onClose }) {
     }
   }, [machine]);
 
+  const getMetadata = () => {
+    return {
+      empresa: 'AgroPaccioli',
+      finca: machine?.id_finca ? `Finca ID ${machine.id_finca}` : 'N/A',
+      fechaDesde: startDate,
+      fechaHasta: endDate,
+      usuario: user?.nombre || user?.username || 'Usuario del Sistema',
+      rol: user?.rol || 'No asignado',
+      reportName: `Mantenimientos - ${machine.marca_modelo || machine.nombre} (${machine.placa || machine.codigo || ''})`
+    };
+  };
+
   const handleExportPdf = () => {
     const columns = [
       { name: 'numero_orden', type: 'varchar' },
@@ -49,7 +66,7 @@ function HistorialMantenimientosModal({ machine, onClose }) {
     ];
     const machineName = machine.marca_modelo || machine.nombre;
     const machineIdentifier = machine.placa || machine.codigo || '';
-    exportToPdf(`Mantenimientos - ${machineName} (${machineIdentifier})`, columns, data);
+    exportToPdf(`Mantenimientos - ${machineName} (${machineIdentifier})`, columns, data, getMetadata());
   };
 
   const handleExportExcel = () => {
@@ -65,7 +82,7 @@ function HistorialMantenimientosModal({ machine, onClose }) {
     ];
     const machineName = machine.marca_modelo || machine.nombre;
     const machineIdentifier = machine.placa || machine.codigo || '';
-    exportToExcel(`Manttos_${machineName}_${machineIdentifier}`, columns, data);
+    exportToExcel(`Manttos_${machineName}_${machineIdentifier}`, columns, data, getMetadata());
   };
 
   if (!machine) return null;
@@ -101,10 +118,10 @@ function HistorialMantenimientosModal({ machine, onClose }) {
 
           <div style={{ flex: 1 }} />
           
-          <button className="btn btn-outline" onClick={handleExportPdf} disabled={data.length === 0}>
+          <button className="btn-action-base btn-pdf" onClick={handleExportPdf}>
             📄 PDF
           </button>
-          <button className="btn btn-outline" onClick={handleExportExcel} disabled={data.length === 0}>
+          <button className="btn-action-base btn-excel" onClick={handleExportExcel}>
             📊 Excel
           </button>
         </div>
@@ -118,49 +135,59 @@ function HistorialMantenimientosModal({ machine, onClose }) {
                 <p>No se encontraron órdenes de trabajo en este rango de fechas.</p>
              </div>
           ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Orden #</th>
-                  <th>Tipo</th>
-                  <th>Prioridad</th>
-                  <th>Fecha Solicitud</th>
-                  <th>Fecha Fin</th>
-                  <th>Estado</th>
-                  <th>Costo</th>
-                  <th>Activo/Vehículo</th>
-                  <th>Técnico / Taller</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((row, index) => (
-                  <tr key={row.id_mantenimiento || row.id_orden_trabajo || index}>
-                    <td><strong>{row.numero_orden || '-'}</strong></td>
-                    <td>{row.tipo_orden}</td>
-                    <td>
-                      <span style={{ 
-                        color: row.prioridad === 'Alta' || row.prioridad === 'Critica' ? 'var(--danger)' : 
-                               row.prioridad === 'Media' ? 'var(--warning)' : 'var(--text-muted)'
-                      }}>
-                        {row.prioridad}
-                      </span>
-                    </td>
-                    <td>{row.fecha_solicitud ? new Date(row.fecha_solicitud).toLocaleDateString() : '-'}</td>
-                    <td>{row.fecha_fin ? new Date(row.fecha_fin).toLocaleDateString() : 'En proceso'}</td>
-                    <td>
-                      <span className={`badge ${row.estado === 'Completada' || row.estado === 'Verificada' ? 'badge-success' : 'badge-info'}`}>
-                        {row.estado}
-                      </span>
-                    </td>
-                    <td className="number-cell">
-                      {row.costo_total ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(row.costo_total) : '-'}
-                    </td>
-                    <td>{row.activo_nombre ? `${row.activo_nombre} (${row.activo_codigo || ''})` : 'Este Equipo'}</td>
-                    <td>{row.tecnico_nombre ? `${row.tecnico_nombre} ${row.tecnico_apellido || ''}` : '-'}</td>
+            <>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Orden #</th>
+                    <th>Tipo</th>
+                    <th>Prioridad</th>
+                    <th>Fecha Solicitud</th>
+                    <th>Fecha Fin</th>
+                    <th>Estado</th>
+                    <th>Costo</th>
+                    <th>Activo/Vehículo</th>
+                    <th>Técnico / Taller</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.slice((currentPage - 1) * 20, currentPage * 20).map((row, index) => (
+                    <tr key={row.id_mantenimiento || row.id_orden_trabajo || index}>
+                      <td><strong>{row.numero_orden || '-'}</strong></td>
+                      <td>{row.tipo_orden}</td>
+                      <td>
+                        <span style={{ 
+                          color: row.prioridad === 'Alta' || row.prioridad === 'Critica' ? 'var(--danger)' : 
+                                 row.prioridad === 'Media' ? 'var(--warning)' : 'var(--text-muted)'
+                        }}>
+                          {row.prioridad}
+                        </span>
+                      </td>
+                      <td>{row.fecha_solicitud ? new Date(row.fecha_solicitud).toLocaleDateString() : '-'}</td>
+                      <td>{row.fecha_fin ? new Date(row.fecha_fin).toLocaleDateString() : 'En proceso'}</td>
+                      <td>
+                        <span className={`badge ${row.estado === 'Completada' || row.estado === 'Verificada' ? 'badge-success' : 'badge-info'}`}>
+                          {row.estado}
+                        </span>
+                      </td>
+                      <td className="number-cell">
+                        {row.costo_total ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(row.costo_total) : '-'}
+                      </td>
+                      <td>{row.activo_nombre ? `${row.activo_nombre} (${row.activo_codigo || ''})` : 'Este Equipo'}</td>
+                      <td>{row.tecnico_nombre ? `${row.tecnico_nombre} ${row.tecnico_apellido || ''}` : '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {data.length > 0 && (
+                <Pagination 
+                  currentPage={currentPage}
+                  totalItems={data.length}
+                  pageSize={20}
+                  onPageChange={setCurrentPage}
+                />
+              )}
+            </>
           )}
         </div>
       </div>

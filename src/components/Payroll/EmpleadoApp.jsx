@@ -539,7 +539,7 @@ export default function EmpleadoApp({ tenantId }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '16px' }}>
-        <aside style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <aside style={{ background: 'var(--bg-card)', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px' }}>
             <div style={{ color: '#64748b', fontSize: '12px' }}>Estado de sesión</div>
             <div style={{ fontWeight: 800, marginTop: '4px' }}>Activa hasta {formatTime(session.session_expires)}</div>
@@ -619,7 +619,7 @@ export default function EmpleadoApp({ tenantId }) {
           </div>
         </aside>
 
-        <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px' }}>
+        <section style={{ background: 'var(--bg-card)', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px' }}>
           <h3 style={{ marginTop: 0 }}>Mis labores de hoy</h3>
           {loading ? (
             <div style={{ color: '#64748b' }}>Cargando labores reales...</div>

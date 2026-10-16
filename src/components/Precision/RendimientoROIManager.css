@@ -1,0 +1,251 @@
+.rendimiento-roi-container {
+  padding: 24px;
+  background: var(--bg-primary, #f8fafc);
+  min-height: calc(100vh - 70px);
+}
+
+.rendimiento-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+  background: #ffffff;
+  padding: 20px 24px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.badge-modulo-roi {
+  display: inline-block;
+  background: #f0fdf4;
+  color: #16a34a;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border: 1px solid #bbf7d0;
+  margin-bottom: 6px;
+}
+
+.btn-primary-roi {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: #059669;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+}
+
+.btn-primary-roi:hover {
+  background: #047857;
+}
+
+/* STRIP TRIALS GRID */
+.trials-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 18px;
+}
+
+.trial-card-item {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.trial-card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.trial-badge {
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.trial-card-item h3 {
+  margin: 0 0 2px 0;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.comparison-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.comparison-side {
+  padding: 12px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.comparison-side.control {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.comparison-side.vra {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+}
+
+.side-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.side-ton {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 4px 0;
+}
+
+.side-ton.highlight {
+  color: #16a34a;
+}
+
+.side-cost {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.economic-summary-box {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 12px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  color: #475569;
+}
+
+.summary-row.total {
+  padding-top: 6px;
+  border-top: 1px dashed #cbd5e1;
+  font-size: 13px;
+}
+
+.trial-notes {
+  font-size: 12px;
+  color: #64748b;
+  font-style: italic;
+  margin: 0;
+}
+
+/* VISOR DE COSECHA */
+.yield-map-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 950px) {
+  .yield-map-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.yield-sidebar-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.yield-stats-box {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.stat-line {
+  display: flex;
+  justify-content: space-between;
+  color: #334155;
+}
+
+.yield-legend-box {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+}
+
+.yield-legend-box h4 {
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  color: #475569;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.legend-circle {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.yield-leaflet-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 10px;
+}
+
+.yield-popup {
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

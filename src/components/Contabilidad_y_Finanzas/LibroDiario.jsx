@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { authFetch } from '../../utils/api';
+import Pagination from '../Pagination';
 
 const LibroDiario = ({ tenantId }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
@@ -96,6 +98,7 @@ const LibroDiario = ({ tenantId }) => {
     });
 
     setData(datesSorted);
+    setCurrentPage(1);
   };
 
   const handlePrint = () => {
@@ -109,7 +112,8 @@ const LibroDiario = ({ tenantId }) => {
           <title>Libro Diario</title>
           <style>
             @media print {
-              @page { margin: 10mm; size: portrait; }
+              @page { margin: 10mm; size: portrait;   table, th, td { color: black !important; border-color: #ccc !important; }
+}
               body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: system-ui, -apple-system, sans-serif; font-size: 11px; }
               table { page-break-inside: auto; }
               tr    { page-break-inside: avoid; page-break-after: auto; }
@@ -135,8 +139,8 @@ const LibroDiario = ({ tenantId }) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(val);
   };
 
-  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' };
-  const inputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', background: 'white', width: '100%', boxSizing: 'border-box' };
+  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '4px' };
+  const inputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', width: '100%', boxSizing: 'border-box' };
   const tdStyle = { padding: '6px 8px', borderBottom: '1px dotted #e2e8f0' };
 
   let granTotalDebito = 0;
@@ -147,7 +151,7 @@ const LibroDiario = ({ tenantId }) => {
   });
 
   return (
-    <div style={{ margin: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+    <div style={{ margin: '20px', background: 'var(--card-bg)', color: 'var(--text)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
       <div className="no-print">
         <div style={{ background: 'linear-gradient(90deg, #0f172a 0%, #1e293b 100%)', padding: '24px', color: 'white', borderTopLeftRadius: '8px', borderTopRightRadius: '8px' }}>
           <h2 style={{ margin: '0 0 8px 0' }}>📘 Libro Diario (Columnario)</h2>
@@ -155,7 +159,7 @@ const LibroDiario = ({ tenantId }) => {
         </div>
         
         <div style={{ padding: '24px' }}>
-          <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '24px', display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
+          <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '24px', display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>Fecha Desde *</label>
               <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={inputStyle} />
@@ -187,26 +191,26 @@ const LibroDiario = ({ tenantId }) => {
       </div>
 
       {data.length > 0 && (
-        <div className="printable-report" style={{ padding: '40px', background: 'white' }}>
+        <div className="printable-report" style={{ padding: '40px', background: 'var(--card-bg)', color: 'var(--text)' }}>
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>
             <h1 style={{ margin: '0 0 8px 0', fontSize: '20px' }}>LIBRO DIARIO DE CONTABILIDAD</h1>
-            <p style={{ margin: '0', color: '#64748b' }}>Periodo: {fechaInicio} a {fechaFin}</p>
-            {idFinca && <p style={{ margin: '4px 0 0 0', color: '#64748b' }}>Finca Filtro: {fincas.find(f => f.id_finca.toString() === idFinca)?.nombre}</p>}
+            <p style={{ margin: '0', color: 'var(--text-muted)' }}>Periodo: {fechaInicio} a {fechaFin}</p>
+            {idFinca && <p style={{ margin: '4px 0 0 0', color: 'var(--text-muted)' }}>Finca Filtro: {fincas.find(f => f.id_finca.toString() === idFinca)?.nombre}</p>}
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
             <thead>
               <tr>
-                <th style={{ padding: '8px', textAlign: 'left', background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>CÓDIGO</th>
-                <th style={{ padding: '8px', textAlign: 'left', background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>CUENTA MAYOR / DETALLE</th>
-                <th style={{ padding: '8px', textAlign: 'right', background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>DÉBITOS</th>
-                <th style={{ padding: '8px', textAlign: 'right', background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>CRÉDITOS</th>
+                <th style={{ padding: '8px', textAlign: 'left', background: 'var(--bg-main)', borderBottom: '2px solid var(--border)' }}>CÓDIGO</th>
+                <th style={{ padding: '8px', textAlign: 'left', background: 'var(--bg-main)', borderBottom: '2px solid var(--border)' }}>CUENTA MAYOR / DETALLE</th>
+                <th style={{ padding: '8px', textAlign: 'right', background: 'var(--bg-main)', borderBottom: '2px solid var(--border)' }}>DÉBITOS</th>
+                <th style={{ padding: '8px', textAlign: 'right', background: 'var(--bg-main)', borderBottom: '2px solid var(--border)' }}>CRÉDITOS</th>
               </tr>
             </thead>
             <tbody>
-              {data.map(dia => (
+              {data.slice((currentPage - 1) * 20, currentPage * 20).map(dia => (
                 <React.Fragment key={dia.fecha}>
-                  <tr style={{ background: '#e2e8f0' }}>
+                  <tr style={{ background: 'var(--border)' }}>
                     <td colSpan="4" style={{ padding: '8px', fontWeight: 'bold', fontSize: '12px' }}>
                       FECHA: {dia.fecha}
                     </td>
@@ -215,7 +219,7 @@ const LibroDiario = ({ tenantId }) => {
                   {dia.comprobantesList.map((comp, cIdx) => (
                     <React.Fragment key={cIdx}>
                       <tr>
-                        <td colSpan="4" style={{ padding: '6px 8px', fontWeight: 'bold', color: '#334155', background: '#f8fafc' }}>
+                        <td colSpan="4" style={{ padding: '6px 8px', fontWeight: 'bold', color: 'var(--text)', background: 'var(--bg-main)' }}>
                           COMPROBANTE: {comp.llave}
                         </td>
                       </tr>
@@ -228,15 +232,15 @@ const LibroDiario = ({ tenantId }) => {
                         </tr>
                       ))}
                       <tr>
-                        <td colSpan="2" style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 'bold', color: '#64748b' }}>Suma Comprobante:</td>
-                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 'bold', color: '#0f172a' }}>{formatCurrency(comp.totalDebito)}</td>
-                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 'bold', color: '#0f172a' }}>{formatCurrency(comp.totalCredito)}</td>
+                        <td colSpan="2" style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 'bold', color: 'var(--text-muted)' }}>Suma Comprobante:</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 'bold', color: 'var(--text)' }}>{formatCurrency(comp.totalDebito)}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 'bold', color: 'var(--text)' }}>{formatCurrency(comp.totalCredito)}</td>
                       </tr>
                     </React.Fragment>
                   ))}
                   
-                  <tr style={{ background: '#f1f5f9' }}>
-                    <td colSpan="2" style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 'bold', color: '#1e293b' }}>
+                  <tr style={{ background: 'var(--bg-main)' }}>
+                    <td colSpan="2" style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 'bold', color: '#7dd3fc' }}>
                       TOTAL MOVIMIENTO DEL DÍA:
                     </td>
                     <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 'bold', color: '#16a34a' }}>
@@ -263,8 +267,19 @@ const LibroDiario = ({ tenantId }) => {
               </tr>
             </tfoot>
           </table>
+
+          {data.length > 0 && (
+            <div style={{ marginTop: '15px' }}>
+              <Pagination 
+                currentPage={currentPage}
+                totalItems={data.length}
+                pageSize={20}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
           
-          <div style={{ marginTop: '50px', display: 'flex', justifyContent: 'space-around', color: '#64748b' }}>
+          <div style={{ marginTop: '50px', display: 'flex', justifyContent: 'space-around', color: 'var(--text-muted)' }}>
             <div style={{ textAlign: 'center', borderTop: '1px solid #cbd5e1', paddingTop: '8px', width: '250px' }}>
               <strong>Representante Legal</strong>
             </div>

@@ -304,6 +304,40 @@ export default function RRHHUbicacionPersonal({ tenantId, fincaId }) {
     setSharing(false);
   }, []);
 
+  const QUEUE_KEY = 'gps_offline_queue';
+
+  const enqueuePing = useCallback((pingData) => {
+    const queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
+    // Prevent huge memory usage, keep max 1000 points
+    if (queue.length > 1000) queue.shift();
+    queue.push(pingData);
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+    setWorkerError(`⚠️ Sin red. Punto guardado offline (${queue.length} pendientes).`);
+  }, []);
+
+  const flushPingQueue = useCallback(async () => {
+    const queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
+    if (queue.length === 0) return;
+    
+    let remaining = [...queue];
+    for (let i = 0; i < queue.length; i++) {
+      try {
+        await pingGPSTelemetry(queue[i]);
+        remaining.shift(); // Elimina el punto enviado
+      } catch (err) {
+        break; // Detener si sigue sin conexión
+      }
+    }
+    
+    if (remaining.length === 0) {
+      localStorage.removeItem(QUEUE_KEY);
+      setWorkerError(''); // Todo sincronizado
+    } else {
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(remaining));
+      setWorkerError(`⚠️ Quedan ${remaining.length} puntos offline pendientes.`);
+    }
+  }, []);
+
   const startWorkerTracking = useCallback(() => {
     if (!navigator.geolocation) {
       setWorkerError('Este navegador no soporta geolocalización.');
@@ -331,22 +365,30 @@ export default function RRHHUbicacionPersonal({ tenantId, fincaId }) {
         };
         setWorkerPoint(point);
 
+        const pingData = {
+          identificador_gps: trackingIdentifier,
+          latitud: latitude,
+          longitud: longitude,
+          velocidad: Number.isFinite(speed) ? speed : 0,
+          direccion: Number.isFinite(heading) ? heading : 0,
+          auto_register: true,
+          tipo_entidad: 'Empleado',
+          tenantId,
+          id_empleado: workerEmployee.id_empleado,
+          // Guardamos timestamp real por si se guarda offline
+          timestamp: new Date().toISOString()
+        };
+
         try {
-          await pingGPSTelemetry({
-            identificador_gps: trackingIdentifier,
-            latitud: latitude,
-            longitud: longitude,
-            velocidad: Number.isFinite(speed) ? speed : 0,
-            direccion: Number.isFinite(heading) ? heading : 0,
-            auto_register: true,
-            tipo_entidad: 'Empleado',
-            tenantId,
-            id_empleado: workerEmployee.id_empleado
-          });
+          // Primero intentamos vaciar la cola offline si hay conexión
+          await flushPingQueue();
+          
+          // Luego enviamos el actual
+          await pingGPSTelemetry(pingData);
           setLastPingAt(new Date().toISOString());
         } catch (err) {
-          console.error(err);
-          setWorkerError(err.message);
+          console.error("Modo Offline Activado por error de red:", err);
+          enqueuePing(pingData);
         }
       },
       (err) => {

@@ -102,8 +102,8 @@ export default function CustodiaRepuestosDashboard({ tenantId, currentUserId }) 
             <Text type="secondary">Control Estricto 1 a 1: Mecánico debe devolver pieza vieja para descargo de responsabilidad.</Text>
           </div>
           <Space>
-            <Button icon={<FileExcelOutlined />} onClick={exportToExcel} style={{ color: '#52c41a', borderColor: '#52c41a' }}>Exportar Audit</Button>
-            <Button icon={<FilePdfOutlined />} onClick={exportToPDF} danger>Exportar Audit PDF</Button>
+            <Button className="btn-action-base btn-excel" icon={<FileExcelOutlined />} onClick={exportToExcel}>Exportar Audit</Button>
+            <Button className="btn-action-base btn-pdf" icon={<FilePdfOutlined />} onClick={exportToPDF}>Exportar Audit PDF</Button>
           </Space>
         </div>
       </Card>
@@ -137,7 +137,7 @@ export default function CustodiaRepuestosDashboard({ tenantId, currentUserId }) 
                     loading={loading}
                     pagination={{ pageSize: 15 }}
                     columns={[
-                      { title: 'Pedido Origen', dataIndex: 'id_pedido_origen', width: 120 },
+                      { title: 'Pedido Origen', dataIndex: 'id_pedido_origen', width: 120, render: id => id ? <b>#{id}</b> : '-' },
                       { title: 'Mecánico / Operador', render: (_, r) => <b>{r.documento} - {r.nombres} {r.apellidos}</b> },
                       { title: 'Pieza Entregada (Nueva)', render: (_, r) => `[${r.insumo_codigo}] ${r.insumo_nombre}` },
                       { title: 'Estado Deuda', dataIndex: 'estado_devolucion', render: e => (

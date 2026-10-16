@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
 import { authFetch } from '../../utils/api';
+import { customStyles } from '../PremiumSelect';
 
 function PrestamoCapturer({ tenantId, fincaId }) {
   const [terceros, setTerceros] = useState([]);

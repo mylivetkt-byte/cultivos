@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './ParametrosContables.css';
 import { authFetch } from '../../utils/api';
+import Pagination from '../Pagination';
 
 function ParametrosContables() {
   const [activeTab, setActiveTab] = useState('subempresas');
@@ -13,6 +14,8 @@ function ParametrosContables() {
   const [centros, setCentros] = useState([]);
   const [terceros, setTerceros] = useState([]);
   const [plantillas, setPlantillas] = useState([]);
+
+  const [currentPageTerceros, setCurrentPageTerceros] = useState(1);
 
   const [selectedComprobante, setSelectedComprobante] = useState(null);
   
@@ -55,7 +58,10 @@ function ParametrosContables() {
         if(activeTab === 'lapsos') setLapsos(data);
         if(activeTab === 'puc') setPuc(data);
         if(activeTab === 'centros') setCentros(data);
-        if(activeTab === 'terceros') setTerceros(data);
+        if(activeTab === 'terceros') {
+          setTerceros(data);
+          setCurrentPageTerceros(1);
+        }
         if(activeTab === 'plantillas') setPlantillas(data);
       }
     } catch (e) { console.error("Error fetching data:", e); }
@@ -343,7 +349,7 @@ function ParametrosContables() {
             <table className="modern-table">
               <thead><tr><th>Identificación</th><th>Razón Social / Nombre</th><th>Tipo</th><th>Acciones</th></tr></thead>
               <tbody>
-                {terceros.map(t => (
+                {terceros.slice((currentPageTerceros - 1) * 20, currentPageTerceros * 20).map(t => (
                   <tr key={t.id_tercero}>
                     <td>{t.documento} {t.dv ? `-${t.dv}` : ''}</td>
                     <td>{t.razon_social || t.nombre_completo}</td>
@@ -353,6 +359,16 @@ function ParametrosContables() {
                 ))}
               </tbody>
             </table>
+            {terceros.length > 0 && (
+              <div style={{ marginTop: '15px' }}>
+                <Pagination 
+                  currentPage={currentPageTerceros}
+                  totalItems={terceros.length}
+                  pageSize={20}
+                  onPageChange={setCurrentPageTerceros}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -364,7 +380,7 @@ function ParametrosContables() {
             <div className="panel-toolbar">
               <div>
                 <h2>Plantillas y Modelos de Asiento 🪄</h2>
-                <p style={{fontSize:'12px', color:'#64748b'}}>Pre-configura esqueletos contables para agilizar la digitación.</p>
+                <p style={{fontSize:'12px', color: 'var(--text-muted)'}}>Pre-configura esqueletos contables para agilizar la digitación.</p>
               </div>
               <button className="btn-modern primary" onClick={createEmptyPlantilla}>+ Crear Nueva Plantilla</button>
             </div>
@@ -372,17 +388,17 @@ function ParametrosContables() {
               {plantillas.map(p => {
                 const docName = tiposDoc.find(t => t.id_tipo_doc === p.id_tipo_doc_defecto);
                 return (
-                <div key={p.id_plantilla} style={{background:'white', padding:'20px', borderRadius:'12px', border:'1px solid #e2e8f0', boxShadow:'0 4px 6px -1px rgba(0,0,0,0.05)'}}>
-                  <div style={{display:'flex', justifyContent:'space-between', borderBottom:'1px solid #e2e8f0', paddingBottom:'10px', marginBottom:'10px'}}>
+                <div key={p.id_plantilla} style={{background: 'var(--card-bg)', color: 'var(--text)', padding:'20px', borderRadius:'12px', border: '1px solid var(--border)', boxShadow:'0 4px 6px -1px rgba(0,0,0,0.05)'}}>
+                  <div style={{display:'flex', justifyContent:'space-between', borderBottom: '1px solid var(--border)', paddingBottom:'10px', marginBottom:'10px'}}>
                     <div>
-                      <h3 style={{margin:0, color:'#0f172a', fontSize:'16px'}}>{p.nombre}</h3>
+                      <h3 style={{margin:0, color: 'var(--text)', fontSize:'16px'}}>{p.nombre}</h3>
                       {docName && <span className="badge bg-green" style={{marginTop:'5px', display:'inline-block'}}>Auto-Aplica en: {docName.codigo}</span>}
                     </div>
                     <button className="btn-sm del" style={{height:'30px'}} onClick={()=>deleteItem(p.id_plantilla, 'plantillas')}>Borrar Plantilla</button>
                   </div>
                   <table style={{width:'100%', fontSize:'12px', borderCollapse:'collapse', marginBottom:'10px'}}>
                     <thead>
-                      <tr style={{borderBottom:'1px solid #eee'}}><th style={{textAlign:'left', paddingBottom:'4px'}}>Cuenta</th><th>Naturaleza</th><th></th></tr>
+                      <tr style={{borderBottom: '1px solid var(--border-color)'}}><th style={{textAlign:'left', paddingBottom:'4px'}}>Cuenta</th><th>Naturaleza</th><th></th></tr>
                     </thead>
                     <tbody>
                       {p.detalles?.map((d, i) => (
@@ -399,7 +415,7 @@ function ParametrosContables() {
                   </table>
                   
                   {/* Inline Form to add account */}
-                  <div style={{display:'flex', gap:'8px', marginTop:'10px', padding:'10px', background:'#f8fafc', borderRadius:'8px', position:'relative'}}>
+                  <div style={{display:'flex', gap:'8px', marginTop:'10px', padding:'10px', background: 'var(--bg-main)', borderRadius:'8px', position:'relative'}}>
                     <div style={{flex:1}}>
                       <input 
                         type="text" 
@@ -414,15 +430,15 @@ function ParametrosContables() {
                       />
                       {/* AC Dropdown */}
                       {acPlantilla.id_plantilla === p.id_plantilla && acPlantilla.text.length > 1 && !acPlantilla.id_cuenta && (
-                        <ul className="ac-list" style={{position:'absolute', top:'100%', left:0, width:'100%', zIndex:100, background:'white', border:'1px solid #cbd5e1', borderRadius:'4px', maxHeight:'200px', overflowY:'auto', padding:0, margin:0, listStyle:'none', boxShadow:'0 10px 15px -3px rgba(0,0,0,0.1)'}}>
+                        <ul className="ac-list" style={{position:'absolute', top:'100%', left:0, width:'100%', zIndex:100, background: 'var(--card-bg)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius:'4px', maxHeight:'200px', overflowY:'auto', padding:0, margin:0, listStyle:'none', boxShadow:'0 10px 15px -3px rgba(0,0,0,0.1)'}}>
                           {puc.filter(cta => cta.nivel === 5 && (cta.codigo.includes(acPlantilla.text) || cta.nombre.toLowerCase().includes(acPlantilla.text.toLowerCase())))
                              .slice(0, 15).map(cta => (
-                            <li key={cta.id_cuenta} style={{padding:'8px 12px', cursor:'pointer', borderBottom:'1px solid #f1f5f9', fontSize:'12px'}} onMouseEnter={(e)=>e.target.style.background='#f1f5f9'} onMouseLeave={(e)=>e.target.style.background='white'} onClick={() => {
+                            <li key={cta.id_cuenta} style={{padding:'8px 12px', cursor:'pointer', borderBottom: '1px solid var(--border)', fontSize:'12px'}} onMouseEnter={(e)=>e.target.style.background='#f1f5f9'} onMouseLeave={(e)=>e.target.style.background='white'} onClick={() => {
                               setAcPlantilla({ ...acPlantilla, text: `${cta.codigo} - ${cta.nombre}`, id_cuenta: cta.id_cuenta });
                             }}>{cta.codigo} - {cta.nombre}</li>
                           ))}
                           {puc.filter(cta => cta.nivel === 5 && (cta.codigo.includes(acPlantilla.text) || cta.nombre.toLowerCase().includes(acPlantilla.text.toLowerCase()))).length === 0 && (
-                            <li style={{padding:'8px 12px', fontSize:'12px', color:'#64748b'}}>No se encontraron cuentas.</li>
+                            <li style={{padding:'8px 12px', fontSize:'12px', color: 'var(--text-muted)'}}>No se encontraron cuentas.</li>
                           )}
                         </ul>
                       )}
@@ -446,7 +462,7 @@ function ParametrosContables() {
                 </div>
                 );
               })}
-              {plantillas.length === 0 && <p style={{color:'#64748b'}}>No hay plantillas creadas. Usa el botón superior para crear una.</p>}
+              {plantillas.length === 0 && <p style={{color: 'var(--text-muted)'}}>No hay plantillas creadas. Usa el botón superior para crear una.</p>}
             </div>
           </div>
         )}

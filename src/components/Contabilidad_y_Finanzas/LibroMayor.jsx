@@ -129,7 +129,8 @@ const LibroMayor = ({ tenantId }) => {
           <title>Libro Mayor y Balances</title>
           <style>
             @media print {
-              @page { margin: 10mm; size: portrait; }
+              @page { margin: 10mm; size: portrait;   table, th, td { color: black !important; border-color: #ccc !important; }
+}
               body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: system-ui, -apple-system, sans-serif; font-size: 11px; }
               table { page-break-inside: auto; }
               tr    { page-break-inside: avoid; page-break-after: auto; }
@@ -155,11 +156,11 @@ const LibroMayor = ({ tenantId }) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(val);
   };
 
-  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' };
-  const inputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', background: 'white', width: '100%', boxSizing: 'border-box' };
+  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '4px' };
+  const inputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', width: '100%', boxSizing: 'border-box' };
 
   return (
-    <div style={{ margin: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+    <div style={{ margin: '20px', background: 'var(--card-bg)', color: 'var(--text)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
       <div className="no-print">
         <div style={{ background: 'linear-gradient(90deg, #0f172a 0%, #1e293b 100%)', padding: '24px', color: 'white', borderTopLeftRadius: '8px', borderTopRightRadius: '8px' }}>
           <h2 style={{ margin: '0 0 8px 0' }}>📚 Libro Mayor y Balances</h2>
@@ -167,7 +168,7 @@ const LibroMayor = ({ tenantId }) => {
         </div>
         
         <div style={{ padding: '24px' }}>
-          <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '24px', display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
+          <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '24px', display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>Fecha Desde *</label>
               <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={inputStyle} />
@@ -209,16 +210,16 @@ const LibroMayor = ({ tenantId }) => {
       </div>
 
       {data.length > 0 && (
-        <div className="printable-report" style={{ padding: '40px', background: 'white' }}>
+        <div className="printable-report" style={{ padding: '40px', background: 'var(--card-bg)', color: 'var(--text)' }}>
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>
             <h1 style={{ margin: '0 0 8px 0', fontSize: '20px' }}>LIBRO MAYOR Y BALANCES</h1>
-            <p style={{ margin: '0', color: '#64748b' }}>Periodo: {fechaInicio} a {fechaFin}</p>
-            {idFinca && <p style={{ margin: '4px 0 0 0', color: '#64748b' }}>Finca Filtro: {fincas.find(f => f.id_finca.toString() === idFinca)?.nombre}</p>}
+            <p style={{ margin: '0', color: 'var(--text-muted)' }}>Periodo: {fechaInicio} a {fechaFin}</p>
+            {idFinca && <p style={{ margin: '4px 0 0 0', color: 'var(--text-muted)' }}>Finca Filtro: {fincas.find(f => f.id_finca.toString() === idFinca)?.nombre}</p>}
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
             <thead>
-              <tr style={{ background: '#f8fafc', borderBottom: '2px solid #cbd5e1' }}>
+              <tr style={{ background: 'var(--bg-main)', borderBottom: '2px solid var(--border)' }}>
                 <th style={{ padding: '8px', textAlign: 'left' }}>CÓDIGO</th>
                 <th style={{ padding: '8px', textAlign: 'left' }}>CUENTA MAYOR</th>
                 <th style={{ padding: '8px', textAlign: 'right' }}>SALDO ANTERIOR</th>
@@ -230,12 +231,12 @@ const LibroMayor = ({ tenantId }) => {
             <tbody>
               {data.map(acc => {
                 let fw = acc.nivel === 1 ? 'bold' : (acc.nivel === 2 ? '600' : 'normal');
-                let color = acc.nivel === 1 ? '#0f172a' : '#334155';
+                let color = acc.nivel === 1 ? 'var(--text)' : 'var(--text-muted)';
                 let pl = acc.nivel === 1 ? '8px' : (acc.nivel === 2 ? '16px' : '24px');
-                let bg = acc.nivel === 1 ? '#f1f5f9' : 'transparent';
+                let bg = acc.nivel === 1 ? 'var(--bg-main)' : 'transparent';
                 
                 return (
-                  <tr key={acc.codigo} style={{ borderBottom: '1px solid #f1f5f9', background: bg }}>
+                  <tr key={acc.codigo} style={{ borderBottom: '1px solid var(--border)', background: bg }}>
                     <td style={{ padding: '6px 8px', paddingLeft: pl, fontWeight: fw, color }}>{acc.codigo}</td>
                     <td style={{ padding: '6px 8px', paddingLeft: pl, fontWeight: fw, color }}>{acc.nombre}</td>
                     <td style={{ padding: '6px 8px', textAlign: 'right', color: acc.saldo_anterior !== 0 ? color : '#cbd5e1', fontWeight: fw }}>
@@ -247,7 +248,7 @@ const LibroMayor = ({ tenantId }) => {
                     <td style={{ padding: '6px 8px', textAlign: 'right', color: acc.credito !== 0 ? color : '#cbd5e1', fontWeight: fw }}>
                       {formatCurrency(acc.credito)}
                     </td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 'bold', color: '#0f172a' }}>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 'bold', color: 'var(--text)' }}>
                       {formatCurrency(acc.saldo_final)}
                     </td>
                   </tr>
@@ -256,7 +257,7 @@ const LibroMayor = ({ tenantId }) => {
             </tbody>
           </table>
           
-          <div style={{ marginTop: '60px', display: 'flex', justifyContent: 'space-around', color: '#64748b' }}>
+          <div style={{ marginTop: '60px', display: 'flex', justifyContent: 'space-around', color: 'var(--text-muted)' }}>
             <div style={{ textAlign: 'center', borderTop: '1px solid #cbd5e1', paddingTop: '8px', width: '250px' }}>
               <strong>Representante Legal</strong>
             </div>

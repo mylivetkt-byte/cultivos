@@ -1,15 +1,12 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = express.Router();
 
-function getDb(req) {
-  return req.tenantPool || pool;
-}
-
 // 1. Get all trees (with options to filter by lote)
 router.get('/trees', async (req, res) => {
-  const { tenantId, loteId } = req.query;
+  const { tenantId, loteId, limit, offset } = req.query;
   const tid = tenantId || 1;
 
   try {
@@ -27,6 +24,12 @@ router.get('/trees', async (req, res) => {
       query += ` AND id_lote = ?`;
       params.push(loteId);
     }
+    
+    // Add pagination to prevent memory overflow with 100k+ trees
+    const safeLimit = parseInt(limit, 10) || 5000;
+    const safeOffset = parseInt(offset, 10) || 0;
+    query += ` LIMIT ? OFFSET ?`;
+    params.push(safeLimit, safeOffset);
 
     const [rows] = await getDb(req).query(query, params);
 
@@ -165,12 +168,13 @@ router.post('/visit', async (req, res) => {
     return res.status(400).json({ error: 'Faltan parámetros obligatorios de visita: id_arbol, id_empleado, estado_salud' });
   }
 
+  const connection = await getDb(req).getConnection();
   try {
     // Start Transaction
-    await getDb(req).query('START TRANSACTION');
+    await connection.beginTransaction();
 
     // 1. Insert visit record
-    const [visRes] = await getDb(req).query(`
+    const [visRes] = await connection.query(`
       INSERT INTO atec_visitas_arboles (id_tenant, id_arbol, id_empleado, fecha_visita, estado_salud_detectado, diagnostico, observaciones)
       VALUES (?, ?, ?, NOW(), ?, ?, ?)
     `, [tid, id_arbol, id_empleado, estado_salud, diagnostico || null, observaciones || null]);
@@ -178,7 +182,7 @@ router.post('/visit', async (req, res) => {
     const visitId = visRes.insertId;
 
     // 2. Update tree health status
-    await getDb(req).query(
+    await connection.query(
       'UPDATE siembra_arboles SET estado_salud = ? WHERE id_arbol = ?',
       [estado_salud, id_arbol]
     );
@@ -186,7 +190,7 @@ router.post('/visit', async (req, res) => {
     // 3. If there is a recipe / disease diagnostic, insert recipe card
     let recipeId = null;
     if (enfermedad_plaga_detectada && receta_tratamiento) {
-      const [recRes] = await getDb(req).query(`
+      const [recRes] = await connection.query(`
         INSERT INTO atec_recetario_enfermedades (id_tenant, id_visita_arbol, enfermedad_plaga_detectada, gravedad, receta_tratamiento, id_insumo, dosis_recomendada, fecha_aplicacion_sugerida, aplicado)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
       `, [
@@ -200,7 +204,7 @@ router.post('/visit', async (req, res) => {
       recipeId = recRes.insertId;
     }
 
-    await getDb(req).query('COMMIT');
+    await connection.commit();
 
     res.json({
       success: true,
@@ -209,17 +213,22 @@ router.post('/visit', async (req, res) => {
       message: 'Inspección fitosanitaria y receta médica agrícola registradas con éxito.'
     });
   } catch (error) {
-    await getDb(req).query('ROLLBACK');
+    await connection.rollback();
     res.status(500).json({ error: error.message });
+  } finally {
+    connection.release();
   }
 });
 
 // 5. Get all recipes / diagnoses cards list
 router.get('/recipes', async (req, res) => {
-  const { tenantId } = req.query;
+  const { tenantId, limit, offset } = req.query;
   const tid = tenantId || 1;
 
   try {
+    const safeLimit = parseInt(limit, 10) || 1000;
+    const safeOffset = parseInt(offset, 10) || 0;
+    
     const [rows] = await getDb(req).query(`
       SELECT 
         r.id_receta, r.enfermedad_plaga_detectada, r.gravedad, 
@@ -236,7 +245,8 @@ router.get('/recipes', async (req, res) => {
       JOIN rrhh_empleados e ON v.id_empleado = e.id_empleado
       WHERE r.id_tenant = ?
       ORDER BY v.fecha_visita DESC
-    `, [tid]);
+      LIMIT ? OFFSET ?
+    `, [tid, safeLimit, safeOffset]);
 
     res.json(rows);
   } catch (error) {

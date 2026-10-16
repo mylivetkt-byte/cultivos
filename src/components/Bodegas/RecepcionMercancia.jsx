@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../utils/api';
+import Pagination from '../Pagination';
 
 function RecepcionMercancia({ tenantId, fincaId }) {
   const [ordenes, setOrdenes] = useState([]);
@@ -12,6 +13,8 @@ function RecepcionMercancia({ tenantId, fincaId }) {
   const [loading, setLoading] = useState(false);
   const [historial, setHistorial] = useState([]);
   const [view, setView] = useState('ordenes');
+  const [currentOrdenesPage, setCurrentOrdenesPage] = useState(1);
+  const [currentHistorialPage, setCurrentHistorialPage] = useState(1);
 
   // Filters
   const [startDate, setStartDate] = useState('');
@@ -45,6 +48,7 @@ function RecepcionMercancia({ tenantId, fincaId }) {
       const res = await authFetch(url);
       const data = await res.json();
       setOrdenes(Array.isArray(data) ? data : []);
+      setCurrentOrdenesPage(1);
     } catch (err) { console.error(err); }
   };
 
@@ -72,6 +76,7 @@ function RecepcionMercancia({ tenantId, fincaId }) {
       const res = await authFetch(`/api/compras/recepciones?id_tenant=${tenantId}`);
       const data = await res.json();
       setHistorial(Array.isArray(data) ? data : []);
+      setCurrentHistorialPage(1);
     } catch (err) { console.error(err); }
   };
 
@@ -199,51 +204,61 @@ function RecepcionMercancia({ tenantId, fincaId }) {
           {ordenes.length === 0 ? (
             <p style={{ color: '#64748b', padding: '20px' }}>No hay ordenes pendientes.</p>
           ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>N Orden</th>
-                  <th>Fecha</th>
-                  <th>Proveedor</th>
-                  <th>NIT</th>
-                  <th>Solicitante</th>
-                  <th>Prioridad</th>
-                  <th>Total</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ordenes.map(o => (
-                  <tr key={o.id_orden_compra}>
-                    <td><strong>{o.numero_orden}</strong></td>
-                    <td>{fmt(o.fecha_emision)}</td>
-                    <td>{o.proveedor}</td>
-                    <td><code>{o.nit_proveedor}</code></td>
-                    <td>
-                      {o.empleado_solicitante ? (
-                        <div>
-                          <span>{o.empleado_solicitante} {o.apellido_solicitante}</span>
-                          <span className="block text-xs text-slate-400">{o.area_solicitante}</span>
-                        </div>
-                      ) : <span className="text-slate-400">-</span>}
-                    </td>
-                    <td>
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                        o.prioridad === 'Critica' ? 'bg-red-100 text-red-700' :
-                        o.prioridad === 'Urgente' ? 'bg-orange-100 text-orange-700' :
-                        'bg-slate-100 text-slate-700'
-                      }`}>{o.prioridad}</span>
-                    </td>
-                    <td>{fmtM(o.total)}</td>
-                    <td><span className={`status-badge ${o.estado === 'Confirmada' ? 'warning' : 'primary'}`}>{o.estado}</span></td>
-                    <td>
-                      <button className="btn btn-sm btn-primary" onClick={() => handleSelectOrden(o)}>Recibir</button>
-                    </td>
+            <>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>N Orden</th>
+                    <th>Fecha</th>
+                    <th>Proveedor</th>
+                    <th>NIT</th>
+                    <th>Solicitante</th>
+                    <th>Prioridad</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {ordenes.slice((currentOrdenesPage - 1) * 20, currentOrdenesPage * 20).map(o => (
+                    <tr key={o.id_orden_compra}>
+                      <td><strong>{o.numero_orden}</strong></td>
+                      <td>{fmt(o.fecha_emision)}</td>
+                      <td>{o.proveedor}</td>
+                      <td><code>{o.nit_proveedor}</code></td>
+                      <td>
+                        {o.empleado_solicitante ? (
+                          <div>
+                            <span>{o.empleado_solicitante} {o.apellido_solicitante}</span>
+                            <span className="block text-xs text-slate-400">{o.area_solicitante}</span>
+                          </div>
+                        ) : <span className="text-slate-400">-</span>}
+                      </td>
+                      <td>
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                          o.prioridad === 'Critica' ? 'bg-red-100 text-red-700' :
+                          o.prioridad === 'Urgente' ? 'bg-orange-100 text-orange-700' :
+                          'bg-slate-100 text-slate-700'
+                        }`}>{o.prioridad}</span>
+                      </td>
+                      <td>{fmtM(o.total)}</td>
+                      <td><span className={`status-badge ${o.estado === 'Confirmada' ? 'warning' : 'primary'}`}>{o.estado}</span></td>
+                      <td>
+                        <button className="btn btn-sm btn-primary" onClick={() => handleSelectOrden(o)}>Recibir</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {ordenes.length > 0 && (
+                <Pagination 
+                  currentPage={currentOrdenesPage}
+                  totalItems={ordenes.length}
+                  pageSize={20}
+                  onPageChange={setCurrentOrdenesPage}
+                />
+              )}
+            </>
           )}
         </div>
       )}
@@ -355,40 +370,50 @@ function RecepcionMercancia({ tenantId, fincaId }) {
           {historial.length === 0 ? (
             <p style={{ color: '#64748b', padding: '20px' }}>No hay entradas registradas.</p>
           ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Consecutivo</th>
-                  <th>Fecha</th>
-                  <th>Bodega Destino</th>
-                  <th>Recibido por</th>
-                  <th>Empleado</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {historial.map(r => (
-                  <tr key={r.id_documento}>
-                    <td><strong>{r.consecutivo}</strong></td>
-                    <td>{fmtH(r.fecha)}</td>
-                    <td>{r.bodega_destino_nombre || '-'}</td>
-                    <td>{r.usuario_crea_nombre}</td>
-                    <td>{r.empleado_recibe_nombre || '-'}</td>
-                    <td><span className={`px-2 py-1 rounded text-xs font-semibold ${
-                      r.estado === 'Aplicado' ? 'bg-green-100 text-green-700' :
-                      r.estado === 'Anulado' ? 'bg-red-100 text-red-700' :
-                      'bg-slate-100 text-slate-700'
-                    }`}>{r.estado}</span></td>
-                    <td>
-                      <button className="btn btn-sm btn-secondary" onClick={() => fetchRecepcionDetalle(r.id_documento)}>
-                        Ver Detalle
-                      </button>
-                    </td>
+            <>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Consecutivo</th>
+                    <th>Fecha</th>
+                    <th>Bodega Destino</th>
+                    <th>Recibido por</th>
+                    <th>Empleado</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {historial.slice((currentHistorialPage - 1) * 20, currentHistorialPage * 20).map(r => (
+                    <tr key={r.id_documento}>
+                      <td><strong>{r.consecutivo}</strong></td>
+                      <td>{fmtH(r.fecha)}</td>
+                      <td>{r.bodega_destino_nombre || '-'}</td>
+                      <td>{r.usuario_crea_nombre}</td>
+                      <td>{r.empleado_recibe_nombre || '-'}</td>
+                      <td><span className={`px-2 py-1 rounded text-xs font-semibold ${
+                        r.estado === 'Aplicado' ? 'bg-green-100 text-green-700' :
+                        r.estado === 'Anulado' ? 'bg-red-100 text-red-700' :
+                        'bg-slate-100 text-slate-700'
+                      }`}>{r.estado}</span></td>
+                      <td>
+                        <button className="btn btn-sm btn-secondary" onClick={() => fetchRecepcionDetalle(r.id_documento)}>
+                          Ver Detalle
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {historial.length > 0 && (
+                <Pagination 
+                  currentPage={currentHistorialPage}
+                  totalItems={historial.length}
+                  pageSize={20}
+                  onPageChange={setCurrentHistorialPage}
+                />
+              )}
+            </>
           )}
         </div>
       )}

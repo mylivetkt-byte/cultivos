@@ -43,10 +43,13 @@
 
 - **No test scripts** – the repository currently has no npm `test` command. If you add tests, create a script (e.g., `"test": "vitest"` or `"test": "mocha"`). Until then, rely on manual API calls (Postman, curl, or the client UI).
 
-- **Important package quirks**  
+- **WhatsApp bot runs in a SEPARATE process** – `server/whatsapp-bot.js` owns the Baileys socket and exposes a local mini‑API on `WHATSAPP_BOT_PORT` (default `3004`, bound to `127.0.0.1`). The main API talks to it over HTTP via `WHATSAPP_BOT_URL`. `server/services/whatsappService.js` is a thin HTTP client that keeps the old function signatures (`getStatus`, `sendTextMessage`, `sendDocumentMessage`, `sendPdfReport`, `logoutWhatsApp`), so existing routers still work. The real socket logic lives in `server/services/whatsappBotCore.js`. If the bot is not running, `/api/whatsapp/*` returns `503`.
+
+- **Secrets live in `.env`** – copy `.env.example` → `.env` and fill real values. `JWT_SECRET` is required in production (the server refuses to start without it; dev has an insecure fallback with a warning). `.env` and `auth_info_baileys/` are gitignored.
+- **Important package quirks**
   - The server parses JSON payloads up to **50 MB** (`express.json({ limit: '50mb' })`).  
   - File uploads should therefore respect this limit.  
-  - All routes are mounted before the duplicate `app.use('/api/whatsapp', …)` on line 77 – the second registration is redundant but harmless.
+  - All routes are mounted before the duplicate `app.use('/api/whatsapp', …)` on line 77 – already fixed: the duplicate `/api/basculas` was removed from `server/index.js` (Paso 3).
 
 - **Typical workflow for a new feature**  
   1. Add/modify a router file under `server/routes/`.  
@@ -71,4 +74,4 @@
 - **Núcleo**: `codigoNucleo` y `nombre` únicos por finca (`UNIQUE(id_finca, codigoNucleo)` y `UNIQUE(id_finca, nombre)`).  Validar en `/api/nucleos` y en la UI correspondiente.
 - **Implementación mínima**: agregar índices `UNIQUE` en los scripts de creación/modificación de tablas y añadir una consulta `SELECT` previa al `INSERT/UPDATE` en los routers; mostrar error 409 y mensaje visual en el cliente.
 
-- **Regla de Buscadores en CRUDs**: En cada formulario o CRUD donde el usuario deba seleccionar un �tem (herramienta, producto, insumo), se debe utilizar siempre un buscador (AutoComplete o Select con showSearch) por c�digo o nombre, evitando inputs de texto simple para descripciones de �tems.
+- **Regla de Buscadores en CRUDs**: En cada formulario o CRUD donde el usuario deba seleccionar un �tem (herramienta, producto, insumo), se debe utilizar siempre un buscador (AutoComplete o Select con showSearch) por c�digo o nombre, evitando inputs de texto simple para descripciones de �tems.

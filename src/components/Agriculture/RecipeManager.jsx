@@ -211,7 +211,7 @@ const RecipeManager = () => {
 
       <div className="card-grid">
         {filteredRecipes.length === 0 ? (
-          <div style={{ padding: '20px', gridColumn: '1 / -1', textAlign: 'center', background: '#fff', borderRadius: '8px' }}>
+          <div style={{ padding: '20px', gridColumn: '1 / -1', textAlign: 'center', background: 'var(--bg-card)', borderRadius: '8px' }}>
             Presione 'Procesar / Buscar' para ver resultados o ajuste sus filtros.
           </div>
         ) : (

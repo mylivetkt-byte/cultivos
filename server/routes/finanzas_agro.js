@@ -1,11 +1,8 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 router.get('/dashboard', async (req, res) => {
   try {
@@ -20,57 +17,63 @@ router.get('/dashboard', async (req, res) => {
     }
 
     // 1. Plata Gastada (Salidas Reales)
-    // Cuentas de gastos (5) o Costos (7) o pasivos pagados, pero simplificado a los egresos reales.
-    const [gastos] = await getDb(req).query(`
+    let sqlGastos = `
       SELECT ROUND(SUM(cd.debito - cd.credito), 0) AS total
       FROM contab_detalles cd
       JOIN contab_documentos doc ON cd.id_documento = doc.id_documento
       JOIN plan_contable pc ON cd.id_cuenta = pc.id_cuenta
+      LEFT JOIN centros_costo cc ON cd.id_centro_costo = cc.id_centro_costo
       WHERE doc.id_tenant = ? AND ${dateFilter}
       AND (pc.codigo LIKE '5%' OR pc.codigo LIKE '7%')
-    `, [tid]);
+    `;
+    if (id_finca) sqlGastos += ` AND cc.id_finca = ${getDb(req).escape(id_finca)}`;
+    const [gastos] = await getDb(req).query(sqlGastos, [tid]);
 
     // 2. Plata Enterrada (Inversión en Cultivos Activos / Siembras)
     // Suma de los costos de producción de las siembras que están en estado 'Activo'
     let sqlSiembras = `SELECT ROUND(SUM(cantidad_plantas * 1500), 0) as total FROM siembras WHERE id_tenant = ? AND estado = 'Activo'`;
-    if (id_finca) sqlSiembras += ` AND id_lote IN (SELECT id_lote FROM lotes WHERE id_finca = ${getDb(req).escape(id_finca)})`;
+    if (id_finca) sqlSiembras += ` AND id_lote IN (SELECT l.id_lote FROM lotes l JOIN nucleos n ON l.id_nucleo = n.id_nucleo WHERE n.id_finca = ${getDb(req).escape(id_finca)})`;
     if (id_lote) sqlSiembras += ` AND id_lote = ${getDb(req).escape(id_lote)}`;
     const [enterrada] = await getDb(req).query(sqlSiembras, [tid]);
 
     // 3. Ventas Reales (Ingresos)
-    const [ventas] = await getDb(req).query(`
+    let sqlVentas = `
       SELECT ROUND(SUM(cd.credito - cd.debito), 0) AS total
       FROM contab_detalles cd
       JOIN contab_documentos doc ON cd.id_documento = doc.id_documento
       JOIN plan_contable pc ON cd.id_cuenta = pc.id_cuenta
+      LEFT JOIN centros_costo cc ON cd.id_centro_costo = cc.id_centro_costo
       WHERE doc.id_tenant = ? AND ${dateFilter}
       AND pc.codigo LIKE '4%'
-    `, [tid]);
+    `;
+    if (id_finca) sqlVentas += ` AND cc.id_finca = ${getDb(req).escape(id_finca)}`;
+    const [ventas] = await getDb(req).query(sqlVentas, [tid]);
 
     // 4. Proyección de Cosecha
     // Hectareas activas * 20 toneladas * $500.000 (Mock calculation for demonstration)
     let sqlHectareas = `SELECT COALESCE(SUM(l.hectareas), 0) as total FROM siembras s JOIN lotes l ON s.id_lote = l.id_lote WHERE s.id_tenant = ? AND s.estado = 'Activo'`;
-    if (id_finca) sqlHectareas += ` AND l.id_finca = ${getDb(req).escape(id_finca)}`;
+    if (id_finca) sqlHectareas += ` AND l.id_nucleo IN (SELECT id_nucleo FROM nucleos WHERE id_finca = ${getDb(req).escape(id_finca)})`;
     if (id_lote) sqlHectareas += ` AND l.id_lote = ${getDb(req).escape(id_lote)}`;
     const [hectareas] = await getDb(req).query(sqlHectareas, [tid]);
     const totalHectareas = hectareas[0]?.total || 0;
     const proyeccion = totalHectareas * 20 * 500000; // 20 ton/ha * 500k COP/ton
 
     // Datos para las gráficas
-    const [flujoMensual] = await getDb(req).query(`
+    let sqlFlujo = `
       SELECT DATE_FORMAT(doc.fecha, '%Y-%m') AS periodo,
              ROUND(SUM(CASE WHEN pc.codigo LIKE '4%' THEN cd.credito - cd.debito ELSE 0 END), 0) AS ingresos,
              ROUND(SUM(CASE WHEN pc.codigo LIKE '5%' OR pc.codigo LIKE '7%' THEN cd.debito - cd.credito ELSE 0 END), 0) AS egresos
       FROM contab_detalles cd
       JOIN contab_documentos doc ON cd.id_documento = doc.id_documento
       JOIN plan_contable pc ON cd.id_cuenta = pc.id_cuenta
+      LEFT JOIN centros_costo cc ON cd.id_centro_costo = cc.id_centro_costo
       WHERE doc.id_tenant = ? AND ${dateFilter}
-      GROUP BY DATE_FORMAT(doc.fecha, '%Y-%m')
-      ORDER BY periodo ASC
-      LIMIT 12
-    `, [tid]);
+    `;
+    if (id_finca) sqlFlujo += ` AND cc.id_finca = ${getDb(req).escape(id_finca)}`;
+    sqlFlujo += ` GROUP BY DATE_FORMAT(doc.fecha, '%Y-%m') ORDER BY periodo ASC LIMIT 12`;
+    const [flujoMensual] = await getDb(req).query(sqlFlujo, [tid]);
 
-    const [gastosCategorias] = await getDb(req).query(`
+    let sqlCategorias = `
       SELECT CASE
                WHEN pc.codigo LIKE '72%' THEN 'Nómina de Campo'
                WHEN pc.codigo LIKE '73%' THEN 'Insumos y Abonos'
@@ -82,11 +85,12 @@ router.get('/dashboard', async (req, res) => {
       FROM contab_detalles cd
       JOIN contab_documentos doc ON cd.id_documento = doc.id_documento
       JOIN plan_contable pc ON cd.id_cuenta = pc.id_cuenta
+      LEFT JOIN centros_costo cc ON cd.id_centro_costo = cc.id_centro_costo
       WHERE doc.id_tenant = ? AND ${dateFilter} AND (pc.codigo LIKE '5%' OR pc.codigo LIKE '7%')
-      GROUP BY name
-      ORDER BY value DESC
-      LIMIT 8
-    `, [tid]);
+    `;
+    if (id_finca) sqlCategorias += ` AND cc.id_finca = ${getDb(req).escape(id_finca)}`;
+    sqlCategorias += ` GROUP BY name ORDER BY value DESC LIMIT 8`;
+    const [gastosCategorias] = await getDb(req).query(sqlCategorias, [tid]);
 
     res.json({
       resumen: {
@@ -125,15 +129,16 @@ router.get('/costos-produccion', async (req, res) => {
         cp.costo_total,
         (cp.costo_total / l.hectareas) as costo_por_hectarea
       FROM costos_produccion cp
-      LEFT JOIN fincas f ON cp.id_finca = f.id_finca
       LEFT JOIN lotes l ON cp.id_lote = l.id_lote
+      LEFT JOIN nucleos n ON l.id_nucleo = n.id_nucleo
+      LEFT JOIN fincas f ON n.id_finca = f.id_finca
       LEFT JOIN cultivos c ON cp.id_cultivo = c.id_cultivo
       WHERE cp.id_tenant = ?
     `;
     const params = [tenantId || 1];
 
     if (id_finca) {
-      sql += ' AND cp.id_finca = ?';
+      sql += ' AND f.id_finca = ?';
       params.push(id_finca);
     }
     if (id_lote) {
@@ -229,6 +234,54 @@ router.post('/activos-biologicos/valorar', async (req, res) => {
     res.json({ success: true, message: "Valoración registrada correctamente" });
   } catch (error) {
     console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- 3. RENTABILIDAD AGRO-FINANCIERA POR LOTE ---
+router.get('/rentabilidad-lote', async (req, res) => {
+  try {
+    const { tenantId, id_finca, id_lote, cosecha } = req.query;
+    const tid = tenantId || 1;
+    const year = Number(cosecha) === 1 ? 2026 : new Date().getFullYear();
+    
+    // Obtenemos los gastos e ingresos agrupados por un concepto genérico
+    let sql = `
+      SELECT 
+        CASE
+          WHEN pc.codigo LIKE '72%' THEN 'Mano de Obra (Campo)'
+          WHEN pc.codigo LIKE '73%' THEN 'Insumos y Fertilizantes'
+          WHEN pc.codigo LIKE '61%' THEN 'Mantenimiento y Riego'
+          WHEN pc.codigo LIKE '51%' THEN 'Servicios Administrativos'
+          WHEN pc.codigo LIKE '41%' THEN 'Venta de Cosecha'
+          ELSE 'Otros Conceptos'
+        END AS concepto,
+        ROUND(SUM(CASE WHEN pc.codigo LIKE '5%' OR pc.codigo LIKE '7%' THEN cd.debito - cd.credito ELSE 0 END), 0) AS costo,
+        ROUND(SUM(CASE WHEN pc.codigo LIKE '4%' THEN cd.credito - cd.debito ELSE 0 END), 0) AS ingreso
+      FROM contab_detalles cd
+      JOIN contab_documentos doc ON cd.id_documento = doc.id_documento
+      JOIN plan_contable pc ON cd.id_cuenta = pc.id_cuenta
+      LEFT JOIN centros_costo cc ON cd.id_centro_costo = cc.id_centro_costo
+      WHERE doc.id_tenant = ? AND YEAR(doc.fecha) = ?
+      AND (pc.codigo LIKE '4%' OR pc.codigo LIKE '5%' OR pc.codigo LIKE '7%')
+    `;
+    const params = [tid, year];
+
+    if (id_finca) {
+      sql += ` AND cc.id_finca = ?`;
+      params.push(id_finca);
+    }
+    
+    // Si no tenemos id_lote a nivel contable, simularemos el filtro proporcionalmente
+    // en la práctica, si el sistema no guarda id_lote en centros de costo, la rentabilidad
+    // a nivel lote es teórica basada en la Finca. 
+
+    sql += ` GROUP BY concepto ORDER BY costo DESC, ingreso DESC`;
+    
+    const [rows] = await getDb(req).query(sql, params);
+    res.json({ data: rows });
+  } catch (error) {
+    console.error('Error rentabilidad-lote:', error);
     res.status(500).json({ error: error.message });
   }
 });

@@ -5,7 +5,7 @@ function WhatsAppManager() {
   const [status, setStatus] = useState({ connected: false, qr: '' });
   const [loading, setLoading] = useState(true);
   const [testPhone, setTestPhone] = useState('');
-  const [testMessage, setTestMessage] = useState('Hola! Este es un mensaje de prueba desde SAS Agrícolas.');
+  const [testMessage, setTestMessage] = useState('Hola! Este es un mensaje de prueba desde AgroPaccioli.');
   const [sending, setSending] = useState(false);
 
   const fetchStatus = async () => {
@@ -107,7 +107,7 @@ function WhatsAppManager() {
         <div className="card" style={{ flex: '1 1 400px', padding: '30px' }}>
           <h2>Prueba de Mensajería</h2>
           <p style={{ color: '#64748b', marginBottom: '20px' }}>
-            Si el bot está conectado, puedes enviarte un mensaje de prueba para verificar que SAS Agrícolas tiene acceso.
+            Si el bot está conectado, puedes enviarte un mensaje de prueba para verificar que AgroPaccioli tiene acceso.
           </p>
 
           <form onSubmit={handleTestSend}>

@@ -1,0 +1,27 @@
+Producción – Funcionalidades por perfil de usuario
+
+1. Campesino (pequeño agricultor)
+   - Registro de cultivos y lotes básicos.
+   - Creación y consulta de precios de mercado referenciales para productos terminados.
+   - Generación de reportes PDF/Excel de precios consultados.
+   - Envío de notificaciones vía WhatsApp (alertas de precios).
+   - Acceso a historial de precios y filtros por rango de fechas.
+
+2. Agricultor de término medio
+   - Gestión completa de órdenes de producción (crear, editar, consultar).
+   - Uso de fórmulas de producción y cálculo de costos de materiales.
+   - Consulta avanzada de precios de mercado con filtros por producto, fecha y fuente.
+   - Exportación de datos a PDF, Excel y envío por WhatsApp.
+   - Dashboard de producción con indicadores de unidades producidas, costos y margen.
+   - Configuración de parámetros de tenant (margen mínimo rentable, días de validez de precios, etc.).
+
+3. Empresa agroindustrial (agricultura, ganadería y acuicultura)
+   - Gestión integral de todos los módulos de producción (cereales, horticultura, etc.).
+   - Integración con módulos de ganadería y acuicultura para trazabilidad de insumos y precios.
+   - Creación de precios de mercado por producto terminado y por insumo utilizado en procesos ganaderos/acuícolas.
+   - Automatización de consultas históricas y auditoría de consultas (tabla prod_consultas_historico).
+   - Generación de reportes consolidado de precios con métricas de rentabilidad por finca, núcleo y cultivo.
+   - Envío masivo de reportes vía WhatsApp a clientes y socios.
+   - Configuración avanzada de alertas y parámetros globales para múltiples tenants.
+
+Este documento detalla el alcance funcional del módulo de Producción para cada nivel de usuario, permitiendo planificar la capacitación y la adopción del sistema.

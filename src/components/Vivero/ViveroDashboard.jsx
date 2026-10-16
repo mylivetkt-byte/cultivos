@@ -106,7 +106,7 @@ export default function ViveroDashboard() {
     const viveroName = filtrosCatalog.viveros.find(v => v.id_vivero == selectedVivero)?.nombre || 'Todos los Viveros';
 
     doc.setFontSize(18);
-    doc.text('SAS Agrícolas - Reporte Gerencial de Viveros', 14, 20);
+    doc.text('AgroPaccioli - Reporte Gerencial de Viveros', 14, 20);
     doc.setFontSize(11);
     doc.text(`Finca: ${fincaName} | Vivero: ${viveroName}`, 14, 28);
     if (fechaInicio && fechaFin) doc.text(`Periodo: ${fechaInicio} a ${fechaFin}`, 14, 34);
@@ -154,8 +154,8 @@ export default function ViveroDashboard() {
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '14px' }}>Estadísticas y valorización del ciclo de propagación de cultivos.</p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={exportToExcel} style={{ padding: '8px 16px', background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>📄 Excel</button>
-          <button onClick={exportToPDF} style={{ padding: '8px 16px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>🖨️ PDF</button>
+          <button className="btn-action-base btn-excel" onClick={exportToExcel}>📄 Excel</button>
+          <button className="btn-action-base btn-pdf" onClick={exportToPDF}>🖨️ PDF</button>
         </div>
       </div>
 

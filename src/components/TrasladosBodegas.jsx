@@ -204,7 +204,7 @@ export default function TrasladosBodegas({ tenantId }) {
   };
 
   const columns = [
-    { title: 'ID', dataIndex: 'id_transferencia', key: 'id_transferencia', width: 80 },
+    { title: 'ID', dataIndex: 'id_transferencia', key: 'id_transferencia', width: 80, render: id => <b>#{id}</b> },
     { title: 'Fecha Solicitud', dataIndex: 'fecha_solicitud', key: 'fecha_solicitud', render: val => val ? dayjs(val).format('YYYY-MM-DD HH:mm') : '' },
     { title: 'Bodega Origen', dataIndex: 'bodega_origen', key: 'bodega_origen', render: (val, record) => <span><b>{val}</b><br/><small>{record.finca_origen}</small></span> },
     { title: 'Bodega Destino', dataIndex: 'bodega_destino', key: 'bodega_destino', render: (val, record) => <span><b>{val}</b><br/><small>{record.finca_destino}</small></span> },
@@ -241,7 +241,7 @@ export default function TrasladosBodegas({ tenantId }) {
   }
 
   return (
-    <div style={{ padding: '24px', background: '#fff', borderRadius: '8px', minHeight: '80vh' }}>
+    <div style={{ padding: '24px', background: 'var(--bg-card)', borderRadius: '8px', minHeight: '80vh' }}>
       <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
         <Col>
           <Title level={3} style={{ margin: 0, color: '#2e7d32' }}>🔄 Traslados Entre Bodegas</Title>

@@ -1,5 +1,6 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = express.Router();
 
@@ -8,7 +9,7 @@ router.get('/dashboard', async (req, res) => {
     const tenantId = req.headers['tenant-id'] || 1;
 
     // 1. Distribución de Hectáreas por Cultivo
-    const [hectareasPorCultivo] = await pool.query(`
+    const [hectareasPorCultivo] = await getDb(req).query(`
       SELECT c.nombre, SUM(s.hectareas_sembradas) as total_ha, c.tipo
       FROM siembras s
       JOIN cultivos c ON s.id_cultivo = c.id_cultivo
@@ -18,7 +19,7 @@ router.get('/dashboard', async (req, res) => {
     `);
 
     // 2. Cultivos Asociados (Intercropping)
-    const [asociaciones] = await pool.query(`
+    const [asociaciones] = await getDb(req).query(`
       SELECT cp.nombre as principal, cc.nombre as companero, a.beneficio_mutuo
       FROM asociacion_cultivos a
       JOIN cultivos cp ON a.id_cultivo_principal = cp.id_cultivo
@@ -26,7 +27,7 @@ router.get('/dashboard', async (req, res) => {
     `);
 
     // 3. Actividad Laboral (Últimos 30 días)
-    const [actividadLaboral] = await pool.query(`
+    const [actividadLaboral] = await getDb(req).query(`
       SELECT ld.fecha_ejecucion as fecha, COUNT(*) as cantidad_labores
       FROM labores_diarias ld
       WHERE ld.fecha_ejecucion >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
@@ -35,7 +36,7 @@ router.get('/dashboard', async (req, res) => {
     `);
 
     // 4. Top Maquinaria Utilizada
-    const [topMaquinaria] = await pool.query(`
+    const [topMaquinaria] = await getDb(req).query(`
       SELECT m.tipo, m.placa, COUNT(ld.id_labor_diaria) as usos
       FROM labores_diarias ld
       JOIN agroind_maquinaria_equipo m ON ld.id_maquinaria = m.id_maq_agro
@@ -46,7 +47,7 @@ router.get('/dashboard', async (req, res) => {
     `);
 
     // 5. Insumos Aplicados
-    const [insumos] = await pool.query(`
+    const [insumos] = await getDb(req).query(`
       SELECT producto_comercial, SUM(dosis_ha) as dosis_total
       FROM registro_aplicaciones
       GROUP BY producto_comercial
@@ -55,7 +56,7 @@ router.get('/dashboard', async (req, res) => {
     `);
 
     // 6. Alertas Sanitarias (Enfermedades Recientes)
-    const [alertasSanitarias] = await pool.query(`
+    const [alertasSanitarias] = await getDb(req).query(`
       SELECT e.nombre_comun, e.gravedad, e.agente_causal
       FROM enfermedades e
       WHERE e.gravedad IN ('Alta', 'Critica')

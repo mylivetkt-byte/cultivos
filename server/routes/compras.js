@@ -1,11 +1,8 @@
 import { Router } from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 // Helper to safely parse tenant ID
 const getTenantId = (val) => {

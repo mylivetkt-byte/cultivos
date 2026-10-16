@@ -1,12 +1,13 @@
 // routes/cosechasAuditoria.js
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = express.Router();
 
 // GET /api/cosechas/:cosechaId/auditoria - retrieve audit logs for a harvest
 router.get('/:cosechaId/auditoria', async (req, res) => {
-  const db = req.tenantPool || pool;
+  const db = getDb(req);
   const { cosechaId } = req.params;
   const { action, userId, from, to } = req.query; // optional filters
   try {

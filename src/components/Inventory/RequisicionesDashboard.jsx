@@ -270,7 +270,7 @@ export default function RequisicionesDashboard({ tenantId }) {
 
   if (view === 'create') {
     return (
-      <div style={{ padding: 24, background: '#fff', minHeight: '100vh' }}>
+      <div style={{ padding: 24, background: 'var(--bg-card)', minHeight: '100vh' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
           <Title level={3} style={{ margin: 0 }}>Nueva Requisición Interna</Title>
           <Space>
@@ -385,7 +385,7 @@ export default function RequisicionesDashboard({ tenantId }) {
 
   if (view === 'detail' && activePedido) {
     return (
-      <div style={{ padding: 24, background: '#fff', minHeight: '100vh' }}>
+      <div style={{ padding: 24, background: 'var(--bg-card)', minHeight: '100vh' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
           <div>
             <Title level={3} style={{ margin: 0 }}>Pedido #{activePedido.id_pedido} - {activePedido.tipo_origen.replace('_', ' ')}</Title>
@@ -498,8 +498,8 @@ export default function RequisicionesDashboard({ tenantId }) {
           </div>
           <Space>
             <Button icon={<WhatsAppOutlined />} onClick={() => setShowWhatsAppManager(true)} style={{ background: '#25D366', color: 'white', borderColor: '#25D366' }}>Conexión WhatsApp</Button>
-            <Button icon={<FileExcelOutlined />} onClick={exportToExcel} style={{ color: '#52c41a', borderColor: '#52c41a' }}>Exportar Excel</Button>
-            <Button icon={<FilePdfOutlined />} onClick={exportToPDF} danger>Exportar PDF</Button>
+            <Button className="btn-action-base btn-excel" icon={<FileExcelOutlined />} onClick={exportToExcel}>Exportar Excel</Button>
+            <Button className="btn-action-base btn-pdf" icon={<FilePdfOutlined />} onClick={exportToPDF}>Exportar PDF</Button>
             <Button type="primary" icon={<PlusOutlined />} size="large" onClick={() => setView('create')}>Nueva Solicitud</Button>
           </Space>
         </div>
@@ -543,7 +543,7 @@ export default function RequisicionesDashboard({ tenantId }) {
             style: { cursor: 'pointer' }
           })}
           columns={[
-            { title: 'ID', dataIndex: 'id_pedido', width: 80 },
+            { title: 'ID', dataIndex: 'id_pedido', width: 80, render: id => <b>#{id}</b> },
             { title: 'Fecha Solicitud', dataIndex: 'fecha_solicitud', render: d => d?.substring(0,10) },
             { title: 'Área Origen', dataIndex: 'tipo_origen', render: t => <b style={{color:'#1890ff'}}>{t.replace('_', ' ')}</b> },
             { title: 'Solicitante', dataIndex: 'nombre_solicitante' },

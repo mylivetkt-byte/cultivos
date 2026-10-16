@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { exportToPdf } from '../../utils/exportPdf';
 import { exportToExcel } from '../../utils/exportExcel';
 import { authFetch } from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
 
 function HistorialLaboresModal({ machine, onClose }) {
+  const { user } = useAuth();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState('');
@@ -48,6 +50,22 @@ function HistorialLaboresModal({ machine, onClose }) {
     }
   }, [machine]);
 
+  const getMetadata = () => {
+    const extraFiltros = [];
+    if (idLote) extraFiltros.push({ label: 'Lote', value: lotes.find(l => String(l.id_lote) === String(idLote))?.nombre || idLote });
+    
+    return {
+      empresa: 'AgroPaccioli',
+      finca: idFinca ? fincas.find(f => String(f.id_finca) === String(idFinca))?.nombre : 'Todas las fincas',
+      fechaDesde: startDate,
+      fechaHasta: endDate,
+      extraFiltros,
+      usuario: user?.nombre || user?.username || 'Usuario del Sistema',
+      rol: user?.rol || 'No asignado',
+      reportName: `Labores - ${machine.marca_modelo || machine.nombre} (${machine.placa || machine.codigo || ''})`
+    };
+  };
+
   const handleExportPdf = () => {
     const columns = [
       { name: 'id_labor', type: 'int' },
@@ -62,7 +80,7 @@ function HistorialLaboresModal({ machine, onClose }) {
     ];
     const machineName = machine.marca_modelo || machine.nombre;
     const machineIdentifier = machine.placa || machine.codigo || '';
-    exportToPdf(`Labores - ${machineName} (${machineIdentifier})`, columns, data);
+    exportToPdf(`Labores - ${machineName} (${machineIdentifier})`, columns, data, getMetadata());
   };
 
   const handleExportExcel = () => {
@@ -79,7 +97,7 @@ function HistorialLaboresModal({ machine, onClose }) {
     ];
     const machineName = machine.marca_modelo || machine.nombre;
     const machineIdentifier = machine.placa || machine.codigo || '';
-    exportToExcel(`Labores_${machineName}_${machineIdentifier}`, columns, data);
+    exportToExcel(`Labores_${machineName}_${machineIdentifier}`, columns, data, getMetadata());
   };
 
   if (!machine) return null;
@@ -131,10 +149,10 @@ function HistorialLaboresModal({ machine, onClose }) {
 
           <div style={{ flex: 1 }} />
           
-          <button className="btn btn-outline" onClick={handleExportPdf} disabled={data.length === 0}>
+          <button className="btn-action-base btn-pdf" onClick={handleExportPdf}>
             📄 PDF
           </button>
-          <button className="btn btn-outline" onClick={handleExportExcel} disabled={data.length === 0}>
+          <button className="btn-action-base btn-excel" onClick={handleExportExcel}>
             📊 Excel
           </button>
         </div>

@@ -1,11 +1,8 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 // 1. Obtener lista de pedidos con filtros
 router.get('/', async (req, res) => {

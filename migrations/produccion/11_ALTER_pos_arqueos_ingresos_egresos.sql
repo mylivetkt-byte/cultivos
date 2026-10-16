@@ -1,0 +1,1 @@
+ALTER TABLE pos_arqueos ADD COLUMN ingresos_adicionales DECIMAL(12,2) DEFAULT 0 AFTER ventas_otros, ADD COLUMN egresos_caja DECIMAL(12,2) DEFAULT 0 AFTER ingresos_adicionales;

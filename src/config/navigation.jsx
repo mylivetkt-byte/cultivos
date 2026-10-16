@@ -33,7 +33,11 @@ import {
   Globe2,
   ListTodo,
   Car,
-  Camera
+  Camera,
+  Factory,
+  Radio,
+  Scale,
+  Plane
 } from 'lucide-react';
 
 export const STATIC_NAVIGATION = [
@@ -43,8 +47,10 @@ export const STATIC_NAVIGATION = [
     icon: <Wrench size={20} />,
     items: [
       { id: 'sistemas-tenants', name: 'Gestión de Empresas', icon: <Building2 size={18} />, path: '/sistemas' },
+      { id: 'sistemas-usuarios', name: 'Administración de Usuarios', icon: <Users size={18} />, path: '/sistemas/usuarios' },
       { id: 'sistemas-stats', name: 'Estadísticas Globales', icon: <LineChart size={18} />, path: '/sistemas/stats' },
-      { id: 'sistemas-auditoria', name: 'Auditoría por Finca', icon: <ShieldCheck size={18} />, path: '/sistemas/auditoria-finca' }
+      { id: 'sistemas-auditoria', name: 'Auditoría por Finca', icon: <ShieldCheck size={18} />, path: '/sistemas/auditoria-finca' },
+      { id: 'sistemas-ia', name: 'Centro de Control IA (Gerencia)', icon: <Activity size={18} />, path: '/gerencia/asistente-ia' }
     ]
   },
   {
@@ -55,13 +61,25 @@ export const STATIC_NAVIGATION = [
       { id: 'cultivos-avanzado', name: 'Tablero Avanzado (Gerencial)', icon: <LineChart size={18} /> },
       { id: 'cultivos-dashboard', name: 'Centro de Control', icon: <Activity size={18} /> },
       {
+        id: 'menu_viveros',
+        name: 'Viveros',
+        icon: <Sprout size={18} />,
+        isSubmenu: true,
+        isDynamicTarget: true,
+        dynamicKey: 'Viveros',
+        items: [
+          { id: 'vivero-dashboard', name: 'Dashboard Vivero', icon: <PieChart size={18} /> },
+          { id: 'inventario-camadas', name: 'Inventario y Camadas', icon: <Layers size={18} /> }
+        ]
+      },
+      {
         id: 'menu_cultivos',
         name: 'Cultivos',
         icon: <Sprout size={18} />,
         isSubmenu: true,
         items: [
           { id: 'cultivos', name: 'Especies de Cultivos' },
-          { id: 'cultivos_catalogo', name: 'Catálogo de Cultivos' },
+          { id: 'cultivos_catalogo', name: 'Catálogo de Cultivos (Súper)', path: '/agricultura/catalogo-cultivos-super' },
           { id: 'fincas', name: 'Haciendas / Fincas' },
           { id: 'nucleos', name: 'Zonas / Núcleos' },
           { id: 'lotes', name: 'Catálogo de Lotes' },
@@ -88,7 +106,7 @@ export const STATIC_NAVIGATION = [
         items: [
           { id: 'siembras', name: 'Registro de Siembras' },
           { id: 'presupuestos_siembra', name: 'Presupuestos de Siembra' },
-          { id: 'siembra_arboles', name: 'Siembra de Árboles' }
+          { id: 'siembra_arboles', name: 'Salud de Árboles' }
         ]
       },
       {
@@ -226,17 +244,7 @@ export const STATIC_NAVIGATION = [
           { id: 'movimientos_inventario', name: 'Movimientos' }
         ]
       },
-      {
-        id: 'menu_inventario_parametros',
-        name: 'Configuraciones',
-        icon: <Wrench size={18} />,
-        isSubmenu: true,
-        items: [
-          { id: 'config_inventario', name: 'Parámetros', isPlaceholder: true },
-          { id: 'config_alertas_seguridad', name: 'Alertas y Seguridad (PIN)' },
-          { id: 'config_logo', name: 'Logo Empresa' }
-        ]
-      },
+
       {
         id: 'menu_inventario_basculas',
         name: 'Integración Básculas',
@@ -328,7 +336,9 @@ export const STATIC_NAVIGATION = [
     name: 'Taller y Mantenimiento',
     icon: <Wrench size={20} />,
     items: [
+      { id: 'radar_maquinaria', path: '/maquinaria/radar', name: 'Radar de Maquinaria (IoT)', icon: <Activity size={18} /> },
       { id: 'app_taller', name: 'App Móvil Taller', icon: <Activity size={18} /> },
+      { id: '/taller/preliquidacion', path: '/taller/preliquidacion', name: 'Preliquidación y Cotización', icon: <FileText size={18} /> },
       {
         id: 'menu_taller_catalogos',
         name: 'Catálogos',
@@ -339,7 +349,8 @@ export const STATIC_NAVIGATION = [
           { id: 'maquinaria', name: 'Equipos y Maquinaria' },
           { id: 'vehiculos', name: 'Flota Vehicular' },
           { id: 'mecanicos', name: 'Mecánicos' },
-          { id: 'taller-herramientas', name: 'Herramientas' }
+          { id: 'taller-herramientas', name: 'Herramientas' },
+          { id: 'equipos_dron', name: 'Catálogo de Drones' }
         ]
       },
       {
@@ -350,7 +361,8 @@ export const STATIC_NAVIGATION = [
         items: [
           { id: 'taller-ordenes', name: 'Órdenes de Trabajo' },
           { id: 'taller-combustible', name: 'Suministro Combustible' },
-          { id: 'taller-checklists', name: 'Checklists' }
+          { id: 'taller-checklists', name: 'Checklists' },
+          { id: 'dron_misiones', name: 'Misiones de Drones' }
         ]
       },
       {
@@ -359,7 +371,8 @@ export const STATIC_NAVIGATION = [
         icon: <FileText size={18} />,
         isSubmenu: true,
         items: [
-          { id: 'taller-master', name: 'Master Taller' }
+          { id: 'taller-master', name: 'Master Taller' },
+          { id: 'drones-dashboard', name: 'Dashboard Drones' }
         ]
       }
     ]
@@ -399,7 +412,39 @@ export const STATIC_NAVIGATION = [
       { id: 'com_precios_mercado', name: 'Precios de Mercado', icon: <LineChart size={18} /> },
       { id: 'cosechas', name: 'Registro de Cosechas', icon: <Tractor size={18} /> },
       { id: 'productos_cosecha', name: 'Productos Cosechados', icon: <Package size={18} /> },
-      { id: 'calidad_postcosecha', name: 'Calidad Postcosecha', icon: <TestTube2 size={18} /> }
+      { id: 'calidad_postcosecha', name: 'Calidad Postcosecha', icon: <TestTube2 size={18} /> },
+      {
+        id: 'menu_pos',
+        name: 'Punto de Venta (POS)',
+        icon: <ShoppingCart size={18} />,
+        isSubmenu: true,
+        items: [
+          { id: 'pos_consola', name: 'Consola POS', path: '/comercializacion/pos' },
+          { id: 'pos_historial', name: 'Historial de Ventas', path: '/comercializacion/pos/historial' },
+          { id: 'pos_dian_pendientes', name: 'Facturas Pendientes DIAN', path: '/comercializacion/pos/dian-pendientes' },
+          { id: 'pos_arqueo', name: 'Arqueo de Caja', path: '/comercializacion/pos/arqueo' },
+          { id: 'pos_movil', name: 'Venta Móvil', path: '/comercializacion/pos-movil' },
+          { id: 'pos_cartera', name: 'Cartera y Recaudos', path: '/comercializacion/pos/cartera' },
+          { id: 'pos_basculas', name: 'Básculas', path: '/comercializacion/pos/basculas' },
+          { id: 'pos_cajas', name: 'Cajas', path: '/comercializacion/pos/cajas' },
+          { id: 'pos_historico_cajeros', name: 'Histórico de Cajeros', path: '/comercializacion/pos/historico-cajeros' },
+          { id: 'proveedor_tecnologico', name: 'Proveedor Tecnológico', path: '/comercializacion/proveedor-tecnologico' }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'Producción',
+    name: 'Producción y Agroindustrialización',
+    icon: <Package size={20} />,   // o el icono que prefieras
+    items: [
+      { id: 'produccion-dashboard', name: 'Dashboard', path: '/produccion/dashboard' },
+      { id: 'produccion-catalogo-productos', name: 'Catálogo de Productos', path: '/produccion/catalogo-productos' },
+      { id: 'produccion-formulas', name: 'Fórmulas', path: '/produccion/formulas' },
+      { id: 'produccion-historico', name: 'Histórico', path: '/produccion/historico' },
+      { id: 'produccion-crear-orden', name: 'Crear Orden', path: '/produccion/crear-orden' },
+      { id: 'produccion-precios', name: 'Precios de Mercado', path: '/produccion/precios' },
+      { id: 'produccion-config', name: 'Configuración', path: '/produccion/config' },
     ]
   },
   {
@@ -515,16 +560,7 @@ export const STATIC_NAVIGATION = [
       }
     ]
   },
-  {
-    id: 'Viveros',
-    name: 'Viveros',
-    icon: <Sprout size={20} />,
-    isDynamicTarget: true,
-    items: [
-      { id: 'vivero-dashboard', name: 'Dashboard Vivero', icon: <PieChart size={18} /> },
-      { id: 'inventario-camadas', name: 'Inventario y Camadas', icon: <Layers size={18} /> }
-    ]
-  },
+
   {
     id: 'Ganado',
     name: 'Ganado y Pecuario',
@@ -594,12 +630,18 @@ export const STATIC_NAVIGATION = [
     ]
   },
   {
-    id: 'Satélite & GPS Tracker',
-    name: 'Satélite & GPS Tracker',
+    id: 'Agricultura de Precisión',
+    name: 'Agricultura de Precisión',
     icon: <Map size={20} />,
     items: [
-      { id: 'satellite-monitor', name: 'Satélite (GIS Premium)', icon: <Globe2 size={18} /> },
-      { id: 'gps-tracker', name: 'GPS Tracker', icon: <Compass size={18} /> }
+      { id: 'muestreo-suelos', name: 'Muestreo & Laboratorio Suelos', icon: <FlaskConical size={18} /> },
+      { id: 'sensores-suelo', name: 'Sensores IoT & Telemetría', icon: <Radio size={18} /> },
+      { id: 'riego-precision', name: 'Riego Tecnificado & FAO-56', icon: <Droplets size={18} /> },
+      { id: 'vra-prescripciones', name: 'Prescripción VRA & Maquinaria', icon: <Tractor size={18} /> },
+      { id: 'drones-dashboard', name: 'Flota Drones & Misiones Aéreas', icon: <Plane size={18} /> },
+      { id: 'rendimiento-roi', name: 'Mapas de Rendimiento & ROI', icon: <Scale size={18} /> },
+      { id: 'satellite-monitor', name: 'Satélite (GIS Premium & VRA)', icon: <Globe2 size={18} /> },
+      { id: 'gps-tracker', name: 'GPS Tracker (Maquinaria)', icon: <Compass size={18} /> }
     ]
   },
   {

@@ -148,7 +148,7 @@ function GerenciaDashboard({ tenantId, fincaId, startDate, endDate }) {
 
       const rolStr = user?.rol ? ` (Rol: ${user.rol})` : '';
       pdf.setFontSize(16);
-      pdf.text('SAS Agrícolas', startX, 20);
+      pdf.text('AgroPaccioli', startX, 20);
       pdf.setFontSize(14);
       pdf.text('Reporte: Dashboard Alta Gerencia', startX, 26);
       pdf.setFontSize(10);
@@ -172,7 +172,7 @@ function GerenciaDashboard({ tenantId, fincaId, startDate, endDate }) {
       
       const rolStr = user?.rol ? ` (Rol: ${user.rol})` : '';
       const headerRows = [
-        ['Empresa: SAS Agrícolas'],
+        ['Empresa: AgroPaccioli'],
         ['Reporte: Dashboard Alta Gerencia'],
         [`Finca Operativa: ${fincaId ? `Finca ID ${fincaId}` : 'Todas las Fincas'}`],
         [`Generado por: ${user?.nombre || user?.username || 'Usuario del Sistema'}${rolStr}`],
@@ -372,16 +372,10 @@ function GerenciaDashboard({ tenantId, fincaId, startDate, endDate }) {
   return (
     <div style={{ marginTop: '30px' }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '20px' }}>
-        <button 
-          onClick={exportToExcel}
-          style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #10b981', background: 'transparent', color: '#10b981', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-        >
+        <button className="btn-action-base btn-excel" onClick={exportToExcel}>
           <span>📊</span> Exportar Excel
         </button>
-        <button 
-          onClick={exportToPDF}
-          style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #ef4444', background: 'transparent', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-        >
+        <button className="btn-action-base btn-pdf" onClick={exportToPDF}>
           <span>📄</span> Exportar PDF
         </button>
       </div>

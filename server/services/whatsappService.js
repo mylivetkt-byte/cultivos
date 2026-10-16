@@ -1,84 +1,64 @@
-import { makeWASocket, useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
-import pino from 'pino';
-import QRCode from 'qrcode';
+// Cliente HTTP del bot de WhatsApp (proceso separado `server/whatsapp-bot.js`).
+// Mantiene la MISMA interfaz que el servicio original (connectToWhatsApp, getStatus,
+// logoutWhatsApp, sendTextMessage, sendDocumentMessage, sendPdfReport) para que todos
+// los routers existentes sigan funcionando sin cambios: las llamadas se reenvían a la
+// mini-API local del bot a través de WHATSAPP_BOT_URL.
+import fetch from 'node-fetch';
+import 'dotenv/config';
 
-let sock = null;
-let currentQR = '';
-let isConnected = false;
+const BOT_URL = (process.env.WHATSAPP_BOT_URL || 'http://127.0.0.1:3004').replace(/\/+$/, '');
+const BOT_SECRET = process.env.WHATSAPP_BOT_SECRET || '';
 
-export async function connectToWhatsApp() {
-    const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
-    
-    // Configurar pino para no saturar los logs
-    const logger = pino({ level: 'silent' });
-    
-    sock = makeWASocket({
-        auth: state,
-        printQRInTerminal: false,
-        logger
-    });
+async function botFetch(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if (BOT_SECRET) headers['X-Bot-Secret'] = BOT_SECRET;
 
-    sock.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect, qr } = update;
-        
-        if (qr) {
-            try {
-                currentQR = await QRCode.toDataURL(qr);
-                console.log('Nuevo QR generado para WhatsApp.');
-            } catch (err) {
-                console.error("Error generando QR", err);
-            }
-        }
-
-        if (connection === 'close') {
-            isConnected = false;
-            const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-            console.log('Conexión de WhatsApp cerrada. Reconectando:', shouldReconnect);
-            if (shouldReconnect) {
-                setTimeout(connectToWhatsApp, 3000);
-            } else {
-                console.log('WhatsApp desconectado manualmente.');
-                currentQR = '';
-            }
-        } else if (connection === 'open') {
-            isConnected = true;
-            currentQR = '';
-            console.log('✅ Bot de WhatsApp conectado correctamente!');
-        }
-    });
-
-    sock.ev.on('creds.update', saveCreds);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), options.timeout || 15000);
+  try {
+    const res = await fetch(`${BOT_URL}${path}`, { ...options, headers, signal: controller.signal });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `El bot de WhatsApp respondió con estado ${res.status}`);
+    return data;
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error('Tiempo de espera agotado al comunicarse con el bot de WhatsApp.');
+    }
+    throw new Error(`Bot de WhatsApp no disponible (${err.message}). Ejecuta "npm run dev:whatsapp" en un proceso aparte.`);
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
-export function getStatus() {
-    return { connected: isConnected, qr: currentQR };
+export async function connectToWhatsApp() {
+  const data = await botFetch('/start', { method: 'POST', body: JSON.stringify({}) });
+  return { connected: data.connected, qr: data.qr };
+}
+
+export async function getStatus() {
+  const data = await botFetch('/status');
+  return { connected: data.connected, qr: data.qr, phone: data.phone };
 }
 
 export async function logoutWhatsApp() {
-    if (sock) {
-        await sock.logout();
-    }
+  await botFetch('/logout', { method: 'POST', body: JSON.stringify({}) });
 }
 
 export async function sendTextMessage(phone, text) {
-    if (!isConnected || !sock) throw new Error("WhatsApp no está conectado.");
-    const jid = `${phone}@s.whatsapp.net`;
-    await sock.sendMessage(jid, { text });
+  if (!phone || !text) throw new Error('Faltan teléfono o texto.');
+  await botFetch('/send', { method: 'POST', body: JSON.stringify({ phone, text }) });
 }
 
-export async function sendDocumentMessage(phone, buffer, filename, caption) {
-    if (!isConnected || !sock) throw new Error("WhatsApp no está conectado.");
-    const jid = `${phone}@s.whatsapp.net`;
-    await sock.sendMessage(jid, {
-        document: buffer,
-        mimetype: 'application/pdf',
-        fileName: filename,
-        caption: caption
-    });
+export async function sendDocumentMessage(phone, buffer, filename, caption = '') {
+  if (!phone || !buffer) throw new Error('Faltan datos para enviar el documento.');
+  const base64 = Buffer.isBuffer(buffer) ? buffer.toString('base64') : buffer;
+  await botFetch('/send-document', {
+    method: 'POST',
+    body: JSON.stringify({ phone, base64, filename, caption }),
+    timeout: 30000,
+  });
 }
 
 export async function sendPdfReport(phone, pdfBase64, filename, caption = '') {
-  if (!isConnected || !sock) throw new Error('WhatsApp no está conectado.');
-  const buffer = Buffer.from(pdfBase64, 'base64');
-  await sendDocumentMessage(phone, buffer, filename, caption);
+  await sendDocumentMessage(phone, pdfBase64, filename, caption);
 }

@@ -1643,6 +1643,8 @@ CREATE TABLE `documentos_comerciales` (
   `plazo_dias` int DEFAULT '0',
   `usuario_creacion` int NOT NULL,
   `observaciones` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `id_documento_referencia` bigint DEFAULT NULL,
+  `motivo_referencia` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `fecha_creacion` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_documento`),
   KEY `id_tenant` (`id_tenant`),

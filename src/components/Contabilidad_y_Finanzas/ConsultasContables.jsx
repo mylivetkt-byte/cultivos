@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../utils/api';
+import Pagination from '../Pagination';
 
 const ConsultasContables = ({ tenantId }) => {
   const [activeTab, setActiveTab] = useState('saldos-cuentas');
@@ -21,6 +22,7 @@ const ConsultasContables = ({ tenantId }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const formatCurrency = (val) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(val || 0);
 
@@ -66,6 +68,7 @@ const ConsultasContables = ({ tenantId }) => {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Error al cargar la consulta');
       setData(Array.isArray(result) ? result : []);
+      setCurrentPage(1);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -115,13 +118,13 @@ const ConsultasContables = ({ tenantId }) => {
   const renderTableHeaders = () => {
     if (activeTab === 'balance-mensual') return (
       <tr>
-        <th style={{padding:'12px', borderBottom:'2px solid #cbd5e1'}}>Mes</th>
-        <th style={{padding:'12px', borderBottom:'2px solid #cbd5e1', textAlign:'right'}}>Movto. Débito</th>
-        <th style={{padding:'12px', borderBottom:'2px solid #cbd5e1', textAlign:'right'}}>Movto. Crédito</th>
-        <th style={{padding:'12px', borderBottom:'2px solid #cbd5e1', textAlign:'right'}}>Saldo Débito</th>
-        <th style={{padding:'12px', borderBottom:'2px solid #cbd5e1', textAlign:'right'}}>Saldo Crédito</th>
-        <th style={{padding:'12px', borderBottom:'2px solid #cbd5e1', textAlign:'right'}}>Diferencia Débit</th>
-        <th style={{padding:'12px', borderBottom:'2px solid #cbd5e1', textAlign:'right'}}>Diferencia Créd</th>
+        <th style={{padding:'12px', borderBottom: '2px solid var(--border)'}}>Mes</th>
+        <th style={{padding:'12px', borderBottom: '2px solid var(--border)', textAlign:'right'}}>Movto. Débito</th>
+        <th style={{padding:'12px', borderBottom: '2px solid var(--border)', textAlign:'right'}}>Movto. Crédito</th>
+        <th style={{padding:'12px', borderBottom: '2px solid var(--border)', textAlign:'right'}}>Saldo Débito</th>
+        <th style={{padding:'12px', borderBottom: '2px solid var(--border)', textAlign:'right'}}>Saldo Crédito</th>
+        <th style={{padding:'12px', borderBottom: '2px solid var(--border)', textAlign:'right'}}>Diferencia Débit</th>
+        <th style={{padding:'12px', borderBottom: '2px solid var(--border)', textAlign:'right'}}>Diferencia Créd</th>
       </tr>
     );
 
@@ -140,7 +143,7 @@ const ConsultasContables = ({ tenantId }) => {
 
   const renderTableRows = () => {
     if (!Array.isArray(data) || data.length === 0) {
-      return <tr><td colSpan="6" style={{textAlign:'center', padding:'20px', color:'#64748b'}}>No se encontraron registros para los filtros seleccionados.</td></tr>;
+      return <tr><td colSpan="6" style={{textAlign:'center', padding:'20px', color: 'var(--text-muted)'}}>No se encontraron registros para los filtros seleccionados.</td></tr>;
     }
 
     if (activeTab === 'balance-mensual') {
@@ -155,8 +158,8 @@ const ConsultasContables = ({ tenantId }) => {
         const diffCred = 0;
 
         return (
-          <tr key={index} style={{ borderBottom: '1px solid #e2e8f0', background: index % 2 === 0 ? 'white' : '#f8fafc' }}>
-            <td style={{padding:'8px', fontWeight:'bold', color:'#334155'}}>{mesNombre}</td>
+          <tr key={index} style={{ borderBottom: '1px solid var(--border)', background: index % 2 === 0 ? 'white' : '#f8fafc' }}>
+            <td style={{padding:'8px', fontWeight:'bold', color: 'var(--text)'}}>{mesNombre}</td>
             <td style={{textAlign:'right', padding:'8px'}}>{debito > 0 ? formatCurrency(debito) : ''}</td>
             <td style={{textAlign:'right', padding:'8px'}}>{credito > 0 ? formatCurrency(credito) : ''}</td>
             <td style={{textAlign:'right', padding:'8px'}}>{saldoDebito > 0 ? formatCurrency(saldoDebito) : ''}</td>
@@ -168,10 +171,10 @@ const ConsultasContables = ({ tenantId }) => {
       });
     }
 
-    return data.map((row, idx) => {
+    return data.slice((currentPage - 1) * 20, currentPage * 20).map((row, idx) => {
       let isNegative = parseFloat(row.saldo) < 0;
       return (
-        <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+        <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
           {activeTab === 'saldos-cuentas' && (
             <>
               <td>{row.codigo}</td>
@@ -206,23 +209,23 @@ const ConsultasContables = ({ tenantId }) => {
     });
   };
 
-  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' };
-  const inputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', background: 'white' };
+  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '4px' };
+  const inputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' };
 
   return (
-    <div style={{ margin: '20px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', background: 'white', borderRadius: '8px' }}>
-      <div className="no-print" style={{ background: 'linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%)', borderBottom: '1px solid #e2e8f0', padding: '24px' }}>
+    <div style={{ margin: '20px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', background: 'var(--card-bg)', color: 'var(--text)', borderRadius: '8px' }}>
+      <div className="no-print" style={{ background: 'linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%)', borderBottom: '1px solid var(--border)', padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <h2 style={{ fontSize: '1.5rem', color: '#0f172a', margin: '0 0 8px 0' }}>🔎 Consultas Contables (Avanzadas)</h2>
-            <p style={{ color: '#64748b', margin: 0 }}>Análisis financiero con segmentación por Centro de Costo (Finca) y Periodos Fiscales.</p>
+            <h2 style={{ fontSize: '1.5rem', color: 'var(--text)', margin: '0 0 8px 0' }}>🔎 Consultas Contables (Avanzadas)</h2>
+            <p style={{ color: 'var(--text-muted)', margin: 0 }}>Análisis financiero con segmentación por Centro de Costo (Finca) y Periodos Fiscales.</p>
           </div>
         </div>
       </div>
       <div style={{ padding: '24px' }}>
         
         {/* Filters Panel */}
-        <div className="no-print" style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+        <div className="no-print" style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '24px' }}>
           
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '16px' }}>
             {/* Filtro Finca */}
@@ -250,7 +253,7 @@ const ConsultasContables = ({ tenantId }) => {
             {/* Toggle Modo Tiempo */}
             <div style={{ display: 'flex', alignItems: 'flex-end' }}>
               {activeTab === 'balance-mensual' ? null : (
-                <div style={{ display: 'flex', background: '#e2e8f0', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                <div style={{ display: 'flex', background: 'var(--border)', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)' }}>
                   <button 
                     onClick={() => setModoTiempo('fechas')} 
                     style={{ padding: '8px 16px', border: 'none', background: modoTiempo === 'fechas' ? '#2563eb' : 'transparent', color: modoTiempo === 'fechas' ? 'white' : '#475569', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
@@ -339,9 +342,9 @@ const ConsultasContables = ({ tenantId }) => {
 
         {error && <div style={{ background: '#fef2f2', color: '#991b1b', padding: '12px', borderRadius: '6px', marginBottom: '16px', border: '1px solid #fca5a5' }}>{error}</div>}
 
-        <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+        <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid var(--border)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-            <thead style={{ background: '#f1f5f9', color: '#334155' }}>
+            <thead style={{ background: 'var(--bg-main)', color: 'var(--text)' }}>
               {renderTableHeaders()}
             </thead>
             <tbody>
@@ -353,6 +356,17 @@ const ConsultasContables = ({ tenantId }) => {
             </tbody>
           </table>
         </div>
+
+        {data.length > 0 && activeTab !== 'balance-mensual' && (
+          <div style={{ marginTop: '16px' }}>
+            <Pagination 
+              currentPage={currentPage}
+              totalItems={data.length}
+              pageSize={20}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
 
       </div>
     </div>

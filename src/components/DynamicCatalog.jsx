@@ -17,6 +17,7 @@ import {
   formatColumnName,
 } from '../utils/api';
 import { exportToPdf } from '../utils/exportPdf';
+import { exportFichasPdf } from '../utils/exportFichasPdf';
 import { exportToExcel } from '../utils/exportExcel';
 import { QRCodeSVG } from 'qrcode.react';
 import { calcularDV } from '../utils/dian';
@@ -26,6 +27,7 @@ import HistorialLaboresModal from './Inventory/HistorialLaboresModal';
 import HistorialMantenimientosModal from './Inventory/HistorialMantenimientosModal';
 import HojaDeVidaModal from './Inventory/HojaDeVidaModal';
 import HistoriaClinicaModal from './Ganado/HistoriaClinicaModal';
+import DroneDetailsModal from './Drones/DroneDetailsModal';
 import { authFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -37,9 +39,9 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [sortColumn, setSortColumn] = useState('');
   const [sortDirection, setSortDirection] = useState('ASC');
-  const [searchTimeout, setSearchTimeout] = useState(null);
 
   // Custom filters for insumos
   const [filterGrupo, setFilterGrupo] = useState('');
@@ -49,9 +51,17 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
   const [filterFinca, setFilterFinca] = useState('');
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
+  
+  // Agricultural specific filters
+  const [filterLote, setFilterLote] = useState('');
+  const [filterLoteInput, setFilterLoteInput] = useState('');
+  const [filterSiembra, setFilterSiembra] = useState('');
+  const [filterSiembraInput, setFilterSiembraInput] = useState('');
 
   const hasDateColumn = structure?.columns.some(c => ['date', 'datetime', 'timestamp'].includes(c.displayType));
   const hasFincaColumn = structure?.columns.some(c => c.name === 'id_finca');
+  const hasLoteColumn = structure?.columns.some(c => c.name === 'id_lote');
+  const hasSiembraColumn = structure?.columns.some(c => c.name === 'id_siembra');
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -88,6 +98,7 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
   const [activeMachineForManttos, setActiveMachineForManttos] = useState(null);
   const [activeEmployeeForHojaVida, setActiveEmployeeForHojaVida] = useState(null);
   const [activeAnimalForHistoria, setActiveAnimalForHistoria] = useState(null);
+  const [activeDroneForDetails, setActiveDroneForDetails] = useState(null);
 
   // Generic Quick Add Modal State
   const [quickAddModal, setQuickAddModal] = useState({ isOpen: false, tableName: null, sourceField: null, defaultValues: {} });
@@ -449,41 +460,132 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
   };
 
   const getExportMetadata = () => ({
-    empresa: 'SAS Agrícolas', // Ideally from context or config
+    empresa: 'AgroPaccioli', // Ideally from context or config
     finca: fincaId ? `Finca ID ${fincaId}` : 'Todas las Fincas',
     usuario: user?.nombre || user?.username || 'Usuario del Sistema',
-    rol: user?.rol || 'No asignado',
     reportName: tableName.replace(/_/g, ' ').toUpperCase()
   });
 
-  const handleExportPdf = () => {
-    if (!structure || data.length === 0) return;
-    exportToPdf(tableName, structure.columns, data, getExportMetadata());
-  };
-
-  const handleExportExcel = () => {
-    if (!structure || data.length === 0) return;
-    exportToExcel(tableName, structure.columns, data, getExportMetadata());
-  };
-
-  const handleExportWhatsApp = () => {
-    if (!structure || data.length === 0) return;
-    let text = `*Reporte: ${tableName.replace(/_/g, ' ').toUpperCase()}*\n\n`;
-    const limit = Math.min(data.length, 10);
-    for (let i = 0; i < limit; i++) {
-      const item = data[i];
-      structure.columns.slice(0, 5).forEach(col => {
-        let val = item[col.name];
-        if (val !== null && val !== undefined) {
-           text += `*${col.name}:* ${val}\n`;
-        }
+  const fetchAllForExport = async () => {
+    try {
+      showToast('Preparando datos para exportar...', 'info');
+      const result = await fetchTableData(tableName, {
+        page: 1,
+        pageSize: 10000,
+        search,
+        sortColumn,
+        sortDirection,
+        tenantId,
+        fincaId,
+        nucleoId,
+        filterGrupo,
+        filterSubgrupo,
+        filterFinca,
+        filterDateFrom,
+        filterDateTo
       });
-      text += `-----------------\n`;
+      return result.data;
+    } catch (err) {
+      showToast('Error obteniendo datos: ' + err.message, 'error');
+      return null;
     }
-    if (data.length > 10) {
-      text += `\n_...y ${data.length - 10} registros más._`;
+  };
+
+  const handleExportPdf = async () => {
+    if (!structure) return;
+    const exportData = await fetchAllForExport();
+    if (!exportData || exportData.length === 0) return;
+    
+    if (['enfermedades', 'plagas', 'malezas'].includes(tableName)) {
+       exportFichasPdf(tableName, structure.columns, exportData, getExportMetadata(), fkOptions);
+    } else {
+       let exportCols = structure.columns;
+       
+       if (tableName === 'insumos') {
+         const importantCols = ['codigo', 'nombre', 'id_grupo', 'id_proveedor', 'es_nocivo', 'stock_actual', 'precio_venta_1'];
+         exportCols = structure.columns.filter(c => importantCols.includes(c.name));
+       } else if (tableName === 'rrhh_empleados') {
+         const importantCols = ['documento', 'nombres', 'apellidos', 'id_cargo', 'estado_activo', 'salario_base', 'telefono'];
+         exportCols = structure.columns.filter(c => importantCols.includes(c.name));
+       } else if (tableName === 'fincas' || tableName === 'lotes') {
+         const importantCols = ['codigo', 'nombre', 'id_finca', 'area_total_ha', 'area_cultivable_ha', 'departamento', 'municipio'];
+         exportCols = structure.columns.filter(c => importantCols.includes(c.name));
+       } else if (tableName === 'maquinaria' || tableName === 'agroind_maquinaria_equipo') {
+         const importantCols = ['codigo', 'nombre', 'marca', 'modelo', 'estado', 'horas_motor_totales'];
+         exportCols = structure.columns.filter(c => importantCols.includes(c.name));
+       } else if (tableName === 'terceros') {
+         const importantCols = ['documento', 'nombre_completo', 'tipo_tercero', 'telefono', 'email'];
+         exportCols = structure.columns.filter(c => importantCols.includes(c.name));
+       } else if (tableName === 'vehiculos') {
+         const importantCols = ['placa', 'tipo_vehiculo', 'marca', 'modelo', 'ano', 'kilometraje_actual', 'soat_vencimiento', 'tecnicomecanica_vencimiento'];
+         exportCols = structure.columns.filter(c => importantCols.includes(c.name));
+       }
+       
+       exportToPdf(tableName, exportCols, exportData, getExportMetadata(), fkOptions);
     }
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const handleExportExcel = async () => {
+    if (!structure) return;
+    const exportData = await fetchAllForExport();
+    if (!exportData || exportData.length === 0) return;
+    
+    exportToExcel(tableName, structure.columns, exportData, getExportMetadata());
+  };
+
+  const handleExportWhatsApp = async () => {
+    if (!structure) return;
+    const exportData = await fetchAllForExport();
+    if (!exportData || exportData.length === 0) return;
+    
+    let text = `*Reporte: ${tableName.replace(/_/g, ' ').toUpperCase()}*\n\n`;
+    const limit = Math.min(exportData.length, 10);
+    
+    if (['enfermedades', 'plagas', 'malezas'].includes(tableName)) {
+      let icon = '🍄';
+      if (tableName === 'plagas') icon = '🐛';
+      if (tableName === 'malezas') icon = '🌿';
+      
+      text = `*Catálogo de Campo: ${tableName.replace(/_/g, ' ').toUpperCase()}* ${icon}\n\n`;
+      for (let i = 0; i < limit; i++) {
+        const item = exportData[i];
+        let cultivoName = 'General';
+        if (item.id_cultivo && fkOptions['id_cultivo']) {
+           const opt = fkOptions['id_cultivo'].find(o => String(o.id) === String(item.id_cultivo));
+           if (opt) cultivoName = opt.display || opt.label;
+        }
+        text += `🌴 *Cultivo:* ${cultivoName}\n`;
+        text += `🔹 *Nombre:* ${item.nombre_comun || ''} (${item.nombre_cientifico || ''})\n`;
+        text += `⚠️ *Agresividad/Gravedad:* ${item.gravedad || item.nivel_agresividad || ''}\n`;
+        text += `📋 *Descripción:* ${item.sintomas || item.descripcion || ''}\n`;
+        text += `----------------------\n\n`;
+      }
+    } else {
+      for (let i = 0; i < limit; i++) {
+        const item = exportData[i];
+        structure.columns.forEach(col => {
+          if (['json', 'polygon', 'point', 'longtext', 'mediumtext'].includes(col.type?.toLowerCase())) return;
+          if (['fotografia', 'imagen_url', 'contrasena'].includes(col.name)) return;
+          
+          let val = item[col.name];
+          if (fkOptions[col.name]) {
+            const opt = fkOptions[col.name].find(o => String(o.id) === String(val) || String(o.value) === String(val));
+            if (opt) val = opt.display || opt.label;
+          }
+          if (val !== null && val !== undefined && val !== '') {
+            text += `*${formatColumnName(col.name)}:* ${val}\n`;
+          }
+        });
+        text += `\n`;
+      }
+    }
+    
+    if (exportData.length > 10) {
+      text += `_...y ${exportData.length - 10} registros más. Exporta a PDF para ver el catálogo completo._`;
+    }
+
+    const encodedText = encodeURIComponent(text);
+    window.open(`https://api.whatsapp.com/send?text=${encodedText}`, '_blank');
   };
 
   const isMinor = () => {
@@ -552,7 +654,8 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
       const isLoading = fkLoading[col.name];
       const reactSelectOptions = options.map(opt => ({
         value: opt.id,
-        label: opt.display || String(opt.id)
+        label: opt.display || String(opt.id),
+        shortLabel: opt.short_display || opt.display || String(opt.id)
       }));
       const currentSelected = reactSelectOptions.find(o => String(o.value) === String(value)) || null;
 
@@ -569,9 +672,11 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
                 options={reactSelectOptions}
                 value={currentSelected}
                 onChange={(selected) => handleFormChange(col.name, selected ? selected.value : null)}
+                formatOptionLabel={(option, { context }) => context === 'menu' ? option.label : (option.shortLabel || option.label)}
                 onBlur={() => checkFieldUniqueness(col.name)}
                 isDisabled={isLoading}
                 isClearable={col.isNullable}
+                menuPosition="fixed"
                 styles={{
                   control: (base) => ({ ...base, background: 'var(--card-bg)', borderColor: 'var(--border)', color: 'var(--text)' }),
                   menu: (base) => ({ ...base, background: 'var(--card-bg)', color: 'var(--text)', zIndex: 9999 }),
@@ -789,7 +894,7 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
     // Decimal
     if (col.displayType === 'decimal') {
       const decimals = col.numericScale || 2;
-      const isCurrency = /costo|precio|valor|total|salario|pago|monto|tarifa/i.test(col.name);
+      const isCurrency = /costo|precio|valor|total|salario|pago|monto|tarifa/i.test(col.name) && !/hectarea|cantidad/i.test(col.name) && !col.name.startsWith('id_') && !col.name.endsWith('_id');
       
       return (
         <div key={col.name} className="form-group">
@@ -826,7 +931,7 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
             {value ? (
               <img src={value} alt="Preview" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border)' }} />
             ) : (
-              <div style={{ width: '100px', height: '100px', borderRadius: '8px', border: '1px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
+              <div style={{ width: '100px', height: '100px', borderRadius: '8px', border: '1px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
                 Sin foto
               </div>
             )}
@@ -948,6 +1053,7 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
             loadOptions={loadOptionsMunicipios}
             onChange={(selected) => handleFormChange(col.name, selected ? selected.value : null)}
             placeholder="Buscar ciudad o código..."
+            menuPosition="fixed"
             styles={{
               control: (base) => ({ ...base, background: 'var(--card-bg)', borderColor: 'var(--border)', color: 'var(--text)' }),
               menu: (base) => ({ ...base, background: 'var(--card-bg)', color: 'var(--text)', zIndex: 9999 }),
@@ -996,6 +1102,14 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
       );
     }
     
+    if (col.name === 'imagen_url' && typeof val === 'string' && val.startsWith('http')) {
+      return (
+        <a href={val} target="_blank" rel="noreferrer">
+          <img src={val} alt="Imagen URL" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e2e8f0' }} />
+        </a>
+      );
+    }
+    
     // Resolve Foreign Keys dynamically
     if (fkOptions[col.name]) {
       const option = fkOptions[col.name].find(opt => String(opt.id) === String(val) || String(opt.value) === String(val));
@@ -1006,6 +1120,30 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
           </span>
         );
       }
+    }
+
+    if (col.name === 'es_nocivo') {
+      return val ? (
+        <span 
+          className="badge" 
+          style={{ backgroundColor: '#fee2e2', color: '#ef4444', border: '1px solid #f87171', cursor: 'help', padding: '2px 8px', borderRadius: '12px', fontSize: '12px' }} 
+          title={row.anotacion_prevencion || 'Sustancia Nociva / Peligrosa'}
+        >
+          ⚠️ Peligroso
+        </span>
+      ) : (
+        <span style={{ color: '#94a3b8' }}>No</span>
+      );
+    }
+
+    if (col.name === 'url_hoja_seguridad') {
+      return val ? (
+        <a href={val} target="_blank" rel="noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          📄 PDF
+        </a>
+      ) : (
+        <span style={{ color: '#94a3b8' }}>-</span>
+      );
     }
 
     if (col.displayType === 'boolean') {
@@ -1054,7 +1192,7 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
     if (col.displayType === 'decimal' || col.displayType === 'number') {
       const num = parseFloat(val);
       if (isNaN(num)) return String(val);
-      const isCurrency = /costo|precio|valor|total|salario|pago|monto|tarifa/i.test(col.name);
+      const isCurrency = /costo|precio|valor|total|salario|pago|monto|tarifa/i.test(col.name) && !/hectarea|cantidad/i.test(col.name) && !col.name.startsWith('id_') && !col.name.endsWith('_id');
       
       if (isCurrency) {
         return new Intl.NumberFormat('es-CO', {
@@ -1086,20 +1224,22 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
     if (col.name === 'poligono_gps' || col.type?.toLowerCase() === 'polygon') {
       const pointsCount = (val.match(/,/g) || []).length;
       return (
-        <span className="badge badge-poly" style={{
-          backgroundColor: 'rgba(0, 240, 255, 0.1)',
-          border: '1px solid rgba(0, 240, 255, 0.4)',
-          color: '#00F0FF',
-          padding: '2px 8px',
-          borderRadius: '12px',
-          fontSize: '12px',
-          fontWeight: 'bold',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '4px'
-        }}>
-          🗺️ Polígono ({pointsCount > 0 ? pointsCount + 1 : 0} pts)
-        </span>
+        <div style={{ minWidth: '140px', display: 'inline-block' }}>
+          <span className="badge badge-poly" style={{
+            backgroundColor: 'rgba(0, 240, 255, 0.1)',
+            border: '1px solid rgba(0, 240, 255, 0.4)',
+            color: '#00F0FF',
+            padding: '2px 8px',
+            borderRadius: '12px',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}>
+            🗺️ Polígono ({pointsCount > 0 ? pointsCount + 1 : 0} pts)
+          </span>
+        </div>
       );
     }
 
@@ -1183,7 +1323,7 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
       <div className="catalog-toolbar">
         <h2 className="catalog-title">{formatTableName(tableName)}</h2>
           <div className="catalog-search" style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'transparent', padding: 0, border: 'none' }}>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px 12px' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px 12px' }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '8px', color: 'var(--text-muted)' }}>
                 <circle cx="11" cy="11" r="8" />
                 <path d="M21 21l-4.35-4.35" />
@@ -1200,7 +1340,7 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
             {tableName === 'insumos' && fkOptions['id_grupo'] && (
               <select 
                 className="form-input" 
-                style={{ width: 'auto', padding: '6px 12px', minWidth: '150px' }}
+                style={{ width: 'auto', padding: '6px 12px', minWidth: '150px', backgroundColor: '#1e293b', color: '#fff' }}
                 value={filterGrupo}
                 onChange={(e) => { 
                   setFilterGrupo(e.target.value); 
@@ -1218,7 +1358,7 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
             {tableName === 'insumos' && fkOptions['id_subgrupo'] && (
               <select 
                 className="form-input" 
-                style={{ width: 'auto', padding: '6px 12px', minWidth: '150px' }}
+                style={{ width: 'auto', padding: '6px 12px', minWidth: '150px', backgroundColor: '#1e293b', color: '#fff' }}
                 value={filterSubgrupo}
                 onChange={(e) => { setFilterSubgrupo(e.target.value); setPagination(p => ({...p, page: 1})); }}
               >
@@ -1234,7 +1374,7 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
             {hasFincaColumn && fkOptions['id_finca'] && (
               <select 
                 className="form-input" 
-                style={{ width: 'auto', padding: '6px 12px', minWidth: '150px' }}
+                style={{ width: 'auto', padding: '6px 12px', minWidth: '150px', backgroundColor: '#1e293b', color: '#fff' }}
                 value={filterFinca}
                 onChange={(e) => { 
                   setFilterFinca(e.target.value); 
@@ -1280,13 +1420,13 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
             </svg>
             Nuevo
           </button>
-          <button className="btn btn-outline" onClick={handleExportPdf} disabled={data.length === 0}>
+          <button className="btn-action-base btn-pdf" onClick={handleExportPdf}>
             📄 PDF
           </button>
-          <button className="btn btn-outline" onClick={handleExportExcel} disabled={data.length === 0}>
+          <button className="btn-action-base btn-excel" onClick={handleExportExcel}>
             📊 Excel
           </button>
-          <button className="btn btn-outline" onClick={handleExportWhatsApp} disabled={data.length === 0} style={{ color: '#25D366', borderColor: '#25D366', fontWeight: 'bold' }}>
+          <button className="btn-action-base btn-whatsapp" onClick={handleExportWhatsApp}>
             💬 WhatsApp
           </button>
         </div>
@@ -1325,6 +1465,7 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
                       onClick={() => handleSort(col.name)}
                       className={sortColumn === col.name ? 'sorted' : ''}
                       title={`${col.type}${col.comment ? ' - ' + col.comment : ''}`}
+                      style={(col.name === 'poligono_gps' || col.type?.toLowerCase() === 'polygon') ? { width: '200px', minWidth: '200px' } : undefined}
                     >
                       {formatColumnName(col.name)}
                       {col.isPrimaryKey && ' 🔑'}
@@ -1378,7 +1519,7 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
                           return true;
                         })
                         .map((col) => (
-                        <td key={col.name} title={row[col.name] != null ? String(row[col.name]) : 'NULL'}>
+                        <td key={col.name} title={row[col.name] != null ? String(row[col.name]) : 'NULL'} style={(col.name === 'poligono_gps' || col.type?.toLowerCase() === 'polygon') ? { width: '200px', minWidth: '200px', overflow: 'visible', whiteSpace: 'nowrap' } : undefined}>
                           {renderCellValue(col, row)}
                         </td>
                       ))}
@@ -1449,6 +1590,14 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
                                 title="Historial de Mantenimientos"
                                 style={{ padding: '4px', fontSize: '14px', lineHeight: 1 }}
                               >🔧</button>
+                              {row.categoria === 'DRON' && (
+                                <button
+                                  className="btn btn-outline btn-sm btn-icon"
+                                  onClick={() => setActiveDroneForDetails(row)}
+                                  title="Ficha del Dron"
+                                  style={{ padding: '4px', fontSize: '14px', lineHeight: 1, borderColor: '#0ea5e9', color: '#0ea5e9' }}
+                                >🚁</button>
+                              )}
                             </>
                           )}
 
@@ -1507,7 +1656,7 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
           </div>
 
           {/* Pagination */}
-          {pagination.totalPages > 1 && (
+          {pagination.totalPages > 0 && (
             <div className="table-footer">
               <div className="table-info">
                 Mostrando {((pagination.page - 1) * pagination.pageSize) + 1} - {Math.min(pagination.page * pagination.pageSize, pagination.total)} de {pagination.total.toLocaleString('es-ES')}
@@ -1747,6 +1896,13 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
         <HistoriaClinicaModal
           animalId={activeAnimalForHistoria}
           onClose={() => setActiveAnimalForHistoria(null)}
+        />
+      )}
+
+      {activeDroneForDetails && (
+        <DroneDetailsModal 
+          drone={activeDroneForDetails} 
+          onClose={() => setActiveDroneForDetails(null)} 
         />
       )}
 

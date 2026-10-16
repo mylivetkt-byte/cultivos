@@ -187,7 +187,7 @@ const AccountingConfig = ({ tenantId }) => {
             })}
             {configs.length === 0 && (
               <tr>
-                <td colSpan="6" style={{ textAlign: 'center', color: '#999' }}>No hay configuraciones activas.</td>
+                <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No hay configuraciones activas.</td>
               </tr>
             )}
           </tbody>

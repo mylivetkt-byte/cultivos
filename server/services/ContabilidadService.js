@@ -14,8 +14,14 @@ class ContabilidadService {
       monto_total, 
       concepto, 
       fecha, 
-      id_usuario 
+      id_usuario,
+      connection // injected transaction connection
     } = params;
+
+    const db = connection || pool;
+    if (!connection) {
+      console.warn(`[ContabilidadService] WARNING: No connection provided for transaction! Using pool.`);
+    }
 
     if (!id_finca) {
       console.log(`[ContabilidadService] Saltando generación: Falta id_finca.`);
@@ -24,7 +30,7 @@ class ContabilidadService {
 
     try {
       // 1. Check if there is a distribution configured for this module, doc type and finca
-      const [configs] = await pool.query(`
+      const [configs] = await db.query(`
         SELECT id_tipo_comp, cuenta_debito, cuenta_credito 
         FROM con_distribucion_documentos 
         WHERE id_tenant = ? AND id_finca = ? AND modulo = ? AND id_tipo_documento = ? AND activo = 1
@@ -47,7 +53,7 @@ class ContabilidadService {
       const ano = inputDate.getFullYear();
       const mes = inputDate.getMonth() + 1;
 
-      const [periodos] = await pool.query(`
+      const [periodos] = await db.query(`
         SELECT id_periodo FROM periodos_contables 
         WHERE id_tenant = ? AND ano = ? AND mes = ? AND estado = 'Abierto'
       `, [id_tenant, ano, mes]);
@@ -61,7 +67,7 @@ class ContabilidadService {
         const firstDay = new Date(ano, mes - 1, 1).toISOString().split('T')[0];
         const lastDay = new Date(ano, mes, 0).toISOString().split('T')[0];
         
-        const [resultPeriodo] = await pool.query(`
+        const [resultPeriodo] = await db.query(`
           INSERT INTO periodos_contables (id_tenant, ano, mes, fecha_inicio, fecha_fin, estado)
           VALUES (?, ?, ?, ?, ?, 'Abierto')
         `, [id_tenant, ano, mes, firstDay, lastDay]);
@@ -70,7 +76,7 @@ class ContabilidadService {
       }
 
       // 3. Get next consecutivo from tipo_comprobante
-      const [tipoComp] = await pool.query(`SELECT codigo, consecutivo_actual FROM tipos_comprobantes WHERE id_tipo_comp = ? FOR UPDATE`, [id_tipo_comp]);
+      const [tipoComp] = await db.query(`SELECT codigo, consecutivo_actual FROM tipos_comprobantes WHERE id_tipo_comp = ? FOR UPDATE`, [id_tipo_comp]);
       if (tipoComp.length === 0) return;
       
       const consecutivoInt = tipoComp[0].consecutivo_actual;
@@ -78,27 +84,35 @@ class ContabilidadService {
       const consecutivo = `${prefijo}-${consecutivoInt.toString().padStart(6, '0')}`;
 
       // Update consecutivo
-      await pool.query(`UPDATE tipos_comprobantes SET consecutivo_actual = consecutivo_actual + 1 WHERE id_tipo_comp = ?`, [id_tipo_comp]);
+      await db.query(`UPDATE tipos_comprobantes SET consecutivo_actual = consecutivo_actual + 1 WHERE id_tipo_comp = ?`, [id_tipo_comp]);
 
-      // 4. Create Comprobante
+      // 4. Create Comprobante (Lote)
       const fechaStr = inputDate.toISOString().split('T')[0];
-      const [resComp] = await pool.query(`
-        INSERT INTO comprobantes (id_tenant, id_finca, id_tipo_comp, id_periodo, consecutivo, fecha, concepto, total, estado, usuario_creacion)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Contabilizado', ?)
-      `, [id_tenant, id_finca, id_tipo_comp, id_periodo, consecutivo, fechaStr, concepto, monto_total, id_usuario || null]);
-
+      const descripcionComp = `Comprobante Automático: ${concepto.substring(0, 100)}`;
+      
+      const [resComp] = await db.query(`
+        INSERT INTO contab_comprobantes (id_tenant, id_periodo, id_tipo_comp, numero, descripcion, estado)
+        VALUES (?, ?, ?, ?, ?, 'Contabilizado')
+      `, [id_tenant, id_periodo, id_tipo_comp, consecutivo, descripcionComp]);
       const id_comprobante = resComp.insertId;
 
-      // 5. Create Comprobante Detalles (Débito y Crédito)
-      await pool.query(`
-        INSERT INTO comprobantes_detalle (id_comprobante, id_cuenta, debito, credito, descripcion)
-        VALUES (?, ?, ?, ?, ?)
-      `, [id_comprobante, cuenta_debito, monto_total, 0, concepto]);
+      // 5. Create Documento
+      const [resDoc] = await db.query(`
+        INSERT INTO contab_documentos (id_tenant, id_comprobante, id_tipo_doc, numero_doc, fecha, concepto, estado, tabla_origen, id_origen)
+        VALUES (?, ?, ?, ?, ?, ?, 'Contabilizado', ?, ?)
+      `, [id_tenant, id_comprobante, id_tipo_documento || id_tipo_comp, consecutivo, fechaStr, concepto, modulo, null]);
+      const id_documento = resDoc.insertId;
 
-      await pool.query(`
-        INSERT INTO comprobantes_detalle (id_comprobante, id_cuenta, debito, credito, descripcion)
-        VALUES (?, ?, ?, ?, ?)
-      `, [id_comprobante, cuenta_credito, 0, monto_total, concepto]);
+      // 6. Create Detalles (Débito y Crédito)
+      await db.query(`
+        INSERT INTO contab_detalles (id_documento, id_cuenta, descripcion, valor_base, debito, credito)
+        VALUES (?, ?, ?, 0, ?, 0)
+      `, [id_documento, cuenta_debito, concepto, monto_total]);
+
+      await db.query(`
+        INSERT INTO contab_detalles (id_documento, id_cuenta, descripcion, valor_base, debito, credito)
+        VALUES (?, ?, ?, 0, 0, ?)
+      `, [id_documento, cuenta_credito, concepto, monto_total]);
 
       console.log(`[ContabilidadService] Comprobante ${consecutivo} generado exitosamente por valor de ${monto_total}.`);
       return id_comprobante;

@@ -612,7 +612,7 @@ function SaludArboles({ tenantId, fincaId, nucleoId }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <div style={{ background: '#fff', padding: '6px', borderRadius: '6px', display: 'flex' }}>
+                    <div style={{ background: 'var(--bg-card)', padding: '6px', borderRadius: '6px', display: 'flex' }}>
                       <QRCodeSVG value={treeDetail.tree.codigo_qr || `SAS-QR-${treeDetail.tree.codigo_arbol}-${treeDetail.tree.id_arbol}`} size={56} />
                     </div>
                     <div>
@@ -888,7 +888,7 @@ function SaludArboles({ tenantId, fincaId, nucleoId }) {
                                   padding: '1px 4px',
                                   borderRadius: '3px',
                                   background: recipe.gravedad === 'Critica' ? '#ef4444' : '#f59e0b',
-                                  color: '#000'
+                                  color: 'var(--text-primary)'
                                 }}>
                                   Gravedad: {recipe.gravedad}
                                 </span>
@@ -918,7 +918,7 @@ function SaludArboles({ tenantId, fincaId, nucleoId }) {
                                       padding: '2px 8px',
                                       background: '#f59e0b',
                                       border: 'none',
-                                      color: '#000',
+                                      color: 'var(--text-primary)',
                                       fontWeight: 'bold',
                                       borderRadius: '3px',
                                       cursor: 'pointer'

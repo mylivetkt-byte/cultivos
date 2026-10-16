@@ -28,9 +28,12 @@ router.post('/login', async (req, res) => {
       username: user.username,
       id_tenant: user.id_tenant,
       rol: user.rol,
+      requiere_cambio_clave: user.requiere_cambio_clave,
       tenant_nombre: user.tenant_nombre,
       db_name: user.db_name,
-      permisos: user.permisos
+      permisos: user.permisos,
+      granular: user.granular,
+      fincas: user.fincas
     });
 
     res.json({
@@ -41,13 +44,46 @@ router.post('/login', async (req, res) => {
         username: user.username,
         id_tenant: user.id_tenant,
         tenant_nombre: user.tenant_nombre,
+        requiere_cambio_clave: user.requiere_cambio_clave,
         rol: user.rol,
         db_name: user.db_name,
-        permisos: user.permisos
+        permisos: user.permisos,
+        granular: user.granular,
+        fincas: user.fincas
       }
     });
   } catch (err) {
     console.error('Login error:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+router.post('/cambiar-clave-obligatorio', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return res.status(401).json({ error: 'Token inválido' });
+    }
+
+    const { nuevaClave } = req.body;
+    if (!nuevaClave || nuevaClave.length < 6) {
+      return res.status(400).json({ error: 'La clave debe tener al menos 6 caracteres' });
+    }
+
+    const bcrypt = await import('bcrypt');
+    const passwordHash = await bcrypt.hash(nuevaClave, 10);
+
+    const { default: pool } = await import('../db.js');
+    await pool.query('UPDATE usuarios SET password_hash = ?, requiere_cambio_clave = 0 WHERE id_usuario = ?', [passwordHash, decoded.id_usuario]);
+
+    res.json({ success: true, message: 'Clave actualizada correctamente' });
+  } catch (err) {
+    console.error('Error changing password:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
@@ -81,7 +117,9 @@ router.get('/me', async (req, res) => {
         tenant_nit: user.tenant_nit,
         rol: user.rol,
         db_name: user.db_name,
-        permisos: user.permisos
+        permisos: user.permisos,
+        granular: user.granular,
+        fincas: user.fincas
       }
     });
   } catch (err) {
@@ -99,7 +137,7 @@ router.get('/permissions', async (req, res) => {
 
     const token = authHeader.substring(7);
     const jwt = await import('jsonwebtoken');
-    const JWT_SECRET = process.env.JWT_SECRET || 'sas-agricolas-secret-key-change-in-production';
+    const JWT_SECRET = process.env.JWT_SECRET || 'agropaccioli-secret-key-change-in-production';
     const decoded = jwt.verify(token, JWT_SECRET);
 
     const permisos = await getUserPermissions(decoded.rol);
@@ -262,7 +300,7 @@ router.post('/change-password', async (req, res) => {
 
     const token = authHeader.substring(7);
     const jwt = await import('jsonwebtoken');
-    const JWT_SECRET = process.env.JWT_SECRET || 'sas-agricolas-secret-key-change-in-production';
+    const JWT_SECRET = process.env.JWT_SECRET || 'agropaccioli-secret-key-change-in-production';
     const decoded = jwt.verify(token, JWT_SECRET);
 
     const { currentPassword, newPassword } = req.body;

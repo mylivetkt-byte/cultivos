@@ -1,9 +1,8 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = express.Router();
-
-function getDb(req) { return req.tenantPool || pool; }
 
 // Obtener Opciones de Filtro (Fincas, Lagos, Siembras)
 router.get('/filtros', async (req, res) => {
@@ -63,14 +62,24 @@ router.get('/global-stats', async (req, res) => {
     const [lotesActivos] = await db.query(`
       SELECT s.id_siembra_acui, s.cantidad_alevines, e.nombre as especie, 
              s.peso_promedio_inicial_g,
-             (SELECT SUM(cantidad_muertes) FROM acuicola_novedades WHERE id_siembra_acui = s.id_siembra_acui) as muertes,
+             COALESCE(n.muertes, 0) as muertes,
              (SELECT peso_promedio_g FROM acuicola_muestreos WHERE id_siembra_acui = s.id_siembra_acui ORDER BY fecha DESC LIMIT 1) as ultimo_peso,
-             (SELECT SUM(costo) FROM acuicola_alimentacion WHERE id_siembra_acui = s.id_siembra_acui) as costo_alimento,
-             (SELECT SUM(costo_repuestos) FROM acuicola_novedades WHERE id_siembra_acui = s.id_siembra_acui) as costo_repuestos,
+             COALESCE(al.costo_alimento, 0) as costo_alimento,
+             COALESCE(n.costo_repuestos, 0) as costo_repuestos,
              s.costo_siembra
       FROM acuicola_siembras s
       JOIN acuicola_estanques a ON s.id_estanque = a.id_estanque
       JOIN acuicola_especies e ON s.id_especie_acui = e.id_especie_acui
+      LEFT JOIN (
+          SELECT id_siembra_acui, SUM(cantidad_muertes) as muertes, SUM(costo_repuestos) as costo_repuestos
+          FROM acuicola_novedades
+          GROUP BY id_siembra_acui
+      ) n ON s.id_siembra_acui = n.id_siembra_acui
+      LEFT JOIN (
+          SELECT id_siembra_acui, SUM(costo) as costo_alimento
+          FROM acuicola_alimentacion
+          GROUP BY id_siembra_acui
+      ) al ON s.id_siembra_acui = al.id_siembra_acui
       WHERE s.estado = 'Activo' AND a.id_tenant = ?
     `, [tenantId]);
 
@@ -107,12 +116,20 @@ router.get('/global-stats', async (req, res) => {
       SELECT 
         DATE_FORMAT(c.fecha_cosecha, '%Y-%m') as mes,
         SUM(c.ingreso_total) as ventas,
-        SUM(s.costo_siembra + 
-            COALESCE((SELECT SUM(costo) FROM acuicola_alimentacion WHERE id_siembra_acui = s.id_siembra_acui), 0) + 
-            COALESCE((SELECT SUM(costo_repuestos) FROM acuicola_novedades WHERE id_siembra_acui = s.id_siembra_acui), 0)) as costos
+        SUM(s.costo_siembra + COALESCE(al.costo_alimento, 0) + COALESCE(n.costo_repuestos, 0)) as costos
       FROM acuicola_cosechas c
       JOIN acuicola_siembras s ON c.id_siembra_acui = s.id_siembra_acui
       JOIN acuicola_estanques a ON s.id_estanque = a.id_estanque
+      LEFT JOIN (
+          SELECT id_siembra_acui, SUM(costo) as costo_alimento
+          FROM acuicola_alimentacion
+          GROUP BY id_siembra_acui
+      ) al ON s.id_siembra_acui = al.id_siembra_acui
+      LEFT JOIN (
+          SELECT id_siembra_acui, SUM(costo_repuestos) as costo_repuestos
+          FROM acuicola_novedades
+          GROUP BY id_siembra_acui
+      ) n ON s.id_siembra_acui = n.id_siembra_acui
       WHERE a.id_tenant = ? AND c.fecha_cosecha >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
       GROUP BY DATE_FORMAT(c.fecha_cosecha, '%Y-%m')
       ORDER BY mes ASC
@@ -461,21 +478,30 @@ router.post('/cosechas-mobile/:id/recursos', async (req, res) => {
       // Desactivamos a los que ya no están en la lista en vez de borrarlos para preservar el tiempo
       const [existing] = await con.query("SELECT id_entidad, estado FROM acuicola_cosechas_recursos WHERE id_lote_cosecha = ? AND tipo_recurso = 'Empleado'", [id]);
       
+      const toRetire = [];
       for (const emp of existing) {
         if (!empleados.includes(emp.id_entidad) && emp.estado === 'Activo') {
-          // Fue removido, le ponemos hora de fin
-          await con.query("UPDATE acuicola_cosechas_recursos SET estado = 'Retirado', hora_fin = CURRENT_TIMESTAMP WHERE id_lote_cosecha = ? AND id_entidad = ? AND tipo_recurso = 'Empleado'", [id, emp.id_entidad]);
+          toRetire.push(emp.id_entidad);
         }
+      }
+
+      if (toRetire.length > 0) {
+        await con.query("UPDATE acuicola_cosechas_recursos SET estado = 'Retirado', hora_fin = CURRENT_TIMESTAMP WHERE id_lote_cosecha = ? AND id_entidad IN (?) AND tipo_recurso = 'Empleado'", [id, toRetire]);
       }
 
       // Agregamos a los nuevos
       const existingIds = existing.map(e => e.id_entidad);
-      if(empleados && empleados.length > 0){
+      const toInsert = [];
+      if (empleados && empleados.length > 0) {
         for (const empId of empleados) {
           if (!existingIds.includes(empId)) {
-            await con.query("INSERT INTO acuicola_cosechas_recursos (id_tenant, id_lote_cosecha, tipo_recurso, id_entidad, estado) VALUES (?, ?, 'Empleado', ?, 'Activo')", [tenantId, id, empId]);
+            toInsert.push([tenantId, id, 'Empleado', empId, 'Activo']);
           }
         }
+      }
+
+      if (toInsert.length > 0) {
+        await con.query("INSERT INTO acuicola_cosechas_recursos (id_tenant, id_lote_cosecha, tipo_recurso, id_entidad, estado) VALUES ?", [toInsert]);
       }
       
       await con.commit();

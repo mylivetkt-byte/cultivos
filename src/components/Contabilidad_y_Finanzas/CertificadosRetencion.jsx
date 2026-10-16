@@ -37,13 +37,13 @@ function CertificadosRetencion() {
         </div>
       </div>
 
-      <div className="card" style={{ padding: '40px', background: 'white', borderRadius: '8px', border: '1px solid var(--border)', color: 'black' }}>
+      <div className="card" style={{ padding: '40px', background: 'var(--card-bg)', color: 'var(--text)', borderRadius: '8px', border: '1px solid var(--border)' }}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
           <h2 style={{ margin: 0 }}>CERTIFICADO DE RETENCIÓN EN LA FUENTE</h2>
           <p style={{ margin: '5px 0 0 0' }}>Por el Año Gravable {filtros.anio}</p>
         </div>
         <div style={{ marginBottom: '20px' }}>
-          <p><strong>AGENTE RETENEDOR:</strong> SAS Agrícolas - NIT 900.123.456-7</p>
+          <p><strong>AGENTE RETENEDOR:</strong> AgroPaccioli - NIT 900.123.456-7</p>
           <p><strong>DIRECCIÓN:</strong> Vereda El Sol, Finca La Esperanza</p>
         </div>
         <p>Certificamos que durante el año {filtros.anio} practicamos las siguientes retenciones en la fuente a nombre de:</p>
@@ -53,23 +53,23 @@ function CertificadosRetencion() {
 
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', marginTop: '20px' }}>
           <thead>
-            <tr style={{ background: '#f1f5f9' }}>
-              <th style={{ border: '1px solid #cbd5e1', padding: '10px', textAlign: 'left' }}>Concepto de Retención</th>
-              <th style={{ border: '1px solid #cbd5e1', padding: '10px', textAlign: 'center' }}>%</th>
-              <th style={{ border: '1px solid #cbd5e1', padding: '10px', textAlign: 'right' }}>Monto Base</th>
-              <th style={{ border: '1px solid #cbd5e1', padding: '10px', textAlign: 'right' }}>Valor Retenido</th>
+            <tr style={{ background: 'var(--bg-main)' }}>
+              <th style={{ border: '1px solid var(--border)', padding: '10px', textAlign: 'left' }}>Concepto de Retención</th>
+              <th style={{ border: '1px solid var(--border)', padding: '10px', textAlign: 'center' }}>%</th>
+              <th style={{ border: '1px solid var(--border)', padding: '10px', textAlign: 'right' }}>Monto Base</th>
+              <th style={{ border: '1px solid var(--border)', padding: '10px', textAlign: 'right' }}>Valor Retenido</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td style={{ border: '1px solid #cbd5e1', padding: '10px' }}>Honorarios</td>
-              <td style={{ border: '1px solid #cbd5e1', padding: '10px', textAlign: 'center' }}>11%</td>
-              <td style={{ border: '1px solid #cbd5e1', padding: '10px', textAlign: 'right' }}>$ 5.000.000</td>
-              <td style={{ border: '1px solid #cbd5e1', padding: '10px', textAlign: 'right' }}>$ 550.000</td>
+              <td style={{ border: '1px solid var(--border)', padding: '10px' }}>Honorarios</td>
+              <td style={{ border: '1px solid var(--border)', padding: '10px', textAlign: 'center' }}>11%</td>
+              <td style={{ border: '1px solid var(--border)', padding: '10px', textAlign: 'right' }}>$ 5.000.000</td>
+              <td style={{ border: '1px solid var(--border)', padding: '10px', textAlign: 'right' }}>$ 550.000</td>
             </tr>
-            <tr style={{ fontWeight: 'bold', background: '#f8fafc' }}>
-              <td colSpan="3" style={{ border: '1px solid #cbd5e1', padding: '10px', textAlign: 'right' }}>TOTAL:</td>
-              <td style={{ border: '1px solid #cbd5e1', padding: '10px', textAlign: 'right' }}>$ 550.000</td>
+            <tr style={{ fontWeight: 'bold', background: 'var(--bg-main)' }}>
+              <td colSpan="3" style={{ border: '1px solid var(--border)', padding: '10px', textAlign: 'right' }}>TOTAL:</td>
+              <td style={{ border: '1px solid var(--border)', padding: '10px', textAlign: 'right' }}>$ 550.000</td>
             </tr>
           </tbody>
         </table>

@@ -37,16 +37,16 @@ export default function TenantDetail({ tenant, onBack, onRefresh }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
-        <div style={{ background: '#f9f9f9', padding: '16px', borderRadius: '8px' }}>
-          <h4 style={{ marginTop: 0, color: '#666' }}>Información General</h4>
+        <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px' }}>
+          <h4 style={{ marginTop: 0, color: 'var(--text-secondary)' }}>Información General</h4>
           <p><strong>NIT:</strong> {tenant.nit}</p>
           <p><strong>Nombre Comercial:</strong> {tenant.nombre_comercial}</p>
           <p><strong>País:</strong> {tenant.pais}</p>
           <p><strong>Moneda:</strong> {tenant.moneda_local}</p>
           <p><strong>DB Name:</strong> {tenant.db_name}</p>
         </div>
-        <div style={{ background: '#f9f9f9', padding: '16px', borderRadius: '8px' }}>
-          <h4 style={{ marginTop: 0, color: '#666' }}>Suscripción</h4>
+        <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px' }}>
+          <h4 style={{ marginTop: 0, color: 'var(--text-secondary)' }}>Suscripción</h4>
           <p><strong>Plan:</strong> {tenant.plan_suscripcion}</p>
           <p><strong>Estado:</strong> {tenant.estado_suscripcion}</p>
           <p><strong>Límite Hectáreas:</strong> {tenant.limite_hectareas}</p>
@@ -59,24 +59,24 @@ export default function TenantDetail({ tenant, onBack, onRefresh }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
           <div style={{ background: '#e3f2fd', padding: '16px', borderRadius: '8px', textAlign: 'center' }}>
             <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#1976d2' }}>{tenant.stats.fincas}</div>
-            <div style={{ color: '#666' }}>Fincas</div>
+            <div style={{ color: 'var(--text-secondary)' }}>Fincas</div>
           </div>
           <div style={{ background: '#e8f5e9', padding: '16px', borderRadius: '8px', textAlign: 'center' }}>
             <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#388e3c' }}>{tenant.stats.lotes}</div>
-            <div style={{ color: '#666' }}>Lotes</div>
+            <div style={{ color: 'var(--text-secondary)' }}>Lotes</div>
           </div>
           <div style={{ background: '#fff3e0', padding: '16px', borderRadius: '8px', textAlign: 'center' }}>
             <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#f57c00' }}>{tenant.stats.hectareas}</div>
-            <div style={{ color: '#666' }}>Hectáreas</div>
+            <div style={{ color: 'var(--text-secondary)' }}>Hectáreas</div>
           </div>
         </div>
       )}
 
       <div style={{ marginBottom: '24px' }}>
         <h3>Usuarios ({tenant.usuarios?.length || 0})</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', borderRadius: '8px', overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', background: 'var(--bg-card)', borderRadius: '8px', overflow: 'hidden' }}>
           <thead>
-            <tr style={{ background: '#f5f5f5', textAlign: 'left' }}>
+            <tr style={{ background: 'var(--bg-main)', textAlign: 'left' }}>
               <th style={{ padding: '10px 12px' }}>Username</th>
               <th style={{ padding: '10px 12px' }}>Email</th>
               <th style={{ padding: '10px 12px' }}>Rol</th>
@@ -85,7 +85,7 @@ export default function TenantDetail({ tenant, onBack, onRefresh }) {
           </thead>
           <tbody>
             {tenant.usuarios?.map(u => (
-              <tr key={u.id_usuario} style={{ borderTop: '1px solid #eee' }}>
+              <tr key={u.id_usuario} style={{ borderTop: '1px solid var(--border-color)' }}>
                 <td style={{ padding: '8px 12px' }}>{u.username}</td>
                 <td style={{ padding: '8px 12px' }}>{u.email}</td>
                 <td style={{ padding: '8px 12px' }}>{u.rol}</td>
@@ -100,10 +100,10 @@ export default function TenantDetail({ tenant, onBack, onRefresh }) {
         </table>
       </div>
 
-      <div style={{ background: '#f9f9f9', padding: '16px', borderRadius: '8px' }}>
+      <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px' }}>
         <h3 style={{ marginTop: 0 }}>Resetear Contraseña Admin</h3>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <input type="password" placeholder="Nueva contraseña" value={resetPass} onChange={(e) => setResetPass(e.target.value)} style={{ flex: 1, padding: '8px 12px', border: '1px solid #ddd', borderRadius: '6px' }} />
+          <input type="password" placeholder="Nueva contraseña" value={resetPass} onChange={(e) => setResetPass(e.target.value)} style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '6px' }} />
           <button onClick={handleResetPassword} style={{ padding: '8px 16px', border: 'none', borderRadius: '6px', background: '#f57c00', color: '#fff', cursor: 'pointer' }}>Resetear</button>
         </div>
         {resetMsg && <p style={{ marginTop: '8px', color: resetMsg.includes('exitosamente') ? '#388e3c' : '#d32f2f', fontSize: '13px' }}>{resetMsg}</p>}

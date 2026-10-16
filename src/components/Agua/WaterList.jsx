@@ -4,7 +4,7 @@ import { deleteWaterRecord, updateWaterRecord, fetchWaterOptions } from '../../s
 import WaterForm from './WaterForm.jsx';
 import './WaterList.css';
 
-export default function WaterList({ records, onUpdate, onDelete, setFilters }) {
+export default function WaterList({ records = [], onUpdate, onDelete, setFilters, tenantId, fincaId }) {
   // Estado para edición en línea
   const [editingId, setEditingId] = useState(null);
 
@@ -70,9 +70,9 @@ export default function WaterList({ records, onUpdate, onDelete, setFilters }) {
         <tbody>
           {records.map((rec) => (
             <tr key={rec.id}>
-              <td>{rec.id_finca}</td>
-              <td>{rec.id_lote || '-'} </td>
-              <td>{rec.id_semillero || '-'} </td>
+              <td>{rec.finca_nombre || rec.id_finca}</td>
+              <td>{rec.lote_nombre || rec.id_lote || '-'} </td>
+              <td>{rec.semillero_nombre || rec.id_semillero || '-'} </td>
               <td>{rec.water_option}</td>
               <td>{rec.fecha_inicio?.split('T')[0]}</td>
               <td>{rec.fecha_fin?.split('T')[0]}</td>
@@ -96,6 +96,8 @@ export default function WaterList({ records, onUpdate, onDelete, setFilters }) {
             <WaterForm
               initialData={records.find((r) => r.id === editingId)}
               onSuccess={handleSuccess}
+              tenantId={tenantId}
+              fincaId={fincaId}
             />
           </div>
         </div>

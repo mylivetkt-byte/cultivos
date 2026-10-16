@@ -244,7 +244,7 @@ export default function AcuicolaMolinoMantenimiento({ tenantId = 1 }) {
   ];
 
   const progCols = [
-    { title: 'ID', dataIndex: 'id_mantenimiento', width: 60 },
+    { title: 'ID', dataIndex: 'id_mantenimiento', width: 60, render: id => <b>#{id}</b> },
     { title: 'Fecha Prog.', dataIndex: 'fecha_programada', render: d => d ? moment(d).format('YYYY-MM-DD') : '' },
     { title: 'Equipo', dataIndex: 'id_equipo', render: id => {
       const eq = equipos.find(e => e.id_equipo === id);
@@ -360,7 +360,7 @@ export default function AcuicolaMolinoMantenimiento({ tenantId = 1 }) {
         </div>
       </div>
 
-      <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+      <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
         <Tabs activeKey={activeTab} onChange={setActiveTab} size="large">
           <TabPane tab={<span><ToolOutlined /> Equipos y Maquinaria</span>} key="1">
             <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>

@@ -1,0 +1,207 @@
+◇ injected env (14) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+==== Esquema de BD: sas_agricolas (SOLO LECTURA) ====
+
+### insumos
+Campo | Tipo | Nulo | Key | Def
+id_insumo | int | NO | PRI | null
+id_tenant | int | NO | MUL | null
+codigo | varchar(30) | NO |  | null
+nombre | varchar(150) | NO |  | null
+unidad_medida | varchar(20) | NO |  | null
+costo_unitario | decimal(15,4) | YES |  | null
+stock_actual | decimal(12,2) | YES |  | null
+stock_minimo | decimal(12,2) | YES |  | null
+ubicacion_almacen | varchar(100) | YES |  | null
+fecha_vencimiento | date | YES |  | null
+requiere_receta | tinyint(1) | YES |  | 0
+ingrediente_activo | varchar(150) | YES |  | null
+tiempo_reentrada_horas | int | YES |  | null
+id_finca | int | YES | MUL | null
+id_grupo | int | YES | MUL | null
+id_subgrupo | int | YES | MUL | null
+tipo_item | enum('Producto','Servicio') | YES |  | Producto
+requiere_devolucion | tinyint(1) | YES |  | 0
+descripcion_larga | text | YES |  | null
+descripcion_corta | varchar(100) | YES |  | null
+codigo_proveedor | varchar(50) | YES |  | null
+codigo_barras | varchar(100) | YES |  | null
+codigo_qr | varchar(255) | YES |  | null
+aplica_iva | tinyint(1) | YES |  | 0
+porcentaje_iva | decimal(5,2) | YES |  | 0.00
+subpartida_arancelaria | varchar(50) | YES |  | null
+registro_ica | varchar(100) | YES |  | null
+origen | enum('Nacional','Importado','Produccion Propia') | YES |  | Nacional
+precio_venta_1 | decimal(15,4) | YES |  | 0.0000
+precio_venta_2 | decimal(15,4) | YES |  | 0.0000
+precio_venta_3 | decimal(15,4) | YES |  | 0.0000
+maneja_bascula | tinyint(1) | YES |  | 0
+id_bascula | int | YES |  | null
+estado | enum('Activo','Suspendido','Eliminado') | YES |  | Activo
+es_nocivo | tinyint(1) | YES |  | 0
+anotacion_prevencion | text | YES |  | null
+stock_maximo | decimal(12,2) | YES |  | null
+id_proveedor | int | YES |  | null
+imagen_url | varchar(255) | YES |  | null
+
+### inv_documentos_detalle -> NO EXISTE: Table 'sas_agricolas.inv_documentos_detalle' doesn't exist
+
+### inv_documentos
+Campo | Tipo | Nulo | Key | Def
+id_documento | int | NO | PRI | null
+id_tenant | int | NO |  | null
+id_tipo | int | NO | MUL | null
+consecutivo | varchar(50) | NO |  | null
+fecha | datetime | YES |  | CURRENT_TIMESTAMP
+id_bodega_origen | int | YES |  | null
+id_bodega_destino | int | YES |  | null
+estado | enum('Borrador','Aplicado','Anulado') | YES |  | Borrador
+observaciones | text | YES |  | null
+id_usuario_crea | int | YES |  | null
+id_usuario_aprueba | int | YES |  | null
+peso_bascula_entrada | decimal(12,2) | YES |  | null
+peso_bascula_salida | decimal(12,2) | YES |  | null
+id_empleado_recibe | int | YES |  | null
+id_empleado_entrega | int | YES |  | null
+persona_reclama | varchar(150) | YES |  | null
+id_maquina | int | YES |  | null
+firma_recibe | longtext | YES |  | null
+
+### movimientos_inventario
+Campo | Tipo | Nulo | Key | Def
+id_movimiento | bigint | NO | PRI | null
+id_tenant | int | NO | MUL | null
+id_insumo | int | NO | MUL | null
+tipo_movimiento | enum('Entrada','Salida','Ajuste','Devolucion') | NO |  | null
+cantidad | decimal(12,2) | NO |  | null
+costo_unitario | decimal(15,4) | YES |  | null
+id_trazabilidad | bigint | YES | MUL | null
+fecha_movimiento | datetime | YES |  | CURRENT_TIMESTAMP
+documento_referencia | varchar(50) | YES |  | null
+usuario_responsable | int | NO |  | null
+observaciones | text | YES |  | null
+id_bodega | int | YES |  | null
+id_documento | int | YES |  | null
+id_empleado | int | YES |  | null
+id_vehiculo | int | YES |  | null
+id_maquina | int | YES |  | null
+id_lote | int | YES |  | null
+id_semillero | int | YES |  | null
+id_produccion_biol | int | YES |  | null
+
+### tipos_comprobantes
+Campo | Tipo | Nulo | Key | Def
+id_tipo_comp | int | NO | PRI | null
+id_tenant | int | NO | MUL | null
+codigo | varchar(10) | NO |  | null
+nombre | varchar(100) | NO |  | null
+es_factura_electronica | tinyint(1) | YES |  | 0
+
+### tipos_documentos
+Campo | Tipo | Nulo | Key | Def
+id_tipo_doc | int | NO | PRI | null
+id_tenant | int | NO | MUL | null
+id_tipo_comp | int | NO | MUL | null
+codigo | varchar(10) | NO |  | null
+nombre | varchar(100) | NO |  | null
+consecutivo_actual | int | YES |  | 1
+es_manual | tinyint(1) | YES |  | 0
+
+### contab_comprobantes
+Campo | Tipo | Nulo | Key | Def
+id_comprobante | bigint | NO | PRI | null
+id_tenant | int | NO | MUL | null
+id_periodo | int | NO |  | null
+id_tipo_comp | int | NO |  | null
+numero | varchar(20) | NO |  | null
+descripcion | varchar(200) | YES |  | null
+estado | enum('Abierto','Cerrado','Anulado') | YES |  | Abierto
+fecha_creacion | datetime | YES |  | CURRENT_TIMESTAMP
+
+### contab_documentos
+Campo | Tipo | Nulo | Key | Def
+id_documento | bigint | NO | PRI | null
+id_tenant | int | NO |  | null
+id_comprobante | bigint | YES | MUL | null
+id_tipo_doc | int | NO | MUL | null
+numero_doc | varchar(20) | NO |  | null
+fecha | date | NO |  | null
+concepto | varchar(300) | YES |  | null
+id_tercero | int | YES |  | null
+estado | enum('Borrador','Aprobado','Anulado') | YES |  | Borrador
+fecha_creacion | datetime | YES |  | CURRENT_TIMESTAMP
+tabla_origen | varchar(100) | YES |  | null
+id_origen | varchar(100) | YES |  | null
+
+### contab_detalles
+Campo | Tipo | Nulo | Key | Def
+id_detalle | bigint | NO | PRI | null
+id_documento | bigint | NO | MUL | null
+id_cuenta | int | NO |  | null
+id_tercero | int | YES |  | null
+id_centro_costo | int | YES |  | null
+descripcion | varchar(300) | YES |  | null
+valor_base | decimal(15,2) | YES |  | 0.00
+debito | decimal(15,2) | YES |  | 0.00
+credito | decimal(15,2) | YES |  | 0.00
+
+### plan_contable
+Campo | Tipo | Nulo | Key | Def
+id_cuenta | int | NO | PRI | null
+id_tenant | int | NO | MUL | null
+codigo | varchar(30) | NO |  | null
+nombre | varchar(200) | NO |  | null
+nivel | int | YES |  | 1
+naturaleza | enum('Debito','Credito') | YES |  | null
+requiere_centro_costo | tinyint(1) | YES |  | 0
+porcentaje_impuesto | decimal(5,2) | YES |  | null
+requiere_tercero | tinyint(1) | YES |  | 0
+requiere_cxc | tinyint(1) | YES |  | 0
+requiere_cxp | tinyint(1) | YES |  | 0
+maneja_iva | tinyint(1) | YES |  | 0
+maneja_retefuente | tinyint(1) | YES |  | 0
+maneja_reteica | tinyint(1) | YES |  | 0
+activo | tinyint(1) | YES |  | 1
+
+### periodos_contables
+Campo | Tipo | Nulo | Key | Def
+id_periodo | int | NO | PRI | null
+id_tenant | int | NO | MUL | null
+ano | int | NO |  | null
+mes | int | NO |  | null
+fecha_inicio | date | NO |  | null
+fecha_fin | date | NO |  | null
+estado | enum('Abierto','Cerrado') | YES |  | Abierto
+
+### fincas
+Campo | Tipo | Nulo | Key | Def
+id_finca | int | NO | PRI | null
+id_tenant | int | NO | MUL | null
+codigo | varchar(20) | NO |  | null
+nombre | varchar(150) | NO |  | null
+hectareas_totales | decimal(12,2) | YES |  | null
+poligono_gps | geometry | NO | MUL | null
+centro_gps | point | YES |  | null
+altitud_min | decimal(8,2) | YES |  | null
+altitud_max | decimal(8,2) | YES |  | null
+altitud_promedio | decimal(8,2) | YES |  | null
+departamento | varchar(100) | YES |  | null
+municipio | varchar(100) | YES |  | null
+vereda | varchar(100) | YES |  | null
+zona_agroecologica | enum('Seco','Humedo','Muy_Humedo','Alto_Andino','Selva') | YES |  | null
+clasificacion_suelo | varchar(50) | YES |  | null
+activo | tinyint(1) | YES |  | 1
+
+### Relaciones(FK) de interes:
+  contab_detalles.id_documento -> contab_documentos.id_documento
+  fincas.id_tenant -> tenants.id_tenant
+  insumos.id_finca -> fincas.id_finca
+  insumos.id_grupo -> inv_grupos.id_grupo
+  insumos.id_subgrupo -> inv_subgrupos.id_subgrupo
+  insumos.id_tenant -> tenants.id_tenant
+  movimientos_inventario.id_insumo -> insumos.id_insumo
+  movimientos_inventario.id_tenant -> tenants.id_tenant
+  movimientos_inventario.id_trazabilidad -> trazabilidad_lotes.id_trazabilidad
+
+### (tabla tenants no disponible en esta BD) Unknown column 'id' in 'field list'
+
+==== Fin (no se modifico nada) ====

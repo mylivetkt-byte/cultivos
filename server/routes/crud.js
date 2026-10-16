@@ -1,11 +1,8 @@
 import { Router } from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 function getGlobalDb() {
   return pool;
@@ -28,7 +25,7 @@ router.get('/maquinaria/:id/labores', async (req, res) => {
       LEFT JOIN lotes lo ON l.id_lote = lo.id_lote
       LEFT JOIN nucleos n ON lo.id_nucleo = n.id_nucleo
       LEFT JOIN fincas f ON n.id_finca = f.id_finca
-      LEFT JOIN siembras s ON lo.id_lote = s.id_lote AND s.estado = 'Activa'
+      LEFT JOIN siembras s ON lo.id_lote = s.id_lote AND s.estado = 'Activo'
       LEFT JOIN cultivos c ON s.id_cultivo = c.id_cultivo
       WHERE l.id_maquinaria = ? OR l.id_vehiculo = ?
     `;
@@ -105,7 +102,7 @@ router.get('/mecanicos/:id/labores', async (req, res) => {
       LEFT JOIN lotes lo ON l.id_lote = lo.id_lote
       LEFT JOIN nucleos n ON lo.id_nucleo = n.id_nucleo
       LEFT JOIN fincas f ON n.id_finca = f.id_finca
-      LEFT JOIN siembras s ON lo.id_lote = s.id_lote AND s.estado = 'Activa'
+      LEFT JOIN siembras s ON lo.id_lote = s.id_lote AND s.estado = 'Activo'
       LEFT JOIN cultivos c ON s.id_cultivo = c.id_cultivo
       WHERE l.id_empleado = ?
     `;
@@ -608,7 +605,7 @@ router.get('/:name/data', async (req, res) => {
   try {
     const tableName = req.params.name;
     const page = Math.max(1, parseInt(req.query.page) || 1);
-    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize) || 20));
+    const pageSize = Math.min(25000, Math.max(1, parseInt(req.query.pageSize) || 20));
     const search = req.query.search || '';
     const sortColumn = req.query.sortColumn || '';
     const sortDirection = (req.query.sortDirection || 'ASC').toUpperCase();
@@ -716,6 +713,7 @@ router.get('/:name/data', async (req, res) => {
       }
     }
 
+    // Get Total Count for Pagination
     const [countResult] = await getDb(req).query(
       `SELECT COUNT(*) as total FROM ?? ${finalWhereClause}`,
       [tableName, ...finalParams]
@@ -753,6 +751,13 @@ router.post('/:name/data', async (req, res) => {
     const { columns, pk } = await getTableMeta(tableName, getDb(req));
 
     const uniquenessCheck = await checkConfiguredUniqueRules(tableName, req.body, null, getDb(req));
+
+    if (tableName === 'bod_bodegas') {
+      if (!req.body.id_finca || String(req.body.id_finca).trim() === '' || String(req.body.id_finca) === 'null') {
+        return res.status(400).json({ error: 'Debe seleccionar una Finca obligatoriamente para crear una bodega.' });
+      }
+    }
+
     if (uniquenessCheck.exists) {
       return res.status(409).json({
         error: uniquenessCheck.rule?.mensaje_error || 'El registro ya existe y viola una regla de unicidad.',
@@ -839,11 +844,12 @@ router.post('/:name/data', async (req, res) => {
     }
 
     res.json({ success: true, data: newRecord });
-  } catch (err) {
+    } catch (err) {
     console.error('Error inserting data:', err);
     let msg = err.code || err.message || 'Unknown error';
     if (err.code === 'ER_DUP_ENTRY') {
-      msg = 'El registro ya existe. Verifica que no haya documentos duplicados.';
+      msg = 'El registro ya existe. Verifica que no haya documentos o códigos duplicados.';
+      return res.status(409).json({ error: msg });
     }
     res.status(500).json({ error: msg });
   }
@@ -855,6 +861,12 @@ router.put('/:name/data/:id', async (req, res) => {
     const tableName = req.params.name;
     const id = req.params.id;
     const { columns, pk } = await getTableMeta(tableName, getDb(req));
+
+    if (tableName === 'bod_bodegas') {
+      if (!req.body.id_finca || String(req.body.id_finca).trim() === '' || String(req.body.id_finca) === 'null') {
+        return res.status(400).json({ error: 'Debe seleccionar una Finca obligatoriamente para esta bodega.' });
+      }
+    }
 
     const uniquenessCheck = await checkConfiguredUniqueRules(tableName, req.body, id, getDb(req));
     if (uniquenessCheck.exists) {
@@ -913,11 +925,12 @@ router.put('/:name/data/:id', async (req, res) => {
     );
 
     res.json({ success: true, data: rows[0], affectedRows: result.affectedRows });
-  } catch (err) {
+    } catch (err) {
     console.error('Error updating data:', err);
     let msg = err.code || err.message || 'Unknown error';
     if (err.code === 'ER_DUP_ENTRY') {
-      msg = 'El registro ya existe. Verifica que no haya documentos duplicados.';
+      msg = 'El registro ya existe. Verifica que no haya documentos o códigos duplicados.';
+      return res.status(409).json({ error: msg });
     }
     res.status(500).json({ error: msg });
   }
@@ -970,7 +983,34 @@ router.get('/:name/lookup/:fkCol', async (req, res) => {
     );
 
     let displayCol = refCol;
-    if (refCols.length > 0) {
+    let isRawSql = false;
+
+    // Custom logic for tables without good descriptive columns
+    if (refTable === 'siembras' || refTable === 'acuicola_siembras') {
+      displayCol = `CONCAT('Siembra #', id_siembra, ' - ', DATE_FORMAT(fecha_siembra, '%Y-%m-%d'))`;
+      isRawSql = true;
+    } else if (refTable === 'vehiculos') {
+      displayCol = `CONCAT(placa, ' - ', marca_modelo)`;
+      isRawSql = true;
+    } else if (refTable === 'agroind_maquinaria_equipo' || refTable === 'maquinaria') {
+      displayCol = `CONCAT(IFNULL(placa, 'S/P'), ' - ', marca_modelo)`;
+      isRawSql = true;
+    } else if (refTable === 'ordenes_compra') {
+      displayCol = `CONCAT('OC #', id_orden, ' - ', DATE_FORMAT(fecha_orden, '%Y-%m-%d'))`;
+      isRawSql = true;
+    } else if (refTable === 'plan_contable') {
+      displayCol = `CONCAT(codigo, ' - ', nombre)`;
+      isRawSql = true;
+    } else if (refTable === 'cosechas') {
+      displayCol = `CONCAT('Cosecha #', id_cosecha, ' - ', DATE_FORMAT(fecha_cosecha, '%Y-%m-%d'))`;
+      isRawSql = true;
+    } else if (refTable === 'empleados') {
+      displayCol = `CONCAT(nombres, ' ', IFNULL(apellidos, ''))`;
+      isRawSql = true;
+    } else if (['plagas', 'enfermedades', 'malezas'].includes(refTable)) {
+      displayCol = `CONCAT(nombre_comun, ' (', nombre_cientifico, ')')`;
+      isRawSql = true;
+    } else if (refCols.length > 0) {
       const colNames = refCols.map(c => c.COLUMN_NAME.toLowerCase());
       const prioritizedNames = ['nombre_completo', 'razon_social', 'nombre', 'descripcion', 'titulo', 'codigo'];
       
@@ -986,6 +1026,9 @@ router.get('/:name/lookup/:fkCol', async (req, res) => {
       if (!found) {
         displayCol = refCols[0].COLUMN_NAME;
       }
+    } else {
+      displayCol = `CONCAT('ID: ', ${refCol})`;
+      isRawSql = true;
     }
 
     // Fetch column metadata of referenced table to apply tenant filtering
@@ -997,23 +1040,26 @@ router.get('/:name/lookup/:fkCol', async (req, res) => {
     const mappedCols = refMetaCols.map(c => ({ COLUMN_NAME: c.COLUMN_NAME, DATA_TYPE: c.DATA_TYPE }));
     const { filterSql, filterParams } = buildTenantFilter(refTable, mappedCols, req.query);
 
-    let sql = `SELECT ?? as id, ?? as display, ??.* FROM ?? ${filterSql} ORDER BY ?? LIMIT 2000`;
-    let queryParams = [refCol, displayCol, refTable, refTable, ...filterParams, displayCol];
+    const displaySelect = isRawSql ? displayCol : '??';
+    let sql = `SELECT ?? as id, ${displaySelect} as display, ??.* FROM ?? ${filterSql} ORDER BY 2 LIMIT 25000`;
+    let queryParams = [refCol];
+    if (!isRawSql) queryParams.push(displayCol);
+    queryParams.push(refTable, refTable, ...filterParams);
 
     if (refTable === 'gen_municipios') {
-      sql = `SELECT codigo_dane as id, CONCAT(codigo_dane, ' - ', municipio, ', ', departamento) as display, ??.* FROM ?? ${filterSql} ORDER BY departamento, municipio LIMIT 2000`;
+      sql = `SELECT codigo_dane as id, CONCAT(codigo_dane, ' - ', municipio, ', ', departamento) as display, CONCAT(municipio, ', ', departamento) as short_display, ??.* FROM ?? ${filterSql} ORDER BY departamento, municipio LIMIT 15000`;
       queryParams = [refTable, refTable, ...filterParams];
     } else if (refTable === 'gen_tipos_documento' || refTable === 'gen_regimen_fiscal') {
-      sql = `SELECT codigo as id, CONCAT(codigo, ' - ', descripcion) as display, ??.* FROM ?? ${filterSql} ORDER BY codigo LIMIT 2000`;
+      sql = `SELECT codigo as id, CONCAT(codigo, ' - ', descripcion) as display, descripcion as short_display, ??.* FROM ?? ${filterSql} ORDER BY codigo LIMIT 15000`;
       queryParams = [refTable, refTable, ...filterParams];
     } else if (refTable === 'terceros') {
-      sql = `SELECT id_tercero as id, CONCAT(documento, ' - ', nombre_completo) as display, ??.* FROM ?? ${filterSql} ORDER BY nombre_completo LIMIT 500`;
+      sql = `SELECT id_tercero as id, CONCAT(documento, ' - ', nombre_completo) as display, nombre_completo as short_display, ??.* FROM ?? ${filterSql} ORDER BY nombre_completo LIMIT 500`;
       queryParams = [refTable, refTable, ...filterParams];
     } else if (refTable === 'rrhh_cargos') {
-      sql = `SELECT id_cargo as id, CONCAT(codigo, ' - ', descripcion) as display, ??.* FROM ?? ${filterSql} ORDER BY descripcion LIMIT 2000`;
+      sql = `SELECT id_cargo as id, CONCAT(codigo, ' - ', descripcion) as display, descripcion as short_display, ??.* FROM ?? ${filterSql} ORDER BY descripcion LIMIT 15000`;
       queryParams = [refTable, refTable, ...filterParams];
     } else if (refTable === 'rrhh_empleados') {
-      sql = `SELECT id_empleado as id, CONCAT(IFNULL(documento, ''), ' - ', IFNULL(nombres, ''), ' ', IFNULL(apellidos, '')) as display, ??.* FROM ?? ${filterSql} ORDER BY nombres LIMIT 2000`;
+      sql = `SELECT id_empleado as id, CONCAT(IFNULL(documento, ''), ' - ', IFNULL(nombres, ''), ' ', IFNULL(apellidos, '')) as display, CONCAT(IFNULL(nombres, ''), ' ', IFNULL(apellidos, '')) as short_display, ??.* FROM ?? ${filterSql} ORDER BY nombres LIMIT 15000`;
       queryParams = [refTable, refTable, ...filterParams];
     }
 
@@ -1063,3 +1109,5 @@ router.get('/insumos/next-code', async (req, res) => {
 });
 
 export default router;
+
+// Trigger backend restart

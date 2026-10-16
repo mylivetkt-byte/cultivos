@@ -1,0 +1,26 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 1,
+        "lote_id": 1,
+        "indice": 0.85,
+        "fecha": "2026-08-28"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-74.0, 4.0],
+            [-74.1, 4.0],
+            [-74.1, 4.1],
+            [-74.0, 4.1],
+            [-74.0, 4.0]
+          ]
+        ]
+      }
+    }
+  ]
+}

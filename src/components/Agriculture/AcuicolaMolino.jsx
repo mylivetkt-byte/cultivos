@@ -350,7 +350,7 @@ export default function AcuicolaMolino({ tenantId }) {
   };
 
   const salidasCols = [
-    { title: 'Doc #', dataIndex: 'id_salida', width: 80 },
+    { title: 'Doc #', dataIndex: 'id_salida', width: 80, render: id => <b>#{id}</b> },
     { title: 'Fecha', dataIndex: 'fecha', render: d => new Date(d).toISOString().split('T')[0] },
     { title: 'Fórmula', dataIndex: 'formula_nombre', render: t => <Tag color="blue">{t}</Tag> },
     { title: 'Cantidad (kg)', dataIndex: 'cantidad_kg', render: q => <strong>{q} kg</strong> },
@@ -361,7 +361,7 @@ export default function AcuicolaMolino({ tenantId }) {
   ];
 
   const prodCols = [
-    { title: 'Lote #', dataIndex: 'id_produccion', width: 80 },
+    { title: 'Lote #', dataIndex: 'id_produccion', width: 80, render: id => <b>#{id}</b> },
     { title: 'Fecha', dataIndex: 'fecha', render: d => new Date(d).toISOString().split('T')[0] },
     { title: 'Fórmula', dataIndex: 'formula_nombre' },
     { title: 'Total (kg)', dataIndex: 'cantidad_producida_kg', render: q => <strong>{q} kg</strong> },
@@ -371,7 +371,7 @@ export default function AcuicolaMolino({ tenantId }) {
   ];
 
   const insumoCols = [
-    { title: 'ID', dataIndex: 'id_insumo', width: 80 },
+    { title: 'ID', dataIndex: 'id_insumo', width: 80, render: id => <b>#{id}</b> },
     { title: 'Código', dataIndex: 'codigo' },
     { title: 'Nombre', dataIndex: 'nombre', render: t => <strong>{t}</strong> },
     { title: 'Stock Actual (kg)', dataIndex: 'cantidad_actual', render: q => <Tag color={q > 500 ? 'green' : 'red'}>{q} kg</Tag> },
@@ -392,7 +392,7 @@ export default function AcuicolaMolino({ tenantId }) {
   ];
 
   const kardexCols = [
-    { title: 'Doc', dataIndex: 'id_movimiento', width: 60 },
+    { title: 'Doc', dataIndex: 'id_movimiento', width: 60, render: id => <b>#{id}</b> },
     { title: 'Fecha', dataIndex: 'fecha', render: d => new Date(d).toISOString().split('T')[0] },
     { title: 'Insumo', dataIndex: 'insumo_nombre', render: t => <strong>{t}</strong> },
     { title: 'Tipo', dataIndex: 'tipo', render: t => <Tag color={t === 'Entrada' ? 'green' : 'red'}>{t}</Tag> },
@@ -403,7 +403,7 @@ export default function AcuicolaMolino({ tenantId }) {
   ];
 
   const kardexProdCols = [
-    { title: 'Doc', dataIndex: 'id_movimiento', width: 60 },
+    { title: 'Doc', dataIndex: 'id_movimiento', width: 60, render: id => <b>#{id}</b> },
     { title: 'Fecha', dataIndex: 'fecha', render: d => new Date(d).toISOString().split('T')[0] },
     { title: 'Fórmula', dataIndex: 'formula_nombre', render: t => <strong>{t}</strong> },
     { title: 'Tipo', dataIndex: 'tipo', render: t => <Tag color={t === 'ENTRADA' ? 'green' : 'red'}>{t}</Tag> },
@@ -415,7 +415,7 @@ export default function AcuicolaMolino({ tenantId }) {
 
 
   const formulasCols = [
-    { title: 'Fórmula ID', dataIndex: 'id_formula', width: 100 },
+    { title: 'Fórmula ID', dataIndex: 'id_formula', width: 100, render: id => <b>#{id}</b> },
     { title: 'Nombre Fórmula / Producto', dataIndex: 'nombre', render: (t, record) => <strong>{t} {record.es_externo ? <Tag color="orange">Externo</Tag> : ''}</strong> },
     { title: 'Fase', dataIndex: 'fase_recomendada', render: t => <Tag color="purple">{t}</Tag> },
     { title: 'Proteína %', dataIndex: 'proteina_pct', render: p => `${p}%` },
@@ -444,7 +444,7 @@ export default function AcuicolaMolino({ tenantId }) {
   ];
 
   const glassCardStyle = {
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: '12px',
     boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
     overflow: 'hidden',
@@ -452,7 +452,7 @@ export default function AcuicolaMolino({ tenantId }) {
   };
 
   const metricCardStyle = {
-    background: '#fff',
+    background: 'var(--bg-card)',
     borderRadius: '12px',
     boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
     padding: '24px',
@@ -700,7 +700,7 @@ export default function AcuicolaMolino({ tenantId }) {
           </Row>
         </Form>
         {simuladorResult && (
-          <div style={{ marginTop: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', color: '#333' }}>
+          <div style={{ marginTop: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', color: 'var(--text-primary)' }}>
             <Title level={5}>Resultados: {simuladorResult.formula} ({simuladorResult.cantidad} kg)</Title>
             <Table 
               dataSource={simuladorResult.detalles} 
@@ -810,7 +810,7 @@ export default function AcuicolaMolino({ tenantId }) {
             </Col>
           </Row>
           <Form.Item name="cantidad_producida_kg" label="Cantidad Total Producida (kg)" rules={[{ required: true }]}>
-             <Input type="number" disabled style={{ color: '#000', fontWeight: 'bold' }} />
+             <Input type="number" disabled style={{ color: 'var(--text-primary)', fontWeight: 'bold' }} />
           </Form.Item>
           <Form.Item name="responsable" label="Operador Responsable">
              <Input />

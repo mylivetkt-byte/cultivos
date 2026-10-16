@@ -172,7 +172,8 @@ const BalanceComprobacion = ({ tenantId }) => {
           <title>Balance de Prueba</title>
           <style>
             @media print {
-              @page { margin: 15mm; }
+              @page { margin: 15mm;   table, th, td { color: black !important; border-color: #ccc !important; }
+}
               body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: system-ui, -apple-system, sans-serif; }
             }
           </style>
@@ -207,8 +208,8 @@ const BalanceComprobacion = ({ tenantId }) => {
 
   const formatCurrency = (amount) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 2 }).format(amount);
 
-  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' };
-  const inputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', background: 'white', width: '100%' };
+  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '4px' };
+  const inputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', width: '100%' };
 
   // Totales (Sumando solo el Nivel 1)
   const roots = hierarchicalList.filter(r => r.codigo.length === 1);
@@ -222,7 +223,7 @@ const BalanceComprobacion = ({ tenantId }) => {
   const lapsoFinName = lapsoFinObj ? `${lapsoFinObj.ano}-${String(lapsoFinObj.mes).padStart(2,'0')}` : idLapsoFin;
 
   return (
-    <div style={{ margin: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+    <div style={{ margin: '20px', background: 'var(--card-bg)', color: 'var(--text)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
       {/* HEADER NO IMPRIMIBLE */}
       <div className="no-print">
         <div style={{ background: 'linear-gradient(90deg, #1e293b 0%, #334155 100%)', padding: '24px', color: 'white' }}>
@@ -230,7 +231,7 @@ const BalanceComprobacion = ({ tenantId }) => {
           <p style={{ margin: 0, color: '#cbd5e1' }}>Vista multinivel con opción de apertura de terceros.</p>
         </div>
         <div style={{ padding: '24px' }}>
-          <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+          <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '24px' }}>
             <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '16px' }}>
               <div style={{ flex: 1, minWidth: '200px' }}>
                 <label style={labelStyle}>Finca (Subempresa)</label>
@@ -246,7 +247,7 @@ const BalanceComprobacion = ({ tenantId }) => {
                   <input type="checkbox" checked={conTerceros} onChange={(e) => setConTerceros(e.target.checked)} style={{ transform: 'scale(1.2)' }} />
                   Detallar por Terceros
                 </label>
-                <div style={{ display: 'flex', background: '#e2e8f0', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                <div style={{ display: 'flex', background: 'var(--border)', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)' }}>
                   <button onClick={() => setModoTiempo('fechas')} style={{ padding: '8px 16px', border: 'none', background: modoTiempo === 'fechas' ? '#2563eb' : 'transparent', color: modoTiempo === 'fechas' ? 'white' : '#475569', fontWeight: 'bold', cursor: 'pointer' }}>📅 Fechas</button>
                   <button onClick={() => setModoTiempo('lapsos')} style={{ padding: '8px 16px', border: 'none', background: modoTiempo === 'lapsos' ? '#2563eb' : 'transparent', color: modoTiempo === 'lapsos' ? 'white' : '#475569', fontWeight: 'bold', cursor: 'pointer' }}>⏱️ Lapsos</button>
                 </div>
@@ -298,20 +299,20 @@ const BalanceComprobacion = ({ tenantId }) => {
 
       {/* REPORTE IMPRIMIBLE */}
       {hierarchicalList.length > 0 && (
-        <div className="printable-report" style={{ padding: '40px', background: 'white' }}>
+        <div className="printable-report" style={{ padding: '40px', background: 'var(--card-bg)', color: 'var(--text)' }}>
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>
             <h1 style={{ margin: '0 0 8px 0', fontSize: '24px' }}>BALANCE DE PRUEBA {conTerceros ? 'CON TERCEROS' : 'CONSOLIDADO'}</h1>
-            <h3 style={{ margin: 0, fontWeight: 'normal', color: '#475569' }}>
+            <h3 style={{ margin: 0, fontWeight: 'normal', color: 'var(--text-muted)' }}>
               {idFinca ? `Finca/Subempresa: ${fincas.find(f => f.id_finca.toString() === idFinca)?.nombre}` : 'Empresa Consolidada'}
             </h3>
-            <p style={{ margin: '8px 0 0 0', color: '#64748b' }}>
+            <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)' }}>
               {modoTiempo === 'fechas' ? `Desde ${fechaInicio} hasta ${fechaFin}` : `Lapso ${lapsoInicioName} a ${lapsoFinName}`}
             </p>
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', fontFamily: 'monospace' }}>
             <thead>
-              <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
+              <tr style={{ background: 'var(--bg-main)', borderBottom: '2px solid var(--border)' }}>
                 <th style={{ padding: '8px', textAlign: 'left' }}>CÓDIGO</th>
                 <th style={{ padding: '8px', textAlign: 'left' }}>NOMBRE DE LA CUENTA / TERCERO</th>
                 <th style={{ padding: '8px', textAlign: 'right' }}>SALDO ANTERIOR</th>
@@ -327,19 +328,19 @@ const BalanceComprobacion = ({ tenantId }) => {
                 let color = 'inherit';
                 let paddingLeft = '8px';
                 
-                if (item.nivel === 1) { fontWeight = 'bold'; color = '#0f172a'; }
-                else if (item.nivel === 2) { fontWeight = 'bold'; color = '#1e293b'; paddingLeft = '16px'; }
-                else if (item.nivel === 3) { paddingLeft = '24px'; fontWeight = '500'; }
-                else if (item.nivel === 4) { paddingLeft = '32px'; }
-                else if (item.nivel === 5) { paddingLeft = '40px'; }
+                if (item.nivel === 1) { fontWeight = 'bold'; color = '#38bdf8'; } // primary light blue
+                else if (item.nivel === 2) { fontWeight = 'bold'; color = '#7dd3fc'; paddingLeft = '16px'; } // lighter blue
+                else if (item.nivel === 3) { paddingLeft = '24px'; fontWeight = '500'; color = 'var(--text-primary)'; }
+                else if (item.nivel === 4) { paddingLeft = '32px'; color = 'var(--text-primary)'; }
+                else if (item.nivel === 5) { paddingLeft = '40px'; color = 'var(--text-secondary)'; }
 
                 if (item.isTercero) {
                   paddingLeft = '50px';
-                  color = '#475569';
+                  color = 'var(--text-muted)';
                 }
 
                 return (
-                  <tr key={idx} style={{ borderBottom: item.isTercero ? 'none' : '1px solid #f1f5f9', fontWeight, color }}>
+                  <tr key={idx} style={{ borderBottom: item.isTercero ? 'none' : '1px solid var(--border)', fontWeight, color }}>
                     <td style={{ padding: '6px 8px', paddingLeft: item.isTercero ? paddingLeft : '8px' }}>
                       {item.isTercero ? item.terceroInfo.nit : item.codigo}
                     </td>
@@ -355,7 +356,7 @@ const BalanceComprobacion = ({ tenantId }) => {
               })}
             </tbody>
             <tfoot>
-              <tr style={{ borderTop: '2px solid #334155', borderBottom: '2px double #334155', fontWeight: 'bold' }}>
+              <tr style={{ borderTop: '2px solid var(--border)', borderBottom: '2px double var(--border)', fontWeight: 'bold' }}>
                 <td colSpan="3" style={{ padding: '12px 8px', textAlign: 'right' }}>TOTAL SUMAS IGUALES MOVIMIENTO:</td>
                 <td style={{ padding: '12px 8px', textAlign: 'right' }}>{formatCurrency(totalDebitos)}</td>
                 <td style={{ padding: '12px 8px', textAlign: 'right' }}>{formatCurrency(totalCreditos)}</td>

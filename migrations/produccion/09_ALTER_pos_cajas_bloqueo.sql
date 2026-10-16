@@ -1,0 +1,1 @@
+ALTER TABLE pos_cajas ADD COLUMN intentos_fallidos INT DEFAULT 0 AFTER clave_cajero, ADD COLUMN bloqueada TINYINT(1) DEFAULT 0 AFTER intentos_fallidos;

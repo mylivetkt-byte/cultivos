@@ -1,13 +1,10 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 import crypto from 'crypto';
 import PDFDocument from 'pdfkit';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 let gpsSecuritySchemaReady = null;
 
@@ -1455,7 +1452,7 @@ router.get('/historial-nominas/:id/desprendibles-pdf', async (req, res) => {
       doc.y = startY;
       doc.fontSize(16).text('Comprobante de Pago de Nómina', { align: 'center' });
       doc.moveDown(0.5);
-      doc.fontSize(10).text(`Empresa: SAS Agrícolas`);
+      doc.fontSize(10).text(`Empresa: AgroPaccioli`);
       doc.text(`Planilla No: ${id}`);
       
       const fi = new Date(planilla.fecha_inicio);
@@ -1530,7 +1527,7 @@ router.get('/historial-nominas/:id/reporte-bancario-pdf', async (req, res) => {
     doc.pipe(res);
 
     // Encabezado Corporativo
-    doc.fontSize(24).font('Helvetica-Bold').text('SAS AGRÍCOLAS S.A.', { align: 'center' });
+    doc.fontSize(24).font('Helvetica-Bold').text('AGROPACCIOLI S.A.', { align: 'center' });
     doc.fontSize(10).font('Helvetica').text('NIT: 900.123.456-7', { align: 'center' });
     doc.moveDown(1);
 
@@ -1580,7 +1577,7 @@ router.get('/historial-nominas/:id/planilla-maestra-pdf', async (req, res) => {
     doc.pipe(res);
 
     // Encabezado Corporativo
-    doc.fontSize(22).font('Helvetica-Bold').text('SAS AGRÍCOLAS S.A.', { align: 'center' });
+    doc.fontSize(22).font('Helvetica-Bold').text('AGROPACCIOLI S.A.', { align: 'center' });
     doc.fontSize(10).font('Helvetica').text('SISTEMA INTEGRADO DE NÓMINA Y COSTOS', { align: 'center' });
     doc.moveDown(1);
     doc.fontSize(14).font('Helvetica-Bold').text(`SÁBANA DE NÓMINA GENERAL - PLANILLA #${id}`, { align: 'center' });

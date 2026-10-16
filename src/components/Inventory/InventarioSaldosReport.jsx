@@ -71,8 +71,9 @@ export default function InventarioSaldosReport({ tenantId }) {
   };
 
   const getMetadata = () => ({
-    empresa: 'SAS Agrícolas',
+    empresa: 'AgroPaccioli',
     finca: filtros.fincaId === 'Todas' ? 'Todas las fincas' : fincas.find(f => f.id_finca === filtros.fincaId)?.nombre,
+    fechaHasta: filtros.fechaCorte.format('YYYY-MM-DD'),
     usuario: user?.nombre || user?.username || 'Usuario del Sistema',
     rol: user?.rol || 'No asignado',
     reportName: `Saldos de Inventario al ${filtros.fechaCorte.format('YYYY-MM-DD')}`

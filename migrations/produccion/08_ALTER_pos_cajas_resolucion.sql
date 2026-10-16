@@ -1,0 +1,1 @@
+ALTER TABLE pos_cajas ADD COLUMN id_resolucion INT NULL AFTER id_tenant;

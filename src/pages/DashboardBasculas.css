@@ -1,5 +1,5 @@
 .dashboard-basculas {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-card);
   backdrop-filter: blur(12px);
   border-radius: 12px;
   padding: 24px;
@@ -22,7 +22,7 @@
 }
 
 .dashboard-basculas .ant-btn-primary {
-  background: linear-gradient(135deg, hsl(210, 70%, 50%), hsl(210, 70%, 60%));
+  background: var(--bg-main), hsl(210, 70%, 60%));
   border: none;
   transition: transform 0.2s ease;
 }

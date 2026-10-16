@@ -67,7 +67,7 @@ export default function BioFabrica({ tenantId }) {
   return (
     <div className="dashboard-container">
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>🏭 Bio-Fábrica (Abonos y Violes)</h2>
+        <h2>🏭 Bio-Fábrica (Abonos y Bioles)</h2>
         <button className="btn btn-primary btn-sm" onClick={() => { setEditItem(null); setForm({ lote_id: '', producto: '', cantidad_litros: '', costo_materiales: 0, costo_jornales: 0 }); setShowModal(true); }}>+ Registrar Producción</button>
       </div>
       {error && <div className="alert alert-danger">{error}</div>}

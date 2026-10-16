@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './CapturadorContable.css';
 import { authFetch } from '../../utils/api';
+import { Select } from 'antd';
+const { Option } = Select;
 
 function CapturadorContable({ tenantId }) {
   // 1. Data Source
@@ -448,137 +450,157 @@ function CapturadorContable({ tenantId }) {
                 </div>
               </div>
               
-              <div className="doc-body" style={{flex:1, overflowY:'auto'}}>
-                
-                {/* Formulario de Entrada Rápida */}
-                <div className="entry-form no-print">
-                  <div className="input-col ac-container">
-                    <label>Cuenta (Autocompletar)</label>
-                    <input 
-                      type="text" 
-                      className="mod-input" 
-                      placeholder="Escriba código o nombre..." 
-                      value={acText}
-                      onChange={e => { setAcText(e.target.value); setAcOpen(true); }}
-                      onFocus={() => setAcOpen(true)}
-                      disabled={isPeriodClosed}
-                    />
-                    {acOpen && filteredCuentas.length > 0 && (
-                      <div className="ac-dropdown">
-                        {filteredCuentas.map(c => (
-                          <div key={c.id_cuenta} className="ac-item" onClick={() => selectCuenta(c)}>
-                            <span className="ac-code">{c.codigo}</span>
-                            <span className="ac-name">{c.nombre}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="input-col">
-                    <label>Tercero {selectedCuenta?.requiere_tercero && <span style={{color:'red'}}>*</span>}</label>
-                    <select className={`mod-input ${selectedCuenta?.requiere_tercero ? 'required' : ''}`} 
-                            value={formDet.id_tercero} 
-                            onChange={e=>setFormDet({...formDet, id_tercero:e.target.value})}
-                            disabled={isPeriodClosed || !selectedCuenta?.requiere_tercero}>
-                      <option value="">Ninguno</option>
-                      {terceros.map(t => <option key={t.id_tercero} value={t.id_tercero}>{t.numero_identificacion} - {t.razon_social}</option>)}
-                    </select>
-                  </div>
-
-                  <div className="input-col">
-                    <label>C.Costo {selectedCuenta?.requiere_centro_costo && <span style={{color:'red'}}>*</span>}</label>
-                    <select className={`mod-input ${selectedCuenta?.requiere_centro_costo ? 'required' : ''}`} 
-                            value={formDet.id_centro_costo} 
-                            onChange={e=>setFormDet({...formDet, id_centro_costo:e.target.value})}
-                            disabled={isPeriodClosed || !selectedCuenta?.requiere_centro_costo}>
-                      <option value="">Ninguno</option>
-                      {centros.map(c => <option key={c.id_centro_costo} value={c.id_centro_costo}>{c.codigo} - {c.nombre}</option>)}
-                    </select>
-                  </div>
-
-                  <div className="input-col">
-                    <label>Concepto de Línea</label>
-                    <input type="text" className="mod-input" value={formDet.descripcion} onChange={e=>setFormDet({...formDet, descripcion:e.target.value})} disabled={isPeriodClosed} />
-                  </div>
-                </div>
-
-                <div className="money-row">
-                  <div className="input-col money-input debit">
-                    <label>DÉBITO (+)</label>
-                    <input type="number" ref={debitRef} placeholder="$ 0" value={formDet.debito} onChange={e=>setFormDet({...formDet, debito:e.target.value, credito: e.target.value>0?0:formDet.credito})} disabled={isPeriodClosed} />
-                  </div>
-                  <div className="input-col money-input credit">
-                    <label>CRÉDITO (-)</label>
-                    <input type="number" ref={creditRef} placeholder="$ 0" value={formDet.credito} onChange={e=>setFormDet({...formDet, credito:e.target.value, debito: e.target.value>0?0:formDet.debito})} disabled={isPeriodClosed} />
-                  </div>
-                  <button className="btn-primary" style={{height:'40px'}} onClick={handleAddDetalle} disabled={isPeriodClosed}>AGREGAR ASIENTO &crarr;</button>
-                </div>
-
-                {/* Grid de Asientos */}
-                <div style={{marginTop:'32px', background:'white', borderRadius:'8px', border:'1px solid #e2e8f0', overflow:'hidden'}}>
-                  <table className="detail-table">
-                    <thead>
-                      <tr>
-                        <th>Cuenta</th>
-                        <th>Concepto / Tercero</th>
-                        <th className="text-right">Débitos</th>
-                        <th className="text-right">Créditos</th>
-                        <th className="text-center">X</th>
+              <div className="doc-body" style={{flex:1, overflowY:'auto', padding: '0 20px 20px 20px'}}>
+                <style>{`
+                  .excel-grid { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--bg-main); }
+                  .excel-grid th { background: var(--card-bg); color: var(--text-muted); padding: 8px; border: 1px solid var(--border); text-align: left; font-weight: 600; }
+                  .excel-grid td { padding: 0; border: 1px solid var(--border); position: relative; height: 36px; }
+                  .excel-input { width: 100%; height: 100%; border: none; background: transparent; padding: 4px 8px; color: var(--text); outline: none; }
+                  .excel-input:focus { background: #1e293b; box-shadow: inset 0 0 0 2px #3b82f6; }
+                  .excel-grid td.focused { box-shadow: inset 0 0 0 2px #3b82f6; }
+                  .excel-select .ant-select-selector { border: none !important; background: transparent !important; box-shadow: none !important; height: 34px !important; padding-top: 2px !important; }
+                  .excel-select.ant-select-focused .ant-select-selector { background: #1e293b !important; }
+                  .excel-row:hover td { background: var(--card-bg); }
+                `}</style>
+                <table className="excel-grid">
+                  <thead>
+                    <tr>
+                      <th style={{width: '25%'}}>Cuenta (F2 para buscar)</th>
+                      <th style={{width: '15%'}}>Tercero</th>
+                      <th style={{width: '15%'}}>C. Costo</th>
+                      <th style={{width: '20%'}}>Concepto</th>
+                      <th style={{width: '10%'}}>Débito</th>
+                      <th style={{width: '10%'}}>Crédito</th>
+                      <th style={{width: '5%', textAlign: 'center'}}>X</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detalles.map(d => (
+                      <tr key={d.id_detalle} className="excel-row">
+                        <td style={{padding: '4px 8px'}}>
+                          <strong>{d.cuenta_codigo}</strong> - <span style={{color:'var(--text-muted)'}}>{d.cuenta_nombre}</span>
+                        </td>
+                        <td style={{padding: '4px 8px', fontSize: '11px'}}>{d.tercero_nit || '-'}</td>
+                        <td style={{padding: '4px 8px', fontSize: '11px'}}>{d.cc_codigo || '-'}</td>
+                        <td style={{padding: '4px 8px'}}>{d.descripcion}</td>
+                        <td className="val-deb" onClick={() => !isPeriodClosed && setEditCell({id: d.id_detalle, field: 'debito', val: d.debito})}>
+                          {editCell?.id === d.id_detalle && editCell?.field === 'debito' ? (
+                            <input autoFocus type="number" className="excel-input"
+                              value={editCell.val} 
+                              onChange={e=>setEditCell({...editCell, val:e.target.value})}
+                              onBlur={()=>saveCellValue(d.id_detalle, 'debito', editCell.val)}
+                              onKeyDown={e=>{if(e.key==='Enter') saveCellValue(d.id_detalle, 'debito', editCell.val)}}
+                            />
+                          ) : (
+                            <div style={{padding: '4px 8px', textAlign: 'right', cursor: 'pointer', color: d.debito > 0 ? '#10b981' : 'inherit'}}>{d.debito > 0 ? formatMoney(d.debito) : ''}</div>
+                          )}
+                        </td>
+                        <td className="val-cred" onClick={() => !isPeriodClosed && setEditCell({id: d.id_detalle, field: 'credito', val: d.credito})}>
+                          {editCell?.id === d.id_detalle && editCell?.field === 'credito' ? (
+                            <input autoFocus type="number" className="excel-input"
+                              value={editCell.val} 
+                              onChange={e=>setEditCell({...editCell, val:e.target.value})}
+                              onBlur={()=>saveCellValue(d.id_detalle, 'credito', editCell.val)}
+                              onKeyDown={e=>{if(e.key==='Enter') saveCellValue(d.id_detalle, 'credito', editCell.val)}}
+                            />
+                          ) : (
+                            <div style={{padding: '4px 8px', textAlign: 'right', cursor: 'pointer', color: d.credito > 0 ? '#ef4444' : 'inherit'}}>{d.credito > 0 ? formatMoney(d.credito) : ''}</div>
+                          )}
+                        </td>
+                        <td style={{textAlign: 'center'}}>
+                          <button className="btn-icon del" onClick={()=>handleDeleteDetalle(d.id_detalle)} disabled={isPeriodClosed} style={{margin: '0 auto', display: 'block'}}>✕</button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {detalles.length === 0 && <tr><td colSpan="5" className="text-center empty-msg">Sin asientos contables</td></tr>}
-                      {detalles.map(d => (
-                        <tr key={d.id_detalle}>
-                          <td><strong>{d.cuenta_codigo}</strong><br/><span style={{fontSize:'10px', color:'#64748b'}}>{d.cuenta_nombre}</span></td>
-                          <td>
-                            {d.descripcion}
-                            {d.tercero_nit && <div style={{fontSize:'10px', color:'#0f172a', fontWeight:'600'}}>Tercero: {d.tercero_nit}</div>}
-                            {d.cc_codigo && <div style={{fontSize:'10px', color:'#0f172a'}}>CC: {d.cc_codigo}</div>}
-                          </td>
-                          <td className="val-deb" onClick={() => !isPeriodClosed && setEditCell({id: d.id_detalle, field: 'debito', val: d.debito})}>
-                            {editCell?.id === d.id_detalle && editCell?.field === 'debito' ? (
-                              <input autoFocus type="number" className="mod-input" style={{width:'100px', margin:0, padding:'2px 4px', height:'24px'}} 
-                                value={editCell.val} 
-                                onChange={e=>setEditCell({...editCell, val:e.target.value})}
-                                onBlur={()=>saveCellValue(d.id_detalle, 'debito', editCell.val)}
-                                onKeyDown={e=>{if(e.key==='Enter') saveCellValue(d.id_detalle, 'debito', editCell.val)}}
-                              />
-                            ) : (
-                              <span style={{cursor:'pointer', borderBottom:'1px dashed #cbd5e1'}}>{d.debito > 0 ? formatMoney(d.debito) : '$0'}</span>
-                            )}
-                          </td>
-                          <td className="val-cred" onClick={() => !isPeriodClosed && setEditCell({id: d.id_detalle, field: 'credito', val: d.credito})}>
-                            {editCell?.id === d.id_detalle && editCell?.field === 'credito' ? (
-                              <input autoFocus type="number" className="mod-input" style={{width:'100px', margin:0, padding:'2px 4px', height:'24px'}} 
-                                value={editCell.val} 
-                                onChange={e=>setEditCell({...editCell, val:e.target.value})}
-                                onBlur={()=>saveCellValue(d.id_detalle, 'credito', editCell.val)}
-                                onKeyDown={e=>{if(e.key==='Enter') saveCellValue(d.id_detalle, 'credito', editCell.val)}}
-                              />
-                            ) : (
-                              <span style={{cursor:'pointer', borderBottom:'1px dashed #cbd5e1'}}>{d.credito > 0 ? formatMoney(d.credito) : '$0'}</span>
-                            )}
-                          </td>
-                          <td className="text-center">
-                            <button className="btn-icon del" onClick={()=>handleDeleteDetalle(d.id_detalle)} disabled={isPeriodClosed}>✕</button>
-                          </td>
-                        </tr>
-                      ))}
-                      {/* Fila de Totales */}
-                      {detalles.length > 0 && (
-                        <tr style={{background:'#f8fafc'}}>
-                          <td colSpan="2" className="text-right" style={{fontWeight:'700'}}>TOTALES:</td>
-                          <td className="val-deb" style={{fontSize:'14px'}}>{formatMoney(totalDebitoDoc)}</td>
-                          <td className="val-cred" style={{fontSize:'14px'}}>{formatMoney(totalCreditoDoc)}</td>
-                          <td></td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
+                    ))}
+                    
+                    {/* FILA DE CAPTURA (NUEVA LÍNEA) */}
+                    {!isPeriodClosed && (
+                      <tr className="excel-row">
+                        <td>
+                          <Select
+                            showSearch
+                            optionFilterProp="children"
+                            value={formDet.id_cuenta || undefined}
+                            onChange={(val) => {
+                              const c = cuentas.find(x => x.id_cuenta === val);
+                              if(c) {
+                                setSelectedCuenta(c);
+                                setFormDet({...formDet, id_cuenta: c.id_cuenta, descripcion: c.nombre});
+                                setTimeout(() => {
+                                  if (c.naturaleza === 'Debito' && debitRef.current) debitRef.current.focus();
+                                  if (c.naturaleza === 'Credito' && creditRef.current) creditRef.current.focus();
+                                }, 50);
+                              } else {
+                                setSelectedCuenta(null);
+                                setFormDet({...formDet, id_cuenta: '', descripcion: ''});
+                              }
+                            }}
+                            className="w-full dark-select excel-select"
+                            placeholder="Buscar cuenta..."
+                            style={{width: '100%'}}
+                            filterOption={(input, option) => 
+                              (option?.children ?? '').toLowerCase().includes(input.toLowerCase()) ||
+                              (option?.value ?? '').toString().toLowerCase().includes(input.toLowerCase())
+                            }
+                          >
+                            {cuentas.filter(c => c.nivel === 5).map(c => (
+                              <Option key={c.id_cuenta} value={c.id_cuenta}>{c.codigo} - {c.nombre}</Option>
+                            ))}
+                          </Select>
+                        </td>
+                        <td>
+                          <Select 
+                            showSearch
+                            optionFilterProp="children"
+                            className={`w-full dark-select excel-select ${selectedCuenta?.requiere_tercero ? 'required-select' : ''}`}
+                            value={formDet.id_tercero || undefined} 
+                            onChange={val=>setFormDet({...formDet, id_tercero:val || ''})}
+                            disabled={!selectedCuenta?.requiere_tercero}
+                            placeholder={selectedCuenta?.requiere_tercero ? "Requerido..." : ""}
+                            allowClear
+                            style={{width: '100%'}}
+                          >
+                            {terceros.map(t => <Option key={t.id_tercero} value={t.id_tercero}>{t.numero_identificacion} - {t.razon_social}</Option>)}
+                          </Select>
+                        </td>
+                        <td>
+                          <Select 
+                            showSearch
+                            optionFilterProp="children"
+                            className={`w-full dark-select excel-select ${selectedCuenta?.requiere_centro_costo ? 'required-select' : ''}`}
+                            value={formDet.id_centro_costo || undefined} 
+                            onChange={val=>setFormDet({...formDet, id_centro_costo:val || ''})}
+                            disabled={!selectedCuenta?.requiere_centro_costo}
+                            placeholder={selectedCuenta?.requiere_centro_costo ? "Requerido..." : ""}
+                            allowClear
+                            style={{width: '100%'}}
+                          >
+                            {centros.map(c => <Option key={c.id_centro_costo} value={c.id_centro_costo}>{c.codigo} - {c.nombre}</Option>)}
+                          </Select>
+                        </td>
+                        <td>
+                          <input type="text" className="excel-input" value={formDet.descripcion} onChange={e=>setFormDet({...formDet, descripcion:e.target.value})} placeholder="Detalle (opcional)" />
+                        </td>
+                        <td>
+                          <input type="number" ref={debitRef} className="excel-input" style={{textAlign: 'right'}} placeholder="$ 0" value={formDet.debito} onChange={e=>setFormDet({...formDet, debito:e.target.value, credito: e.target.value>0?0:formDet.credito})} onKeyDown={e=>{if(e.key==='Enter') handleAddDetalle()}} />
+                        </td>
+                        <td>
+                          <input type="number" ref={creditRef} className="excel-input" style={{textAlign: 'right'}} placeholder="$ 0" value={formDet.credito} onChange={e=>setFormDet({...formDet, credito:e.target.value, debito: e.target.value>0?0:formDet.debito})} onKeyDown={e=>{if(e.key==='Enter') handleAddDetalle()}} />
+                        </td>
+                        <td style={{textAlign: 'center'}}>
+                          <button className="btn-primary" style={{padding: '4px 8px', fontSize: '10px'}} onClick={handleAddDetalle}>&crarr;</button>
+                        </td>
+                      </tr>
+                    )}
+                    {/* Fila de Totales */}
+                    <tr style={{background: 'var(--bg-main)'}}>
+                      <td colSpan="4" style={{textAlign: 'right', padding: '8px', fontWeight: 'bold'}}>TOTALES:</td>
+                      <td style={{textAlign: 'right', padding: '8px', fontWeight: 'bold', color: '#10b981'}}>{formatMoney(totalDebitoDoc)}</td>
+                      <td style={{textAlign: 'right', padding: '8px', fontWeight: 'bold', color: '#ef4444'}}>{formatMoney(totalCreditoDoc)}</td>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </>
           )}

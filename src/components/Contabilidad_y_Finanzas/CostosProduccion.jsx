@@ -49,7 +49,7 @@ const CostosProduccion = ({ tenantId }) => {
               table { page-break-inside: auto; border-collapse: collapse; width: 100%; }
               tr    { page-break-inside: avoid; page-break-after: auto; border-bottom: 1px solid #e2e8f0; }
               th    { text-align: left; padding: 8px; background: #f8fafc; color: #475569; }
-              td    { padding: 8px; color: #334155; }
+              td    { padding: 8px; color: var(--text-primary); }
               thead { display: table-header-group; }
             }
           </style>
@@ -71,7 +71,7 @@ const CostosProduccion = ({ tenantId }) => {
   const formatCurrency = (val) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(val);
 
   return (
-    <div style={{ margin: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+    <div style={{ margin: '20px', background: 'var(--card-bg)', color: 'var(--text)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
       <div className="no-print">
         <div style={{ background: 'linear-gradient(90deg, #b45309 0%, #d97706 100%)', padding: '24px', color: 'white', borderTopLeftRadius: '8px', borderTopRightRadius: '8px' }}>
           <h2 style={{ margin: '0 0 8px 0' }}>🌾 Tablero de Costos de Producción</h2>
@@ -79,10 +79,10 @@ const CostosProduccion = ({ tenantId }) => {
         </div>
         
         <div style={{ padding: '24px' }}>
-          <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '24px', display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
+          <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '24px', display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
             <div style={{ flex: 1, maxWidth: '200px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>Filtro de Periodo</label>
-              <input type="month" value={periodo} onChange={e => setPeriodo(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%' }} />
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '4px' }}>Filtro de Periodo</label>
+              <input type="month" value={periodo} onChange={e => setPeriodo(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', width: '100%' }} />
             </div>
             <div>
               <button onClick={fetchData} style={{ background: '#f59e0b', color: 'white', padding: '9px 24px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', marginRight: '10px' }}>
@@ -100,17 +100,17 @@ const CostosProduccion = ({ tenantId }) => {
       </div>
 
       {data.length > 0 && (
-        <div className="printable-report" style={{ padding: '40px', background: 'white' }}>
+        <div className="printable-report" style={{ padding: '40px', background: 'var(--card-bg)', color: 'var(--text)' }}>
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-            <h1 style={{ margin: '0 0 8px 0', fontSize: '22px', color: '#0f172a' }}>REPORTE GERENCIAL: COSTOS DE PRODUCCIÓN AGRÍCOLA</h1>
-            <p style={{ margin: '0', color: '#64748b' }}>
+            <h1 style={{ margin: '0 0 8px 0', fontSize: '22px', color: 'var(--text)' }}>REPORTE GERENCIAL: COSTOS DE PRODUCCIÓN AGRÍCOLA</h1>
+            <p style={{ margin: '0', color: 'var(--text-muted)' }}>
               Periodo Consultado: {periodo || 'Histórico Global'}
             </p>
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
             <thead>
-              <tr style={{ background: '#f8fafc', borderBottom: '2px solid #cbd5e1' }}>
+              <tr style={{ background: 'var(--bg-main)', borderBottom: '2px solid var(--border)' }}>
                 <th>LOTE / FINCA</th>
                 <th>CULTIVO</th>
                 <th>HECTÁREAS</th>
@@ -118,15 +118,15 @@ const CostosProduccion = ({ tenantId }) => {
                 <th style={{ textAlign: 'right' }}>INSUMOS</th>
                 <th style={{ textAlign: 'right' }}>MAQUINARIA / RIEGO</th>
                 <th style={{ textAlign: 'right' }}>TOTAL COSTO LOTE</th>
-                <th style={{ textAlign: 'right', background: '#eff6ff', color: '#1d4ed8' }}>COSTO / HECTÁREA</th>
+                <th style={{ textAlign: 'right', background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa' }}>COSTO / HECTÁREA</th>
               </tr>
             </thead>
             <tbody>
               {data.map((item) => {
                 const totalMaquinaria = parseFloat(item.costo_maquinaria || 0) + parseFloat(item.costo_riego || 0);
                 return (
-                  <tr key={item.id_costo_prod} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ fontWeight: 'bold', color: '#334155' }}>
+                  <tr key={item.id_costo_prod} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ fontWeight: 'bold', color: 'var(--text)' }}>
                       {item.lote_nombre}<br/>
                       <span style={{ fontWeight: 'normal', fontSize: '10px', color: '#94a3b8' }}>{item.finca_nombre}</span>
                     </td>
@@ -136,7 +136,7 @@ const CostosProduccion = ({ tenantId }) => {
                     <td style={{ textAlign: 'right' }}>{formatCurrency(item.costo_insumos)}</td>
                     <td style={{ textAlign: 'right' }}>{formatCurrency(totalMaquinaria)}</td>
                     <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{formatCurrency(item.costo_total)}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 'bold', background: '#eff6ff', color: '#1d4ed8' }}>
+                    <td style={{ textAlign: 'right', fontWeight: 'bold', background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa' }}>
                       {formatCurrency(item.costo_por_hectarea)}
                     </td>
                   </tr>
@@ -144,19 +144,19 @@ const CostosProduccion = ({ tenantId }) => {
               })}
             </tbody>
             <tfoot>
-              <tr style={{ background: '#f8fafc', fontWeight: 'bold' }}>
+              <tr style={{ background: 'var(--bg-main)', fontWeight: 'bold' }}>
                 <td colSpan="6" style={{ textAlign: 'right', padding: '12px 8px' }}>TOTAL COSTO PERIODO:</td>
                 <td style={{ textAlign: 'right', padding: '12px 8px' }}>
                   {formatCurrency(data.reduce((acc, i) => acc + parseFloat(i.costo_total || 0), 0))}
                 </td>
-                <td style={{ background: '#eff6ff' }}></td>
+                <td style={{ background: 'rgba(59, 130, 246, 0.15)' }}></td>
               </tr>
             </tfoot>
           </table>
 
           {resumen && resumen.length > 0 && (
             <div style={{ marginTop: '40px' }}>
-              <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', color: '#334155' }}>Desempeño vs Presupuesto Anual</h3>
+              <h3 style={{ borderBottom: '1px solid var(--border)', paddingBottom: '8px', color: 'var(--text)' }}>Desempeño vs Presupuesto Anual</h3>
               <div style={{ display: 'flex', gap: '20px', marginTop: '16px' }}>
                 {resumen.map(r => {
                   const ppto = parseFloat(r.total_ppto || 0);
@@ -164,7 +164,7 @@ const CostosProduccion = ({ tenantId }) => {
                   const varPct = ppto > 0 ? ((ejec - ppto) / ppto) * 100 : 0;
                   
                   return (
-                    <div key={r.anio} style={{ flex: 1, padding: '16px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#f8fafc' }}>
+                    <div key={r.anio} style={{ flex: 1, padding: '16px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-main)' }}>
                       <div style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '8px' }}>Año {r.anio}</div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                         <span>Presupuestado:</span> <span>{formatCurrency(ppto)}</span>

@@ -22,7 +22,7 @@ export function exportToExcel(tableName, columns, data, metadata = {}) {
 
     const rolStr = metadata.rol ? ` (Rol: ${metadata.rol})` : '';
     const ws = XLSX.utils.aoa_to_sheet([
-      [`Empresa: ${metadata.empresa || 'SAS Agrícolas'}`],
+      [`Empresa: ${metadata.empresa || 'AgroPaccioli'}`],
       [`Reporte: ${metadata.reportName || tableName.replace(/_/g, ' ')}`],
       [`Finca Operativa: ${metadata.finca || 'Todas las Fincas'}`],
       [`Generado por: ${metadata.usuario || 'Usuario del Sistema'}${rolStr}`],

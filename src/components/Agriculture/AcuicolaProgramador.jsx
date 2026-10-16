@@ -53,7 +53,7 @@ export default function AcuicolaProgramador({ tenantId }) {
   };
 
   const alevinosCols = [
-    { title: 'Lote #', dataIndex: 'id_lote_alev', width: 80 },
+    { title: 'Lote #', dataIndex: 'id_lote_alev', width: 80, render: id => <Tag color="geekblue">#{id}</Tag> },
     { title: 'Especie', dataIndex: 'especie_nombre', render: t => <strong>{t}</strong> },
     { title: 'Recepción', dataIndex: 'fecha_recepcion', render: d => new Date(d).toISOString().split('T')[0] },
     { title: 'Proveedor', dataIndex: 'proveedor' },
@@ -62,7 +62,7 @@ export default function AcuicolaProgramador({ tenantId }) {
   ];
 
   const siembrasCols = [
-    { title: 'Siembra #', dataIndex: 'id_siembra_acui', width: 100 },
+    { title: 'Siembra #', dataIndex: 'id_siembra_acui', width: 100, render: id => <b>#{id}</b> },
     { title: 'Finca', dataIndex: 'finca_nombre' },
     { title: 'Lago / Estanque', dataIndex: 'estanque_codigo', render: t => <Tag color="cyan">{t}</Tag> },
     { title: 'Especie', dataIndex: 'especie_nombre', render: t => <strong>{t}</strong> },
@@ -73,7 +73,7 @@ export default function AcuicolaProgramador({ tenantId }) {
   ];
 
   const progCols = [
-    { title: 'Reg #', dataIndex: 'id_programacion', width: 80 },
+    { title: 'Reg #', dataIndex: 'id_programacion', width: 80, render: id => <b>#{id}</b> },
     { title: 'Lago', dataIndex: 'estanque_codigo' },
     { title: 'Actividad', dataIndex: 'tipo_actividad', render: act => <Tag color="purple">{act}</Tag> },
     { title: 'Fecha', dataIndex: 'fecha_programada', render: d => new Date(d).toISOString().split('T')[0] },

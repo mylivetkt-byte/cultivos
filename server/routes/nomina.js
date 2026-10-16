@@ -3,12 +3,9 @@
 
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 // Helper to extract tenantId from query/body
 function getTenant(req) {
@@ -265,24 +262,31 @@ router.put('/planillas/:id/contabilizar', async (req, res) => {
 
     const concepto = `Provisión Nómina Semanal ${p.semana_numero}-${p.anio}`;
     
-    // 3. Create Comprobante
+    // 3. Create Comprobante (Lote)
+    const descripcionComp = `Nómina Automática: ${concepto.substring(0, 100)}`;
     const [insComp] = await getDb(req).query(`
-      INSERT INTO comprobantes 
-      (id_tenant, id_tipo_comp, id_periodo, consecutivo, fecha, concepto, total, estado)
-      VALUES (?, ?, ?, ?, CURDATE(), ?, ?, 'Contabilizado')
-    `, [p.id_tenant, idTipo, idPeriodo, `NOM-${id}`, concepto, p.total_salarios]);
+      INSERT INTO contab_comprobantes (id_tenant, id_periodo, id_tipo_comp, numero, descripcion, estado)
+      VALUES (?, ?, ?, ?, ?, 'Contabilizado')
+    `, [p.id_tenant, idPeriodo, idTipo, `NOM-${id}`, descripcionComp]);
 
     const idComp = insComp.insertId;
 
-    // 4. Create Details (Débito a Gastos, Crédito a Pasivos/Bancos)
-    await getDb(req).query(`
-      INSERT INTO comprobantes_detalle (id_comprobante, id_cuenta, debito, credito, descripcion)
-      VALUES 
-      (?, ?, ?, 0, 'Gasto Salarios y Deducciones'),
-      (?, ?, 0, ?, 'Obligación Nómina por Pagar')
-    `, [idComp, idCuentaGasto, p.total_salarios, idComp, idCuentaPasivo, p.total_salarios]);
+    // 4. Create Documento
+    const [insDoc] = await getDb(req).query(`
+      INSERT INTO contab_documentos (id_tenant, id_comprobante, id_tipo_doc, numero_doc, fecha, concepto, estado, tabla_origen, id_origen)
+      VALUES (?, ?, ?, ?, CURDATE(), ?, 'Contabilizado', 'rrhh_planillas_semanales', ?)
+    `, [p.id_tenant, idComp, idTipo, `NOM-${id}`, concepto, id]);
+    const idDoc = insDoc.insertId;
 
-    // 5. Update Planilla State
+    // 5. Create Details (Débito a Gastos, Crédito a Pasivos/Bancos)
+    await getDb(req).query(`
+      INSERT INTO contab_detalles (id_documento, id_cuenta, descripcion, valor_base, debito, credito)
+      VALUES 
+      (?, ?, 'Gasto Salarios y Deducciones', 0, ?, 0),
+      (?, ?, 'Obligación Nómina por Pagar', 0, 0, ?)
+    `, [idDoc, idCuentaGasto, p.total_salarios, idDoc, idCuentaPasivo, p.total_salarios]);
+
+    // 6. Update Planilla State
     await getDb(req).query(`UPDATE rrhh_planillas_semanales SET estado = 'Contabilizada' WHERE id_planilla = ?`, [id]);
 
     res.json({ success: true, message: 'Planilla Contabilizada con éxito', id_comprobante: idComp });

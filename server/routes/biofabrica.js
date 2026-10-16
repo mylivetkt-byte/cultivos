@@ -1,5 +1,6 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = express.Router();
 
@@ -7,7 +8,7 @@ const router = express.Router();
 router.get('/saldos-violes', async (req, res) => {
   const { tenantId = 1 } = req.query;
   try {
-    const [rows] = await pool.query(`
+    const [rows] = await getDb(req).query(`
       SELECT 
         i.id_insumo,
         i.codigo,
@@ -42,7 +43,7 @@ router.get('/movimientos-materias-primas', async (req, res) => {
       params.push(startDate, endDate);
     }
 
-    const [rows] = await pool.query(`
+    const [rows] = await getDb(req).query(`
       SELECT 
         m.id_movimiento,
         m.fecha_movimiento,
@@ -84,7 +85,7 @@ router.get('/movimientos-violes', async (req, res) => {
       params.push(startDate, endDate);
     }
 
-    const [rows] = await pool.query(`
+    const [rows] = await getDb(req).query(`
       SELECT 
         m.id_movimiento,
         m.fecha_movimiento,
@@ -128,7 +129,7 @@ router.get('/produccion', async (req, res) => {
     }
 
     // Main production rows
-    const [produccion] = await pool.query(`
+    const [produccion] = await getDb(req).query(`
       SELECT 
         p.id_produccion,
         p.fecha_produccion,
@@ -151,7 +152,7 @@ router.get('/produccion', async (req, res) => {
     // If there's production, get their details
     if (produccion.length > 0) {
       const prodIds = produccion.map(p => p.id_produccion);
-      const [detalles] = await pool.query(`
+      const [detalles] = await getDb(req).query(`
         SELECT 
           d.id_produccion,
           d.cantidad,

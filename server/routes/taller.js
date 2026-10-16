@@ -1,10 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import pool from '../db.js'; // Asegúrate de que apunte a tu conexión MySQL
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
+import { getDb } from '../utils/db.js';
 
 // 1. Catálogo 360 de Máquinas
 router.get('/maquinas', async (req, res) => {

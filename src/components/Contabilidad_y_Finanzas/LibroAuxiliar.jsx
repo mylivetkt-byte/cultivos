@@ -25,25 +25,23 @@ const LibroAuxiliar = ({ tenantId }) => {
   }, [tenantId]);
 
   useEffect(() => {
-    if (idFinca) {
-      fetchCentrosCosto(idFinca);
-      setIdCentroCosto('');
-    } else {
-      setCentrosCosto([]);
-      setIdCentroCosto('');
-    }
+    fetchCentrosCosto(idFinca);
+    setIdCentroCosto('');
   }, [idFinca, tenantId]);
 
   const fetchMaestros = async () => {
     try {
-      const [resFincas, resTerceros, resCuentas] = await Promise.all([
-        authFetch(`/api/contabilidad/subempresas?tenantId=${tenantId || 1}`),
-        authFetch(`/api/contabilidad/catalogos?tableName=terceros&tenantId=${tenantId || 1}`),
-        authFetch(`/api/contabilidad/catalogos?tableName=plan_contable&tenantId=${tenantId || 1}`)
-      ]);
-      
-      if (resFincas.ok) setFincas(await resFincas.json());
-      if (resTerceros.ok) setTerceros((await resTerceros.json()).terceros || []);
+      const resFincas = await authFetch(`/api/contabilidad/catalogos?tableName=fincas&tenantId=${tenantId || 1}`);
+      if (resFincas.ok) {
+        const d = await resFincas.json();
+        if (d.fincas) setFincas(d.fincas);
+      }
+      const resTerceros = await authFetch(`/api/contabilidad/catalogos?tableName=terceros&tenantId=${tenantId || 1}`);
+      if (resTerceros.ok) {
+        const d = await resTerceros.json();
+        if (d.terceros) setTerceros(d.terceros);
+      }
+      const resCuentas = await authFetch(`/api/contabilidad/catalogos?tableName=plan_contable&tenantId=${tenantId || 1}`);
       if (resCuentas.ok) {
         const cat = await resCuentas.json();
         setCuentas((cat.cuentas || []).filter(c => c.nivel === 5).sort((a,b) => a.codigo.localeCompare(b.codigo)));
@@ -58,7 +56,13 @@ const LibroAuxiliar = ({ tenantId }) => {
       const res = await authFetch(`/api/contabilidad/catalogos?tenantId=${tenantId || 1}`);
       if (res.ok) {
         const d = await res.json();
-        if (d.centros) setCentrosCosto(d.centros.filter(c => c.id_finca.toString() === fincaId.toString()));
+        if (d.centros) {
+          if (fincaId) {
+            setCentrosCosto(d.centros.filter(c => c.id_finca?.toString() === fincaId.toString()));
+          } else {
+            setCentrosCosto(d.centros);
+          }
+        }
       }
     } catch (err) {
       console.error(err);
@@ -75,6 +79,7 @@ const LibroAuxiliar = ({ tenantId }) => {
     try {
       let url = `/api/contabilidad/reportes/libro-auxiliar?tenantId=${tenantId || 1}&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
       if (idFinca) url += `&id_finca=${idFinca}`;
+      if (idCentroCosto) url += `&id_centro_costo=${idCentroCosto}`;
       if (idTercero) url += `&id_tercero=${idTercero}`;
       if (cuentaInicio) url += `&cuenta_inicio=${cuentaInicio}`;
       if (cuentaFin) url += `&cuenta_fin=${cuentaFin}`;
@@ -165,7 +170,8 @@ const LibroAuxiliar = ({ tenantId }) => {
           <title>Libro Auxiliar</title>
           <style>
             @media print {
-              @page { margin: 10mm; size: landscape; }
+              @page { margin: 10mm; size: landscape;   table, th, td { color: black !important; border-color: #ccc !important; }
+}
               body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: system-ui, -apple-system, sans-serif; font-size: 10px; }
               table { page-break-inside: auto; }
               tr    { page-break-inside: avoid; page-break-after: auto; }
@@ -192,13 +198,13 @@ const LibroAuxiliar = ({ tenantId }) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(val);
   };
 
-  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' };
-  const inputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', background: 'white', width: '100%', boxSizing: 'border-box' };
-  const tdStyle = { padding: '6px 8px', borderBottom: '1px solid #f1f5f9' };
-  const thStyle = { padding: '8px', textAlign: 'left', background: '#f8fafc', borderBottom: '2px solid #cbd5e1', color: '#475569', fontWeight: 'bold' };
+  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '4px' };
+  const inputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', width: '100%', boxSizing: 'border-box' };
+  const tdStyle = { padding: '6px 8px', borderBottom: '1px solid var(--border)' };
+  const thStyle = { padding: '8px', textAlign: 'left', background: 'var(--bg-main)', borderBottom: '2px solid var(--border)', color: 'var(--text-muted)', fontWeight: 'bold' };
 
   return (
-    <div style={{ margin: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+    <div style={{ margin: '20px', background: 'var(--card-bg)', color: 'var(--text)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
       <div className="no-print">
         <div style={{ background: 'linear-gradient(90deg, #1e293b 0%, #334155 100%)', padding: '24px', color: 'white', borderTopLeftRadius: '8px', borderTopRightRadius: '8px' }}>
           <h2 style={{ margin: '0 0 8px 0' }}>📓 Libro Auxiliar</h2>
@@ -206,7 +212,7 @@ const LibroAuxiliar = ({ tenantId }) => {
         </div>
         
         <div style={{ padding: '24px' }}>
-          <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+          <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '24px' }}>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '16px' }}>
               <div>
@@ -238,13 +244,20 @@ const LibroAuxiliar = ({ tenantId }) => {
                   {terceros.map(t => <option key={t.id_tercero} value={t.id_tercero}>{t.documento} - {t.nombre_completo}</option>)}
                 </select>
               </div>
-              <div>
-                <label style={labelStyle}>Finca (Cultivo)</label>
-                <select value={idFinca} onChange={e => setIdFinca(e.target.value)} style={inputStyle}>
-                  <option value="">-- Todas --</option>
-                  {fincas.map(f => <option key={f.id_finca} value={f.id_finca}>{f.codigo} - {f.nombre}</option>)}
-                </select>
-              </div>
+                <div>
+                  <label style={labelStyle}>Finca (Cultivo)</label>
+                  <select value={idFinca} onChange={e => setIdFinca(e.target.value)} style={inputStyle}>
+                    <option value="">-- Todas --</option>
+                    {fincas.map(f => <option key={f.id_finca} value={f.id_finca}>{f.codigo} - {f.nombre}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Centro de Costo</label>
+                  <select value={idCentroCosto} onChange={e => setIdCentroCosto(e.target.value)} style={inputStyle}>
+                    <option value="">-- Todos los Centros --</option>
+                    {centrosCosto.map(c => <option key={c.id_centro_costo} value={c.id_centro_costo}>{c.codigo} - {c.nombre}</option>)}
+                  </select>
+                </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px' }}>
@@ -263,11 +276,11 @@ const LibroAuxiliar = ({ tenantId }) => {
       </div>
 
       {data.length > 0 && (
-        <div className="printable-report" style={{ padding: '40px', background: 'white' }}>
+        <div className="printable-report" style={{ padding: '40px', background: 'var(--card-bg)', color: 'var(--text)' }}>
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>
             <h1 style={{ margin: '0 0 8px 0', fontSize: '20px' }}>LIBRO AUXILIAR DE CONTABILIDAD</h1>
-            <p style={{ margin: '0', color: '#64748b' }}>Desde: {fechaInicio} Hasta: {fechaFin}</p>
-            {idFinca && <p style={{ margin: '4px 0 0 0', color: '#64748b' }}>Finca Filtro: {fincas.find(f => f.id_finca.toString() === idFinca)?.nombre}</p>}
+            <p style={{ margin: '0', color: 'var(--text-muted)' }}>Desde: {fechaInicio} Hasta: {fechaFin}</p>
+            {idFinca && <p style={{ margin: '4px 0 0 0', color: 'var(--text-muted)' }}>Finca Filtro: {fincas.find(f => f.id_finca.toString() === idFinca)?.nombre}</p>}
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', minWidth: '900px' }}>
@@ -286,14 +299,14 @@ const LibroAuxiliar = ({ tenantId }) => {
             <tbody>
               {data.map(acc => (
                 <React.Fragment key={acc.codigo}>
-                  <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1' }}>
-                    <td colSpan="5" style={{ padding: '10px 8px', fontWeight: 'bold', color: '#0f172a' }}>
+                  <tr style={{ background: 'var(--bg-main)', borderTop: '2px solid #cbd5e1' }}>
+                    <td colSpan="5" style={{ padding: '10px 8px', fontWeight: 'bold', color: 'var(--text)' }}>
                       CUENTA: {acc.codigo} - {acc.nombre.toUpperCase()}
                     </td>
-                    <td colSpan="2" style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 'bold', color: '#475569' }}>
+                    <td colSpan="2" style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 'bold', color: 'var(--text-muted)' }}>
                       SALDO ANTERIOR:
                     </td>
-                    <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 'bold', color: '#0f172a' }}>
+                    <td style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 'bold', color: 'var(--text)' }}>
                       {formatCurrency(acc.saldoAnterior)}
                     </td>
                   </tr>
@@ -311,14 +324,14 @@ const LibroAuxiliar = ({ tenantId }) => {
                     </tr>
                   ))}
                   
-                  <tr style={{ background: '#f1f5f9' }}>
-                    <td colSpan="5" style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', color: '#475569' }}>
+                  <tr style={{ background: 'var(--bg-main)' }}>
+                    <td colSpan="5" style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', color: 'var(--text-muted)' }}>
                       TOTAL MOVIMIENTO MES:
                     </td>
-                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', color: '#1e293b' }}>
+                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', color: '#7dd3fc' }}>
                       {formatCurrency(acc.totalDebito)}
                     </td>
-                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', color: '#1e293b' }}>
+                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', color: '#7dd3fc' }}>
                       {formatCurrency(acc.totalCredito)}
                     </td>
                     <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', color: '#16a34a' }}>
@@ -330,7 +343,7 @@ const LibroAuxiliar = ({ tenantId }) => {
             </tbody>
           </table>
           
-          <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'space-around', color: '#64748b' }}>
+          <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'space-around', color: 'var(--text-muted)' }}>
             <div style={{ textAlign: 'center', borderTop: '1px solid #cbd5e1', paddingTop: '8px', width: '250px' }}>
               <strong>Preparó</strong>
             </div>

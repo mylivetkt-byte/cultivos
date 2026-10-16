@@ -6,8 +6,8 @@ import '../styles/Sidebar.css';
 import '../styles/Sidebar.css';
 import { useAuth } from '../context/AuthContext';
 
-function Sidebar({ modules, loading, selectedTable, onSelectTable, onNavigateHome, open, onToggle, permisos = [] }) {
-  const { logout } = useAuth();
+function Sidebar({ modules, loading, selectedTable, onSelectTable, onNavigateHome, open, onToggle }) {
+  const { logout, user, granular } = useAuth();
   const [search, setSearch] = useState('');
   const [expandedModules, setExpandedModules] = useState({});
   const [expandedSubModules, setExpandedSubModules] = useState({});
@@ -15,10 +15,21 @@ function Sidebar({ modules, loading, selectedTable, onSelectTable, onNavigateHom
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Check user permissions
-  const hasAccess = (moduleName) => {
-    if (!permisos || permisos.length === 0) return true;
-    const match = permisos.find(p => p.modulo === moduleName || p.modulo === 'Todos');
-    return match ? match.puede_leer === 1 : false;
+  const hasAccess = (item) => {
+    if (user?.rol === 'Super_Admin' || user?.rol === 'Administrador_Empresa') return true;
+    
+    // For Submenus (Groups/Folders)
+    if (item.items && item.items.length > 0) {
+      return item.items.some(child => hasAccess(child));
+    }
+
+    // For specific items, check the granular permissions using their ID (which is saved as 'ruta' in the DB)
+    if (item.id) {
+      return granular?.some(p => p.ruta === item.id && (p.acceder === 1 || p.acceder === true));
+    }
+    
+    // If it's a dynamic table without a static ID, default to checking if it's explicitly allowed (for now allow it)
+    return true; 
   };
 
   // Build the complete navigation tree by merging static config with dynamic tables from backend
@@ -71,9 +82,40 @@ function Sidebar({ modules, loading, selectedTable, onSelectTable, onNavigateHom
         }
       });
     });
-
     return tree;
   }, [modules]);
+
+  // Auto-expand modules based on active path or active dynamic table
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    navigationTree.forEach(group => {
+      let expandGroup = false;
+      
+      group.items.forEach(item => {
+        // Direct item match
+        if ((item.path && currentPath === item.path) || (selectedTable && item.id === selectedTable)) {
+          expandGroup = true;
+        }
+        
+        // Submenu match
+        if (item.isSubmenu && item.items) {
+          const hasActiveChild = item.items.some(sub => 
+            (sub.path && currentPath === sub.path) || (selectedTable && sub.id === selectedTable)
+          );
+          
+          if (hasActiveChild) {
+            expandGroup = true;
+            setExpandedSubModules(prev => ({ ...prev, [item.id]: true }));
+            setActiveSubmenu(item.id);
+          }
+        }
+      });
+      
+      if (expandGroup) {
+        setExpandedModules(prev => ({ ...prev, [group.id]: true }));
+      }
+    });
+  }, [window.location.pathname, navigationTree, selectedTable]);
 
   const toggleModule = (id) => {
     if (isCollapsed) setIsCollapsed(false); // Auto expand if collapsed
@@ -104,7 +146,10 @@ function Sidebar({ modules, loading, selectedTable, onSelectTable, onNavigateHom
     return (
       <aside className={`sidebar-container ${open ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
-          <div className="sidebar-brand">🌿 SAS Agrícolas</div>
+          <div className="sidebar-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src="/logo-agropaccioli-cropped.png" alt="Logo" style={{ height: '36px', objectFit: 'contain' }} />
+            <span style={{ color: 'white', fontWeight: 'bold', fontSize: '18px', letterSpacing: '1px' }}>AGROPACCIOLI</span>
+          </div>
         </div>
         <div style={{ padding: '20px', color: '#94a3b8', textAlign: 'center' }}>
           Cargando módulos...
@@ -117,15 +162,20 @@ function Sidebar({ modules, loading, selectedTable, onSelectTable, onNavigateHom
   const q = search.trim().toLowerCase();
   
   const renderItem = (item) => {
+    if (!hasAccess(item)) return null;
+
     // If searching, check if it matches
     const matchesSearch = q === '' || item.name.toLowerCase().includes(q);
     
     if (item.isSubmenu) {
-      const subItemsMatch = item.items.some(sub => sub.name.toLowerCase().includes(q));
+      const allowedItems = item.items.filter(sub => hasAccess(sub));
+      if (allowedItems.length === 0) return null;
+
+      const subItemsMatch = allowedItems.some(sub => sub.name.toLowerCase().includes(q));
       if (!matchesSearch && !subItemsMatch) return null;
 
       const isSubExpanded = expandedSubModules[item.id] || (q !== '' && subItemsMatch);
-      const hasActiveChild = item.items.some(sub => selectedTable === sub.id || (sub.path && window.location.pathname.startsWith(sub.path)));
+      const hasActiveChild = allowedItems.some(sub => selectedTable === sub.id || (sub.path && window.location.pathname.startsWith(sub.path)));
       const isActiveFolder = activeSubmenu === item.id || hasActiveChild;
 
       return (
@@ -135,11 +185,14 @@ function Sidebar({ modules, loading, selectedTable, onSelectTable, onNavigateHom
             onClick={() => toggleSubModule(item.id)}
           >
             <span className="menu-text">{item.name}</span>
+            {allowedItems.length > 0 && (
+              <span className="menu-badge" style={{ marginRight: '8px' }}>{allowedItems.length}</span>
+            )}
             <ChevronRight size={14} className={`menu-arrow ${isSubExpanded ? 'open' : ''}`} />
           </div>
           
           <div className={`sidebar-submenu ${isSubExpanded ? 'open' : ''}`}>
-            {item.items.map(sub => {
+            {allowedItems.map(sub => {
               if (q !== '' && !sub.name.toLowerCase().includes(q)) return null;
               
               if (sub.path) {
@@ -147,8 +200,11 @@ function Sidebar({ modules, loading, selectedTable, onSelectTable, onNavigateHom
                   <Link
                     key={sub.id}
                     to={sub.path}
-                    className={`sub-submenu-item ${selectedTable === sub.id ? 'active' : ''}`}
+                    className={`sub-submenu-item ${selectedTable === sub.id || (window.location.pathname === sub.path) ? 'active' : ''}`}
                     style={{ textDecoration: 'none' }}
+                    onClick={() => {
+                      if (onSelectTable) onSelectTable(null);
+                    }}
                   >
                     <span className="menu-text">{sub.name}</span>
                   </Link>
@@ -178,7 +234,7 @@ function Sidebar({ modules, loading, selectedTable, onSelectTable, onNavigateHom
         <Link 
           key={item.id} 
           to={item.path} 
-          className="submenu-item"
+          className={`submenu-item ${window.location.pathname === item.path ? 'active' : ''}`}
           style={{ textDecoration: 'none' }}
           onClick={() => {
             if (onSelectTable) onSelectTable(null);
@@ -205,13 +261,21 @@ function Sidebar({ modules, loading, selectedTable, onSelectTable, onNavigateHom
   return (
     <aside className={`sidebar-container ${open ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
-        <a 
-          href="#" 
-          className={`sidebar-brand ${isCollapsed ? 'collapsed' : ''}`}
-          onClick={(e) => { e.preventDefault(); navigate('/'); onNavigateHome(); }}
-        >
-          🌿 SAS Agrícolas
-        </a>
+          <a 
+            href="#" 
+            className={`sidebar-brand ${isCollapsed ? 'collapsed' : ''}`}
+            onClick={(e) => { e.preventDefault(); navigate('/'); onNavigateHome(); }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+          >
+            {isCollapsed ? (
+              <img src="/favicon.png" alt="AgroPaccioli" style={{ height: '32px', width: '32px' }} />
+            ) : (
+              <>
+                <img src="/logo-agropaccioli-cropped.png" alt="Logo" style={{ height: '36px', objectFit: 'contain' }} />
+                <span style={{ color: 'white', fontWeight: 'bold', fontSize: '18px', letterSpacing: '1px' }}>AGROPACCIOLI</span>
+              </>
+            )}
+          </a>
         <button 
           className="sidebar-toggle-btn" 
           onClick={() => setIsCollapsed(!isCollapsed)}
@@ -248,7 +312,7 @@ function Sidebar({ modules, loading, selectedTable, onSelectTable, onNavigateHom
       <nav className="sidebar-nav">
         {/* Dashboard Home */}
         <div 
-          className={`sidebar-menu-item ${!selectedTable ? 'active' : ''}`}
+          className={`sidebar-menu-item ${!selectedTable && (window.location.pathname === '/' || window.location.pathname === '/index.html') ? 'active' : ''}`}
           onClick={() => { navigate('/'); onNavigateHome(); }}
         >
           <span className="menu-icon"><Activity size={20} /></span>
@@ -257,7 +321,7 @@ function Sidebar({ modules, loading, selectedTable, onSelectTable, onNavigateHom
         </div>
 
         {navigationTree.map((group) => {
-          if (!hasAccess(group.id)) return null;
+          if (!hasAccess(group)) return null;
 
           // Check if group matches search
           const hasMatchingItems = group.items.some(item => {

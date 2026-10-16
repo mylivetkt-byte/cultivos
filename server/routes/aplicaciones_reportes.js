@@ -1,11 +1,9 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = express.Router();
 
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 /**
  * GET /api/aplicaciones/reportes?tenantId=1&fincaId=23
  * Reporte consolidado de costos por lote.

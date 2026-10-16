@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Polygon, Popup, LayersControl, Marker, WMSTileLayer, FeatureGroup, useMap, ImageOverlay } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Popup, LayersControl, Marker, WMSTileLayer, FeatureGroup, useMap, ImageOverlay, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import * as turf from '@turf/turf';
 import './SatelliteCommandCenter.css';
 import { authFetch } from '../utils/api';
 
@@ -50,6 +51,8 @@ function SatelliteCommandCenter() {
 
   const [fincasList, setFincasList] = useState([]);
   const [selectedFincaId, setSelectedFincaId] = useState(null);
+  const [selectedFincaPolygon, setSelectedFincaPolygon] = useState(null);
+  const [debugError, setDebugError] = useState(null);
   const [lotesRaw, setLotesRaw] = useState([]);  // GeoJSON features de lotes
   const [selectedLoteId, setSelectedLoteId] = useState(null);
   const [selectedLote, setSelectedLote] = useState(null);
@@ -58,6 +61,45 @@ function SatelliteCommandCenter() {
   const [loteBounds, setLoteBounds] = useState(null);
   const [isLoadingImage, setIsLoadingImage] = useState(false);
   const [economiaData, setEconomiaData] = useState([]);
+  const [weatherData, setWeatherData] = useState({ temp: '--', rain7d: '--' });
+  const [vraGrid, setVraGrid] = useState(null);
+  const [bloqueos, setBloqueos] = useState([]);
+
+  // Ground Truthing States
+  const [groundTruthList, setGroundTruthList] = useState([]);
+  const [showGroundTruthModal, setShowGroundTruthModal] = useState(false);
+  const [groundTruthForm, setGroundTruthForm] = useState({
+    codigo_verificacion: '',
+    estado_cultivo_real: 'Deficiencia_Nutricional',
+    severidad: 'Media',
+    diagnostico_campo: '',
+    accion_correctiva: '',
+    indice_observado: 'NDVI',
+    latitud: '',
+    longitud: ''
+  });
+
+  const toggleTool = (toolName) => {
+    setActiveTool(prev => prev === toolName ? null : toolName);
+  };
+
+  const fetchGroundTruth = async () => {
+    try {
+      let url = '/api/satellite/ground-truth';
+      if (selectedFincaId) url += `?fincaId=${selectedFincaId}`;
+      const res = await authFetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setGroundTruthList(data);
+      }
+    } catch (e) {
+      console.error('Error cargando ground truth:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchGroundTruth();
+  }, [selectedFincaId]);
 
   // Función para mostrar notificaciones temporales
   const showToast = (msg) => {
@@ -81,7 +123,7 @@ function SatelliteCommandCenter() {
   const handleDespachar = async (alert) => {
     showToast(`⏳ Generando orden de despacho para ${alert.lote_nombre}...`);
     try {
-      const res = await authFetch('http://localhost:3002/api/gis/despachar', {
+      const res = await authFetch('/api/gis/despachar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_lote: alert.lote_id, descripcion_labor: `Atención a alerta: ${alert.tipo}` })
@@ -96,12 +138,6 @@ function SatelliteCommandCenter() {
     }
   };
 
-  const toggleTool = (toolName) => {
-    setActiveTool(activeTool === toolName ? null : toolName);
-    if (activeTool !== toolName) {
-      showToast(`🛠️ Herramienta activada: ${toolName}`);
-    }
-  };
   
 
   const setFallbackLotes = () => {
@@ -116,13 +152,13 @@ function SatelliteCommandCenter() {
   // Load real data on mount
   useEffect(() => {
     // 1. Alerts
-    authFetch('http://localhost:3002/api/gis/alerts')
+    authFetch('/api/gis/alerts')
       .then(r => r.json())
       .then(setAlerts)
       .catch(err => console.error('Error fetching alerts:', err));
 
     // 2. Cargar lista de fincas
-    authFetch('http://localhost:3002/api/gis/fincas')
+    authFetch(`/api/gis/fincas?t=${Date.now()}`)
       .then(r => r.json())
       .then(data => {
         const list = data.features || [];
@@ -132,20 +168,27 @@ function SatelliteCommandCenter() {
       .catch(err => console.error('Error fetching fincas list:', err));
   }, []);
 
-  // 3. Cuando el usuario elige una finca, cargar sus lotes y métricas
-  useEffect(() => {
-    if (!selectedFincaId) return;
+  const handleFincaChange = (e) => {
+    const fincaId = Number(e.target.value);
+    setSelectedFincaId(fincaId);
+    if (!fincaId) return;
+    
     // Buscar la finca elegida dentro de la lista cargada
-    const chosen = fincasList.find(f => f.properties.id === selectedFincaId);
+    const chosen = fincasList.find(f => f.properties.id === fincaId);
     if (chosen) setFinca(chosen);
 
     // Resetear selección de lote al cambiar de finca
     setSelectedLoteId(null);
     setSelectedLote(null);
+    setIsLoadingLotes(true);
+    setLotesError(null);
 
     // Obtener lotes de la finca
-    authFetch(`http://localhost:3002/api/gis/lotes/${selectedFincaId}`)
-      .then(r => r.json())
+    authFetch(`/api/gis/lotes/${fincaId}?t=${Date.now()}`)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP Error ${r.status}`);
+        return r.json();
+      })
       .then(lotesData => {
         const rawFeatures = lotesData.features || [];
         console.log('Lotes cargados:', rawFeatures.length);
@@ -154,7 +197,7 @@ function SatelliteCommandCenter() {
         if (rawFeatures.length > 0) {
           const loteIds = rawFeatures.map(f => f.properties.id);
           // Obtener métricas para esos lotes
-          authFetch('http://localhost:3002/api/gis/metrics', {
+          return authFetch('/api/gis/metrics', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ loteIds })
@@ -162,10 +205,14 @@ function SatelliteCommandCenter() {
             .then(r => r.json())
             .then(metricsData => {
               const parsed = rawFeatures.map(f => {
+                // Extraer y transformar coordenadas GeoJSON a Leaflet LatLng [lat, lon]
                 let coords = [];
-                if (f.geometry && f.geometry.type === 'Polygon') {
-                  coords = f.geometry.coordinates[0].map(c => [c[1], c[0]]);
+                if (f.geometry && f.geometry.type === 'Polygon' && f.geometry.coordinates[0]) {
+                  coords = f.geometry.coordinates[0].map(pt => [pt[1], pt[0]]);
+                } else if (f.geometry && f.geometry.type === 'MultiPolygon' && f.geometry.coordinates[0][0]) {
+                  coords = f.geometry.coordinates[0][0].map(pt => [pt[1], pt[0]]);
                 }
+
                 const metric = metricsData.find(m => m.lote_id === f.properties.id) || { ndvi: 0.5, ndmi: 0.5 };
                 const ndvi = parseFloat(metric.ndvi || 0.5).toFixed(2);
                 const ndmi = parseFloat(metric.ndmi || 0.5).toFixed(2);
@@ -184,23 +231,56 @@ function SatelliteCommandCenter() {
                 };
               }).filter(l => l.coordinates.length > 0);
               setLotes(parsed);
+              setIsLoadingLotes(false);
             });
         } else {
           setLotes([]);
+          setIsLoadingLotes(false);
         }
       })
-      .catch(err => console.error('Error fetching lotes:', err));
+      .catch(err => {
+        window._lastError = err;
+        console.error('Error fetching lotes:', err);
+        setLotesError(err.message);
+        setDebugError({
+           status: window._lastStatus,
+           msg: err.message,
+           resp: window._lastResponseStr
+        });
+        setIsLoadingLotes(false);
+      })
+      .finally(() => {
+        setIsLoadingLotes(false);
+      });
       
     // Fetch economía de la finca
-    authFetch(`http://localhost:3002/api/gis/economia/${selectedFincaId}`)
+    authFetch(`/api/gis/economia/${fincaId}?t=${Date.now()}`)
       .then(r => r.json())
       .then(data => {
         console.log('Economía cargada:', data);
         setEconomiaData(data);
       })
       .catch(err => console.error('Error fetching economia:', err));
-      
-  }, [selectedFincaId, fincasList]);
+
+    // Fetch Programaciones de Aplicación para Bloqueos de Carencia
+    authFetch(`/api/applications/schedule?tenantId=${tenantId || 1}`)
+      .then(r => r.json())
+      .then(data => {
+        if(Array.isArray(data)) {
+          const now = new Date();
+          const recientes = data.filter(p => {
+             // Simulamos un Periodo de Carencia (PC) de 15 días por defecto para aplicaciones químicas/mixtas
+             if(p.estado !== 'Completada') return false;
+             if(p.id_finca && p.id_finca !== fincaId) return false;
+             const fecha = new Date(p.fecha_ejecucion || p.fecha_programada);
+             const diffDays = Math.floor((now - fecha) / (1000 * 60 * 60 * 24));
+             return diffDays <= 15;
+          });
+          setBloqueos(recientes);
+        }
+      })
+      .catch(err => console.error('Error fetching bloqueos carencia:', err));
+  };
 
   // 4. Cuando el usuario elige un lote, centrar en él
   useEffect(() => {
@@ -213,6 +293,66 @@ function SatelliteCommandCenter() {
       setSelectedLote(chosen);
     }
   }, [selectedLoteId, lotesRaw]);
+
+  // Fetch Clima desde Open-Meteo basado en la ubicación de la finca
+  useEffect(() => {
+    if (finca && finca.geometry && finca.geometry.coordinates && finca.geometry.coordinates[0]) {
+      try {
+        let coords = finca.geometry.coordinates[0];
+        // handle Multipolygon vs Polygon
+        if (finca.geometry.type === 'MultiPolygon') coords = coords[0];
+        
+        const firstPoint = coords[0];
+        // Las coordenadas de geojson vienen en formato [lng, lat]
+        const lng = firstPoint[0];
+        const lat = firstPoint[1];
+
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m&daily=precipitation_sum&timezone=auto&past_days=7`)
+          .then(res => res.json())
+          .then(data => {
+            const currentTemp = data.current?.temperature_2m || '--';
+            const rainArray = data.daily?.precipitation_sum || [];
+            const totalRain = rainArray.reduce((acc, val) => acc + (val || 0), 0).toFixed(1);
+            setWeatherData({ temp: currentTemp, rain7d: totalRain });
+          })
+          .catch(err => {
+            console.error("Open-Meteo fetch error:", err);
+            setWeatherData({ temp: '--', rain7d: '--' });
+          });
+      } catch (e) {
+        console.error("Error parseando coordenadas de la finca para clima", e);
+      }
+    } else {
+      setWeatherData({ temp: '--', rain7d: '--' });
+    }
+  }, [finca]);
+
+  // Generación de Curvas VRA (Zonificación Malla)
+  useEffect(() => {
+    if (activeTool === 'vra' && selectedLote) {
+      try {
+        const bbox = turf.bbox(selectedLote);
+        const cellSide = 0.03; // 30 meters approx grid
+        const squareGrid = turf.squareGrid(bbox, cellSide, { units: 'kilometers', mask: selectedLote });
+        
+        turf.featureEach(squareGrid, function (feature) {
+          // Lógica simulada: Tasa de nitrógeno basada en una variación pseudoaleatoria (demo)
+          // En la vida real, se cruza el polígono de cada grilla con los valores de los píxeles NDVI de la imagen TIF.
+          const rate = Math.floor(Math.random() * 70) + 80; // 80 a 150 kg/ha
+          feature.properties = { applicationRate: rate };
+        });
+
+        setVraGrid(squareGrid);
+        showToast('✅ Mapa de prescripción VRA generado.');
+      } catch (e) {
+        console.error("VRA Error", e);
+        showToast('❌ Error generando malla VRA.');
+        setVraGrid(null);
+      }
+    } else {
+      setVraGrid(null);
+    }
+  }, [activeTool, selectedLote]);
 
   // 5. Fetch CDSE Process API Image for the selected lot
   useEffect(() => {
@@ -235,7 +375,7 @@ function SatelliteCommandCenter() {
         ]);
         
         // 3 is the ID for Sentinel-2 in sat_api_conexiones
-        const res = await authFetch('http://localhost:3002/api/satellite/3/process', {
+        const res = await authFetch('/api/satellite/3/process', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -292,8 +432,9 @@ function SatelliteCommandCenter() {
             <div className="panel-section">
               <label>Seleccionar finca:</label>
               <select
+                className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-300"
                 value={selectedFincaId || ''}
-                onChange={e => setSelectedFincaId(Number(e.target.value))}
+                onChange={handleFincaChange}
               >
                 <option value="" disabled>-- Elegir finca --</option>
                 {fincasList.map(f => (
@@ -327,9 +468,22 @@ function SatelliteCommandCenter() {
                   {lotesRaw.length} lotes — {lotesRaw.filter(l => l.properties.tiene_poligono).length} con polígono GPS
                 </small>
               )}
-              {selectedFincaId && lotesRaw.length === 0 && (
-                <small style={{ color: '#f97316' }}>⚠️ No se encontraron lotes para esta finca. Verifique que los lotes tengan id_finca o núcleo asignado.</small>
-              )}
+                {selectedFincaId && lotesRaw.length === 0 && isLoadingLotes && (
+                  <div style={{ color: '#0ea5e9', fontSize: '12px', background: 'rgba(14, 165, 233, 0.1)', padding: '10px', borderRadius: '4px', border: '1px solid #0ea5e9', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <i className="fa-solid fa-spinner fa-spin"></i>
+                    <div>Sincronizando polígonos de lotes con el satélite...</div>
+                  </div>
+                )}
+                {selectedFincaId && lotesError && (
+                  <div style={{ color: '#ef4444', fontSize: '12px', background: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '4px', border: '1px solid #ef4444' }}>
+                    <i className="fa-solid fa-triangle-exclamation"></i> Error: {lotesError}
+                  </div>
+                )}
+                {selectedFincaId && lotesRaw.length === 0 && !isLoadingLotes && !lotesError && (
+                  <div style={{ color: '#f97316', fontSize: '11px', background: 'rgba(0,0,0,0.5)', padding: '5px' }}>
+                    ⚠️ No se encontraron lotes con polígono para esta finca.
+                  </div>
+                )}
             </div>
             
             <h5 className="sub-heading">Alertas de Prioridad IA</h5>
@@ -432,6 +586,8 @@ function SatelliteCommandCenter() {
 
                 {lotes.map(lote => {
                   const isSelected = selectedLoteId === lote.id;
+                  const bloqueo = bloqueos.find(b => b.id_lote === lote.id);
+
                   let fillColor = 'transparent';
                   let strokeColor = isSelected ? '#ffd700' : lote.color;
                   let weight = isSelected ? 4 : 2;
@@ -448,8 +604,17 @@ function SatelliteCommandCenter() {
                      ecoInfo = `Costo Total: $${cost}`;
                      dashArray = '';
                   } else {
-                     fillColor = isSelected ? 'rgba(255,215,0,0.15)' : 'transparent';
+                     if (bloqueo) {
+                        fillColor = 'rgba(239, 68, 68, 0.4)';
+                        strokeColor = '#ef4444';
+                        weight = isSelected ? 5 : 3;
+                        dashArray = '10 5';
+                     } else {
+                        fillColor = isSelected ? 'rgba(255,215,0,0.15)' : 'rgba(16, 185, 129, 0.05)';
+                     }
                   }
+
+                  if (!lote.coordinates || lote.coordinates.length === 0) return null;
 
                   return (
                     <Polygon 
@@ -466,11 +631,69 @@ function SatelliteCommandCenter() {
                         {lote.hectareas && <>Área: {lote.hectareas} Ha<br/></>}
                         {lote.cultivo_actual && <>Cultivo: {lote.cultivo_actual}<br/></>}
                         NDVI: {lote.ndvi} | NDMI: {lote.ndmi}<br/>{ecoInfo}
+                        {bloqueo && (
+                          <div style={{backgroundColor: '#fee2e2', color: '#b91c1c', fontWeight: 'bold', marginTop: '6px', padding: '6px', border: '1px solid #ef4444', borderRadius: '4px'}}>
+                            🚫 BLOQUEADO: PERIODO DE CARENCIA<br/>
+                            <span style={{fontSize: '11px', color: '#7f1d1d', fontWeight: 'normal'}}>
+                              Fumigado: {new Date(bloqueo.fecha_ejecucion || bloqueo.fecha_programada).toLocaleDateString()}<br/>
+                              Receta: {bloqueo.nombre_receta}
+                            </span>
+                          </div>
+                        )}
                       </Popup>
                     </Polygon>
                   );
                 })}
             </FeatureGroup>
+
+            {/* PUNTOS DE GROUND TRUTHING (SCOUTING) */}
+            {activeTool === 'scouting' && groundTruthList.map(gt => {
+              let pinColor = '#10b981';
+              if (gt.severidad === 'Critica') pinColor = '#ef4444';
+              else if (gt.severidad === 'Alta') pinColor = '#f97316';
+              else if (gt.severidad === 'Media') pinColor = '#eab308';
+              
+              const icon = L.divIcon({
+                className: 'custom-gt-marker',
+                html: `<div style="background:${pinColor}; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 5px rgba(0,0,0,0.5);"></div>`,
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+              });
+
+              return (
+                <Marker key={gt.id_verificacion} position={[parseFloat(gt.latitud), parseFloat(gt.longitud)]} icon={icon}>
+                  <Popup>
+                    <div style={{ fontSize: '12px', minWidth: '180px' }}>
+                      <strong>📍 {gt.codigo_verificacion}</strong><br/>
+                      Lote: {gt.lote_nombre}<br/>
+                      Problema Real: <strong>{gt.estado_cultivo_real}</strong><br/>
+                      Severidad: <span style={{ color: pinColor, fontWeight: 'bold' }}>{gt.severidad}</span><br/>
+                      Índice Satélite: {gt.indice_observado}<br/>
+                      Diagnóstico: {gt.diagnostico_campo}<br/>
+                      {gt.accion_correctiva && <>Acción: <em>{gt.accion_correctiva}</em><br/></>}
+                      <small style={{ color: '#64748b' }}>Fecha: {new Date(gt.fecha_inspeccion).toLocaleDateString()}</small>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+
+            {vraGrid && (
+              <GeoJSON 
+                key={`vra-${selectedLote ? selectedLote.properties.id : 'none'}`}
+                data={vraGrid} 
+                style={(feature) => {
+                  const rate = feature.properties.applicationRate;
+                  let color = '#ffff00';
+                  if (rate > 130) color = '#ff0000';
+                  else if (rate < 100) color = '#00ff00';
+                  return { color: '#000', weight: 1, fillColor: color, fillOpacity: 0.5 };
+                }}
+                onEachFeature={(feature, layer) => {
+                  layer.bindPopup(`Tasa VRA: ${feature.properties.applicationRate} kg/ha`);
+                }}
+              />
+            )}
           </MapContainer>
           
           {/* TIMELINE FLOTANTE */}
@@ -519,6 +742,15 @@ function SatelliteCommandCenter() {
                 <button className={`index-btn ${activeLayer === 'NDVI' ? 'active-ndvi' : ''}`} onClick={() => setActiveLayer('NDVI')}>
                   <div className="color-box ndvi"></div> Vigor Foliar (NDVI)
                 </button>
+                <button className={`index-btn ${activeLayer === 'NDRE' ? 'active-ndvi' : ''}`} onClick={() => setActiveLayer('NDRE')}>
+                  <div className="color-box" style={{background: '#84cc16'}}></div> Canopia Densa (NDRE)
+                </button>
+                <button className={`index-btn ${activeLayer === 'GNDVI' ? 'active-ndvi' : ''}`} onClick={() => setActiveLayer('GNDVI')}>
+                  <div className="color-box" style={{background: '#15803d'}}></div> Clorofila (GNDVI)
+                </button>
+                <button className={`index-btn ${activeLayer === 'SAVI' ? 'active-ndvi' : ''}`} onClick={() => setActiveLayer('SAVI')}>
+                  <div className="color-box" style={{background: '#d97706'}}></div> Suelo Ajustado (SAVI)
+                </button>
                 <button className={`index-btn ${activeLayer === 'NDMI' ? 'active-ndmi' : ''}`} onClick={() => setActiveLayer('NDMI')}>
                   <div className="color-box ndmi"></div> Humedad Dosel (NDMI)
                 </button>
@@ -539,20 +771,112 @@ function SatelliteCommandCenter() {
               </button>
               <button className={`btn-action outline ${activeTool === 'zonificacion' ? 'tool-active' : ''}`} onClick={() => toggleTool('zonificacion')}>Zonificación Nutricional</button>
               <button className={`btn-action outline ${activeTool === 'vra' ? 'tool-active' : ''}`} onClick={() => toggleTool('vra')}>Curvas Prescripción VRA</button>
+              
+              {activeTool === 'vra' && vraGrid && (
+                <button className="btn-action mt-2" style={{backgroundColor: '#10b981', color: 'white'}} onClick={() => {
+                  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(vraGrid));
+                  const downloadAnchorNode = document.createElement('a');
+                  downloadAnchorNode.setAttribute("href", dataStr);
+                  downloadAnchorNode.setAttribute("download", `VRA_Prescription_${selectedLote ? selectedLote.properties.nombre : 'Lote'}.geojson`);
+                  document.body.appendChild(downloadAnchorNode); // required for firefox
+                  downloadAnchorNode.click();
+                  downloadAnchorNode.remove();
+                  showToast('✅ Archivo VRA descargado. Listo para tractores John Deere/Trimble.');
+                }}>
+                  Descargar Mapa VRA (GeoJSON)
+                </button>
+              )}
+
               <button className={`btn-action outline ${activeTool === 'scouting' ? 'tool-active' : ''}`} onClick={() => toggleTool('scouting')}>📍 Ground Truthing Scouting</button>
+              {activeTool === 'scouting' && (
+                <button 
+                  className="btn-action mt-1" 
+                  style={{ background: '#2563eb', color: '#fff' }}
+                  onClick={() => setShowGroundTruthModal(true)}
+                >
+                  + Nueva Inspección en Terreno
+                </button>
+              )}
               <button className={`btn-action yellow ${activeTool === 'labores' ? 'tool-active' : ''}`} onClick={() => toggleTool('labores')}>👁️ Mostrar Capas de Labores</button>
-              <button className="btn-action outline mt-2" onClick={() => showToast('📑 Generando reporte PDF en segundo plano...')}>Generar Reporte Compliance</button>
+              <button className="btn-action outline mt-2" onClick={async () => {
+                if (!finca) {
+                  showToast('❌ Por favor selecciona una finca primero.');
+                  return;
+                }
+                showToast('📑 Generando reporte PDF...');
+                try {
+                  const { jsPDF } = await import('jspdf');
+                  const doc = new jsPDF();
+                  
+                  doc.setFontSize(20);
+                  doc.text('Reporte Compliance Agronómico', 20, 20);
+                  
+                  doc.setFontSize(12);
+                  doc.text(`Finca: ${finca.properties.nombre}`, 20, 30);
+                  doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 40);
+                  
+                  if (selectedLote) {
+                    doc.text(`Lote Seleccionado: ${selectedLote.name || selectedLote.properties.nombre}`, 20, 50);
+                    doc.text(`Área: ${selectedLote.hectareas || selectedLote.properties.hectareas || 'N/A'} Ha`, 20, 60);
+                    doc.text(`Índices - NDVI: ${selectedLote.ndvi || 'N/A'} | NDMI: ${selectedLote.ndmi || 'N/A'}`, 20, 70);
+                    
+                    let yOffset = 80;
+                    
+                    if (loteImage) {
+                      try {
+                        const blob = await fetch(loteImage).then(r => r.blob());
+                        const reader = new FileReader();
+                        const base64data = await new Promise((resolve) => {
+                          reader.onloadend = () => resolve(reader.result);
+                          reader.readAsDataURL(blob);
+                        });
+                        doc.text(`Imagen Satelital (${activeLayer}):`, 20, yOffset);
+                        doc.addImage(base64data, 'PNG', 20, yOffset + 5, 100, 100);
+                        yOffset += 115;
+                      } catch(e) {
+                        console.error('Error adding image to pdf:', e);
+                      }
+                    }
+                    
+                    doc.setFontSize(12);
+                    doc.text('Recomendación IA (Copiloto Agronómico):', 20, yOffset);
+                    doc.setFontSize(10);
+                    let recText = `Basado en los datos recientes del satélite (Capa: ${activeLayer}), se sugiere `;
+                    if (Number(selectedLote.ndvi) < 0.4) {
+                      recText += `atención inmediata por bajo vigor foliar (NDVI ${selectedLote.ndvi}). `;
+                    } else {
+                      recText += `mantener el plan actual dado el buen vigor foliar (NDVI ${selectedLote.ndvi}). `;
+                    }
+                    if (Number(selectedLote.ndmi) < 0.3) {
+                      recText += `Se detecta estrés hídrico; considere aplicar riego.`;
+                    } else {
+                      recText += `La humedad del dosel es adecuada.`;
+                    }
+                    
+                    const splitText = doc.splitTextToSize(recText, 170);
+                    doc.text(splitText, 20, yOffset + 10);
+                  } else {
+                    doc.text('No se ha seleccionado ningún lote específico.', 20, 50);
+                  }
+                  
+                  doc.save(`Reporte_Compliance_${finca.properties.nombre.replace(/\s+/g, '_')}.pdf`);
+                  showToast('✅ Reporte PDF descargado con éxito.');
+                } catch (err) {
+                  console.error(err);
+                  showToast('❌ Error al generar el PDF.');
+                }
+              }}>Generar Reporte Compliance</button>
             </div>
             
             <div className="panel-section">
               <h4>🌦️ MICROCLIMA Y EVAPOTRANSPIRACIÓN (ETc)</h4>
               <div className="microclima-stats">
                 <div>
-                  <span className="big-value">28.8°C</span>
-                  <span className="small-label">Estación Activa</span>
+                  <span className="big-value">{weatherData.temp !== '--' ? `${weatherData.temp}°C` : '--°C'}</span>
+                  <span className="small-label">Estación Activa (Open-Meteo)</span>
                 </div>
                 <div style={{textAlign: 'right'}}>
-                  <span className="big-value blue">109.0 mm</span>
+                  <span className="big-value blue">{weatherData.rain7d !== '--' ? `${weatherData.rain7d} mm` : '-- mm'}</span>
                   <span className="small-label">Lluvia Últimos 7 Días</span>
                 </div>
               </div>
@@ -606,6 +930,171 @@ function SatelliteCommandCenter() {
       {toastMessage && (
         <div className="scc-toast">
           {toastMessage}
+        </div>
+      )}
+
+      {/* MODAL GROUND TRUTHING (SCOUTING EN CAMPO) */}
+      {showGroundTruthModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 99999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: '14px', width: '100%', maxWidth: '580px',
+            padding: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>📍 Registrar Verificación en Campo (Ground Truth)</h3>
+              <button 
+                onClick={() => setShowGroundTruthModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (!selectedLoteId) {
+                alert('Selecciona un lote en el mapa primero.');
+                return;
+              }
+              try {
+                const res = await authFetch('/api/satellite/ground-truth', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    id_finca: selectedFincaId,
+                    id_lote: selectedLoteId,
+                    ...groundTruthForm
+                  })
+                });
+                if (res.ok) {
+                  showToast('✅ Verificación de campo guardada con éxito.');
+                  setShowGroundTruthModal(false);
+                  fetchGroundTruth();
+                } else {
+                  const err = await res.json();
+                  alert('Error: ' + err.error);
+                }
+              } catch (err) {
+                alert('Error al guardar verificación.');
+              }
+            }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Código Verificación</label>
+                  <input 
+                    type="text" 
+                    required 
+                    className="sentinel-input-full"
+                    placeholder="Ej. GT-LOTE-001"
+                    value={groundTruthForm.codigo_verificacion}
+                    onChange={e => setGroundTruthForm({ ...groundTruthForm, codigo_verificacion: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Índice Observado</label>
+                  <select 
+                    className="sentinel-input-full"
+                    value={groundTruthForm.indice_observado}
+                    onChange={e => setGroundTruthForm({ ...groundTruthForm, indice_observado: e.target.value })}
+                  >
+                    <option value="NDVI">NDVI (Vigor General)</option>
+                    <option value="NDRE">NDRE (Red Edge)</option>
+                    <option value="GNDVI">GNDVI (Clorofila)</option>
+                    <option value="SAVI">SAVI (Suelo Ajustado)</option>
+                    <option value="NDMI">NDMI (Estrés Hídrico)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Estado Real en Campo</label>
+                  <select 
+                    className="sentinel-input-full"
+                    value={groundTruthForm.estado_cultivo_real}
+                    onChange={e => setGroundTruthForm({ ...groundTruthForm, estado_cultivo_real: e.target.value })}
+                  >
+                    <option value="Deficiencia_Nutricional">Deficiencia Nutricional (Clorosis)</option>
+                    <option value="Estres_Hidrico">Estrés Hídrico / Marchitez</option>
+                    <option value="Ataque_Plagas">Ataque de Plagas</option>
+                    <option value="Enfermedad_Fungica">Enfermedad Fúngica</option>
+                    <option value="Malezas">Infestación de Malezas</option>
+                    <option value="Excelente">Excelente / Falsa Alarma</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Severidad</label>
+                  <select 
+                    className="sentinel-input-full"
+                    value={groundTruthForm.severidad}
+                    onChange={e => setGroundTruthForm({ ...groundTruthForm, severidad: e.target.value })}
+                  >
+                    <option value="Baja">Baja (Monitoreo)</option>
+                    <option value="Media">Media (Atención Pronta)</option>
+                    <option value="Alta">Alta (Aplicación Inmediata)</option>
+                    <option value="Critica">Crítica (Riesgo Pérdida Lote)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Latitud GPS</label>
+                  <input 
+                    type="number" 
+                    step="0.0000001" 
+                    required 
+                    className="sentinel-input-full"
+                    placeholder="4.6521"
+                    value={groundTruthForm.latitud}
+                    onChange={e => setGroundTruthForm({ ...groundTruthForm, latitud: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Longitud GPS</label>
+                  <input 
+                    type="number" 
+                    step="0.0000001" 
+                    required 
+                    className="sentinel-input-full"
+                    placeholder="-74.0915"
+                    value={groundTruthForm.longitud}
+                    onChange={e => setGroundTruthForm({ ...groundTruthForm, longitud: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Diagnóstico de Campo (Hallazgo Agronómico)</label>
+                <textarea 
+                  required 
+                  className="sentinel-input-full" 
+                  rows={2}
+                  placeholder="Se confirma amarillamiento interveinal por deficiencia de Magnesio..."
+                  value={groundTruthForm.diagnostico_campo}
+                  onChange={e => setGroundTruthForm({ ...groundTruthForm, diagnostico_campo: e.target.value })}
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Acción Correctiva Recomendada</label>
+                <input 
+                  type="text" 
+                  className="sentinel-input-full" 
+                  placeholder="Aplicación foliar de Sulfato de Magnesio 2 kg/ha..."
+                  value={groundTruthForm.accion_correctiva}
+                  onChange={e => setGroundTruthForm({ ...groundTruthForm, accion_correctiva: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button type="button" className="btn-action outline" onClick={() => setShowGroundTruthModal(false)}>Cancelar</button>
+                <button type="submit" className="btn-action" style={{ background: '#2563eb', color: '#fff' }}>Guardar y Auditar</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

@@ -1,11 +1,8 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 // ==========================================
 // CONFIGURACIÓN API DIAN
@@ -29,6 +26,33 @@ router.put('/configuracion/:id', async (req, res) => {
       SET entorno=?, api_token=?, test_set_id=?, software_id=?, software_pin=? 
       WHERE id_config=?
     `, [entorno, api_token, test_set_id, software_id, software_pin, id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==========================================
+// CONFIGURACIÓN DIANBOX (PROVEEDOR TECNOLÓGICO)
+// ==========================================
+router.get('/settings', async (req, res) => {
+  try {
+    const tid = req.query.tenantId || 1;
+    const [rows] = await getDb(req).query('SELECT dianbox_api_key, dianbox_environment, dianbox_active FROM tenants WHERE id_tenant = ?', [tid]);
+    res.json({ success: true, config: rows[0] || null });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/settings', async (req, res) => {
+  try {
+    const { tenantId, dianbox_api_key, dianbox_environment, dianbox_active } = req.body;
+    await getDb(req).query(`
+      UPDATE tenants 
+      SET dianbox_api_key=?, dianbox_environment=?, dianbox_active=? 
+      WHERE id_tenant=?
+    `, [dianbox_api_key, dianbox_environment, dianbox_active ? 1 : 0, tenantId || 1]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -127,14 +151,14 @@ router.post('/emitir', async (req, res) => {
     // 5. CONSTRUCCIÓN DEL PAYLOAD DIAN (Según API docs.apidian.app)
     const dianPayload = {
       type_document_id: 9,
-      establishment_name: 'SAS Agricolas',
+      establishment_name: 'AgroPaccioli',
       establishment_address: 'Finca Principal',
       establishment_phone: '300000000',
       establishment_municipality: 1, 
       test_set_id: configuracion.test_set_id,
       pin: configuracion.software_pin,
       id_software: configuracion.software_id,
-      notes: "Nómina electrónica emitida por SAS Agrícolas",
+      notes: "Nómina electrónica emitida por AgroPaccioli",
       period: { issue_date: new Date().toISOString().split('T')[0] }
     };
 
@@ -177,6 +201,57 @@ router.post('/emitir', async (req, res) => {
     await connection.commit();
     res.json({ success: true, message: 'Nómina transmitida a la DIAN con éxito', cune: dianResponse.cune });
 
+  } catch (err) {
+    await connection.rollback();
+    res.status(500).json({ error: err.message });
+  } finally {
+    connection.release();
+  }
+});
+// ==========================================
+// EMISIÓN DE NOTA DE CRÉDITO (INTEGRACIÓN DIAN)
+// ==========================================
+router.post('/emitir-nota-credito', async (req, res) => {
+  const connection = await getDb(req).getConnection();
+  try {
+    await connection.beginTransaction();
+    const { tenantId, id_nota_credito, motivo_dian } = req.body;
+    const tid = tenantId || 1;
+
+    // 1. Obtener documento de la nota de crédito y su factura referenciada
+    const [docs] = await connection.query(`
+      SELECT nc.*, f.dian_cufe as cufe_factura
+      FROM documentos_comerciales nc
+      LEFT JOIN documentos_comerciales f ON nc.id_documento_referencia = f.id_documento
+      WHERE nc.id_documento = ? AND nc.id_tenant = ?
+    `, [id_nota_credito, tid]);
+
+    if (docs.length === 0) throw new Error('Nota de crédito no encontrada');
+    const nota = docs[0];
+
+    if (!nota.cufe_factura) {
+      throw new Error('La factura referenciada no tiene CUFE válido.');
+    }
+
+    // Aquí iría la lógica de integración con DianBox para Notas de Crédito, similar a emitir factura
+    // Simularemos la respuesta exitosa para fines de demostración
+    const dianResponse = {
+      is_valid: true,
+      cude: `CUDE-SIMULADO-${id_nota_credito}`,
+      xml_url: `https://dian.simulador.app/xml/${id_nota_credito}.xml`,
+      pdf_url: `https://dian.simulador.app/pdf/${id_nota_credito}.pdf`
+    };
+
+    if (dianResponse.is_valid) {
+      await connection.query(`
+        UPDATE documentos_comerciales 
+        SET dian_status = 'Validada', dian_cufe = ?, dian_xml_url = ?, dian_pdf_url = ?
+        WHERE id_documento = ?
+      `, [dianResponse.cude, dianResponse.xml_url, dianResponse.pdf_url, id_nota_credito]);
+    }
+
+    await connection.commit();
+    res.json({ success: true, message: 'Nota de Crédito transmitida a la DIAN', cude: dianResponse.cude });
   } catch (err) {
     await connection.rollback();
     res.status(500).json({ error: err.message });

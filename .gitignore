@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dev-dist/
 
 .env
 .env.*
@@ -11,6 +12,7 @@ auth_info_baileys/
 *.zip
 backup_*/
 scratch/
+coverage/
 
 *.doc
 *.doc.pdf
@@ -18,3 +20,11 @@ modules_output.json
 tables_output.json
 
 .claude
+.kilo/
+.dock.txt
+.killed.txt
+_*.txt
+schema_dump.txt
+temp_*.js
+temp_*.mjs
+.github/workflows/

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../utils/api';
+import Pagination from '../Pagination';
 
 const ExogenaDian = ({ tenantId }) => {
   const [formatos] = useState([
@@ -16,6 +17,7 @@ const ExogenaDian = ({ tenantId }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchExogena = async () => {
     setLoading(true);
@@ -25,6 +27,7 @@ const ExogenaDian = ({ tenantId }) => {
       if (!res.ok) throw new Error("Error generando formato DIAN");
       const result = await res.json();
       setData(result);
+      setCurrentPage(1);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -63,22 +66,22 @@ const ExogenaDian = ({ tenantId }) => {
   const formatCurrency = (val) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(val);
 
   return (
-    <div style={{ margin: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+    <div style={{ margin: '20px', background: 'var(--card-bg)', color: 'var(--text)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
       <div style={{ background: 'linear-gradient(90deg, #1e3a8a 0%, #1e40af 100%)', padding: '24px', color: 'white', borderTopLeftRadius: '8px', borderTopRightRadius: '8px' }}>
         <h2 style={{ margin: '0 0 8px 0' }}>📄 Generador de Información Exógena (DIAN)</h2>
         <p style={{ margin: 0, color: '#bfdbfe' }}>Generación automática de formatos XML para el pre-validador DIAN, consolidando terceros según mapeo contable.</p>
       </div>
 
       <div style={{ padding: '24px' }}>
-        <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '24px', display: 'flex', gap: '20px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+        <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '24px', display: 'flex', gap: '20px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>Año Gravable</label>
-            <input type="number" value={anio} onChange={e => setAnio(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100px' }} />
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '4px' }}>Año Gravable</label>
+            <input type="number" value={anio} onChange={e => setAnio(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', width: '100px' }} />
           </div>
           
           <div style={{ flex: 1, minWidth: '300px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>Formato DIAN a Generar</label>
-            <select value={selectedFormato} onChange={e => setSelectedFormato(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%' }}>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '4px' }}>Formato DIAN a Generar</label>
+            <select value={selectedFormato} onChange={e => setSelectedFormato(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', width: '100%' }}>
               {formatos.map(f => (
                 <option key={f.id} value={f.id}>Formato {f.id} - {f.nombre}</option>
               ))}
@@ -98,16 +101,16 @@ const ExogenaDian = ({ tenantId }) => {
         {error && <div style={{ background: '#fef2f2', color: '#991b1b', padding: '12px', borderRadius: '6px', marginBottom: '20px' }}>{error}</div>}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ margin: 0, color: '#334155' }}>Vista Previa - Formato {selectedFormato}</h3>
+          <h3 style={{ margin: 0, color: 'var(--text)' }}>Vista Previa - Formato {selectedFormato}</h3>
           <span style={{ background: '#eff6ff', color: '#1d4ed8', padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
             Total Registros: {data.length}
           </span>
         </div>
 
-        <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+        <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: '8px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
             <thead>
-              <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
+              <tr style={{ background: 'var(--bg-main)', borderBottom: '2px solid var(--border)' }}>
                 <th style={{ padding: '12px', textAlign: 'center' }}>Concepto</th>
                 <th style={{ padding: '12px', textAlign: 'center' }}>TD</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>NIT / Cédula</th>
@@ -120,13 +123,13 @@ const ExogenaDian = ({ tenantId }) => {
             <tbody>
               {data.length === 0 && (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
                     No hay movimientos para este formato en el año {anio}.
                   </td>
                 </tr>
               )}
-              {data.map((item, idx) => (
-                <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+              {data.slice((currentPage - 1) * 20, currentPage * 20).map((item, idx) => (
+                <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '10px', textAlign: 'center', fontWeight: 'bold', color: '#0369a1' }}>{item.concepto}</td>
                   <td style={{ padding: '10px', textAlign: 'center' }}>{item.tipo_doc}</td>
                   <td style={{ padding: '10px', fontFamily: 'monospace' }}>{item.nit}</td>
@@ -141,7 +144,7 @@ const ExogenaDian = ({ tenantId }) => {
             </tbody>
             {data.length > 0 && (
               <tfoot>
-                <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1' }}>
+                <tr style={{ background: 'var(--bg-main)', borderTop: '2px solid #cbd5e1' }}>
                   <td colSpan="6" style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>TOTAL A REPORTAR:</td>
                   <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold', color: '#1e3a8a', fontSize: '14px' }}>
                     {formatCurrency(data.reduce((acc, i) => acc + i.valor, 0))}
@@ -150,6 +153,16 @@ const ExogenaDian = ({ tenantId }) => {
               </tfoot>
             )}
           </table>
+          {data.length > 0 && (
+            <div style={{ marginTop: '15px' }}>
+              <Pagination 
+                currentPage={currentPage}
+                totalItems={data.length}
+                pageSize={20}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
         </div>
         
       </div>

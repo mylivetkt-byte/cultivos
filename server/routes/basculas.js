@@ -1,14 +1,11 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 import xlsx from 'xlsx';
 import PDFDocument from 'pdfkit';
 import stream from 'stream';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 // LISTAR básculas (opcional filtro activo)
 router.get('/', async (req, res) => {

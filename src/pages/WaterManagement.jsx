@@ -10,23 +10,23 @@ export default function WaterManagement({ tenantId, fincaId, nucleoId }) {
   const [filters, setFilters] = useState({});
   const [refresh, setRefresh] = useState(0);
 
+  const activeTenantId = tenantId || localStorage.getItem('tenantId') || 1;
+
   const loadRecords = async () => {
-    if (!tenantId) return;
+    if (!activeTenantId) return;
     try {
-      const queryParams = { ...filters, tenantId };
+      const queryParams = { ...filters, tenantId: activeTenantId };
       if (fincaId) queryParams.fincaId = fincaId;
-      // You could also map nucleoId if water records use it
       const data = await fetchWaterRecords(queryParams);
-      setRecords(data);
+      setRecords(Array.isArray(data) ? data : (data?.data || []));
     } catch (err) {
       console.error('Error cargando registros de agua:', err);
-      alert('No se pudieron cargar los datos.');
     }
   };
 
   useEffect(() => {
     loadRecords();
-  }, [filters, refresh]);
+  }, [filters, refresh, fincaId, activeTenantId]);
 
   const handleCreated = () => setRefresh(r => r + 1);
   const handleUpdated = () => setRefresh(r => r + 1);
@@ -35,13 +35,15 @@ export default function WaterManagement({ tenantId, fincaId, nucleoId }) {
   return (
     <div className="water-management container">
       <h1 className="title">Gestión de Agua</h1>
-      <WaterForm onSuccess={handleCreated} tenantId={tenantId} fincaId={fincaId} />
+      <WaterForm onSuccess={handleCreated} tenantId={activeTenantId} fincaId={fincaId} />
       <hr />
       <WaterList
         records={records}
         onUpdate={handleUpdated}
         onDelete={handleDeleted}
         setFilters={setFilters}
+        tenantId={activeTenantId}
+        fincaId={fincaId}
       />
     </div>
   );

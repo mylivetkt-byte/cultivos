@@ -1,12 +1,9 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 import { runComplianceEngine } from '../cron/complianceEngine.js';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 // Ejecutar el motor de compliance manualmente
 router.post('/run-compliance', async (req, res) => {

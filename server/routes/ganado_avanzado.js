@@ -287,44 +287,71 @@ router.get('/ficha/:codigo', async (req, res) => {
   try {
     const { codigo } = req.params;
     
-    // Función recursiva para obtener un animal con sus datos de pedigrí
-    async function getAnimal(identificador, isId = false) {
-      const q = isId 
-        ? 'SELECT a.*, p.nombre as potrero_nombre, r.nombre as raza, TIMESTAMPDIFF(MONTH, a.fecha_nacimiento, CURDATE()) as edad_meses FROM ganado_animales a LEFT JOIN ganado_potreros p ON a.id_potrero = p.id_potrero LEFT JOIN ganado_razas r ON a.id_raza = r.id_raza WHERE a.id_animal = ?'
-        : 'SELECT a.*, p.nombre as potrero_nombre, r.nombre as raza, TIMESTAMPDIFF(MONTH, a.fecha_nacimiento, CURDATE()) as edad_meses FROM ganado_animales a LEFT JOIN ganado_potreros p ON a.id_potrero = p.id_potrero LEFT JOIN ganado_razas r ON a.id_raza = r.id_raza WHERE a.arete_crotal = ? OR a.nombre = ? OR a.collar_gps_id = ? LIMIT 1';
+    // Consultar el animal principal
+    const qMain = 'SELECT a.*, p.nombre as potrero_nombre, r.nombre as raza, TIMESTAMPDIFF(MONTH, a.fecha_nacimiento, CURDATE()) as edad_meses FROM ganado_animales a LEFT JOIN ganado_potreros p ON a.id_potrero = p.id_potrero LEFT JOIN ganado_razas r ON a.id_raza = r.id_raza WHERE a.arete_crotal = ? OR a.nombre = ? OR a.collar_gps_id = ? LIMIT 1';
+    const [mainRows] = await pool.query(qMain, [codigo, codigo, codigo]);
+    
+    if (mainRows.length === 0) return res.status(404).json({ error: 'Animal no encontrado' });
+    const mainAnimal = mainRows[0];
+    
+    const allAnimalsMap = { [mainAnimal.id_animal]: mainAnimal };
+
+    // Extraer IDs de Padres
+    const parentIds = [];
+    if (mainAnimal.id_padre) parentIds.push(mainAnimal.id_padre);
+    if (mainAnimal.id_madre) parentIds.push(mainAnimal.id_madre);
+
+    // Si tiene padres, buscarlos todos de golpe
+    if (parentIds.length > 0) {
+      const [parents] = await pool.query('SELECT a.*, p.nombre as potrero_nombre, r.nombre as raza, TIMESTAMPDIFF(MONTH, a.fecha_nacimiento, CURDATE()) as edad_meses FROM ganado_animales a LEFT JOIN ganado_potreros p ON a.id_potrero = p.id_potrero LEFT JOIN ganado_razas r ON a.id_raza = r.id_raza WHERE a.id_animal IN (?)', [parentIds]);
       
-      const params = isId ? [identificador] : [identificador, identificador, identificador];
-      const [rows] = await pool.query(q, params);
-      
-      if (rows.length === 0) return null;
-      
-      const animal = rows[0];
-      
-      // Obtener pedigrí si lo tiene
-      const [pedigriRows] = await pool.query('SELECT * FROM ganado_pedigri WHERE id_animal = ?', [animal.id_animal]);
-      if (pedigriRows.length > 0) {
-        animal.pedigri = pedigriRows[0];
+      const grandparentIds = [];
+      parents.forEach(p => {
+        allAnimalsMap[p.id_animal] = p;
+        if (p.id_padre) grandparentIds.push(p.id_padre);
+        if (p.id_madre) grandparentIds.push(p.id_madre);
+      });
+
+      // Si tiene abuelos, buscarlos todos de golpe
+      if (grandparentIds.length > 0) {
+        const [grandparents] = await pool.query('SELECT a.*, p.nombre as potrero_nombre, r.nombre as raza, TIMESTAMPDIFF(MONTH, a.fecha_nacimiento, CURDATE()) as edad_meses FROM ganado_animales a LEFT JOIN ganado_potreros p ON a.id_potrero = p.id_potrero LEFT JOIN ganado_razas r ON a.id_raza = r.id_raza WHERE a.id_animal IN (?)', [grandparentIds]);
+        grandparents.forEach(g => {
+          allAnimalsMap[g.id_animal] = g;
+        });
       }
-
-      // Obtener fotografías
-      const [fotosRows] = await pool.query('SELECT * FROM ganado_fotografias WHERE id_animal = ? ORDER BY es_principal DESC, fecha_toma DESC', [animal.id_animal]);
-      animal.fotos = fotosRows;
-
-      return animal;
     }
 
-    const animal = await getAnimal(codigo, false);
-    if (!animal) return res.status(404).json({ error: 'Animal no encontrado' });
+    const allIds = Object.keys(allAnimalsMap);
+    
+    // Obtener pedigrís en lote
+    const [pedigris] = await pool.query('SELECT * FROM ganado_pedigri WHERE id_animal IN (?)', [allIds]);
+    pedigris.forEach(ped => {
+      if (allAnimalsMap[ped.id_animal]) {
+        allAnimalsMap[ped.id_animal].pedigri = ped;
+      }
+    });
 
-    // Cargar Padres
-    if (animal.id_padre) animal.padre = await getAnimal(animal.id_padre, true);
-    if (animal.id_madre) animal.madre = await getAnimal(animal.id_madre, true);
+    // Obtener fotografías en lote
+    const [fotosRows] = await pool.query('SELECT * FROM ganado_fotografias WHERE id_animal IN (?) ORDER BY es_principal DESC, fecha_toma DESC', [allIds]);
+    fotosRows.forEach(f => {
+      if (allAnimalsMap[f.id_animal]) {
+        if (!allAnimalsMap[f.id_animal].fotos) allAnimalsMap[f.id_animal].fotos = [];
+        allAnimalsMap[f.id_animal].fotos.push(f);
+      }
+    });
 
-    // Cargar Abuelos
-    if (animal.padre?.id_padre) animal.padre.padre = await getAnimal(animal.padre.id_padre, true);
-    if (animal.padre?.id_madre) animal.padre.madre = await getAnimal(animal.padre.id_madre, true);
-    if (animal.madre?.id_padre) animal.madre.padre = await getAnimal(animal.madre.id_padre, true);
-    if (animal.madre?.id_madre) animal.madre.madre = await getAnimal(animal.madre.id_madre, true);
+    // Construir el árbol (hasta 3 generaciones)
+    const animal = allAnimalsMap[mainAnimal.id_animal];
+    if (animal.id_padre && allAnimalsMap[animal.id_padre]) {
+      animal.padre = allAnimalsMap[animal.id_padre];
+      if (animal.padre.id_padre && allAnimalsMap[animal.padre.id_padre]) animal.padre.padre = allAnimalsMap[animal.padre.id_padre];
+      if (animal.padre.id_madre && allAnimalsMap[animal.padre.id_madre]) animal.padre.madre = allAnimalsMap[animal.padre.id_madre];
+    }
+    if (animal.id_madre && allAnimalsMap[animal.id_madre]) {
+      animal.madre = allAnimalsMap[animal.id_madre];
+      if (animal.madre.id_padre && allAnimalsMap[animal.madre.id_padre]) animal.madre.padre = allAnimalsMap[animal.madre.id_padre];
+      if (animal.madre.id_madre && allAnimalsMap[animal.madre.id_madre]) animal.madre.madre = allAnimalsMap[animal.madre.id_madre];
+    }
 
     // Módulo Financiero / Rentabilidad
     let costo_adquisicion = 0;
@@ -467,28 +494,36 @@ router.post('/compras', async (req, res) => {
     await conn.beginTransaction();
     try {
       const ids_animales = [];
-
+      const animalesData = [];
+      const aretes = [];
+      
+      const nowTs = Date.now();
       for (let i = 0; i < cantidad; i++) {
-        let currentArete = arete_crotal;
-        let currentNombre = nombre;
-        if (isLote) {
-          currentArete = `LOTE-${Date.now()}-${i}`;
-          currentNombre = nombre ? `${nombre} ${i+1}` : `Animal Lote ${i+1}`;
-        }
-
-        const [resAnimal] = await conn.query(
-          'INSERT INTO ganado_animales (arete_crotal, nombre, sexo, fecha_nacimiento, estado, id_hato, id_raza, id_potrero) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [currentArete, currentNombre, sexo || 'Macho', fecha_nacimiento, 'Activo', hatoId, razaId, potreroId]
-        );
-        const id_animal = resAnimal.insertId;
-        ids_animales.push(id_animal);
-
-        // Siempre registramos en compras para trazabilidad (incluso obsequios)
-        await conn.query(
-          'INSERT INTO ganado_compras (fecha, id_animal, procedencia, vendedor, valor, observaciones) VALUES (?, ?, ?, ?, ?, ?)',
-          [fecha, id_animal, procedencia, vendedor || (isObsequio ? 'Donante' : ''), valorUnitario, isObsequio ? 'Entrada por Obsequio' : '']
-        );
+        let currentArete = isLote ? `LOTE-${nowTs}-${i}` : arete_crotal;
+        let currentNombre = isLote ? (nombre ? `${nombre} ${i+1}` : `Animal Lote ${i+1}`) : nombre;
+        aretes.push(currentArete);
+        animalesData.push([currentArete, currentNombre, sexo || 'Macho', fecha_nacimiento, 'Activo', hatoId, razaId, potreroId]);
       }
+
+      // 1. Bulk Insert Animales
+      await conn.query(
+        'INSERT INTO ganado_animales (arete_crotal, nombre, sexo, fecha_nacimiento, estado, id_hato, id_raza, id_potrero) VALUES ?',
+        [animalesData]
+      );
+
+      // 2. Obtener IDs insertados
+      const [insertedRows] = await conn.query('SELECT id_animal, arete_crotal FROM ganado_animales WHERE arete_crotal IN (?)', [aretes]);
+      insertedRows.forEach(r => ids_animales.push(r.id_animal));
+
+      // 3. Bulk Insert Compras
+      const comprasData = insertedRows.map(r => [
+        fecha, r.id_animal, procedencia, vendedor || (isObsequio ? 'Donante' : ''), valorUnitario, isObsequio ? 'Entrada por Obsequio' : ''
+      ]);
+
+      await conn.query(
+        'INSERT INTO ganado_compras (fecha, id_animal, procedencia, vendedor, valor, observaciones) VALUES ?',
+        [comprasData]
+      );
 
       // Accounting integration
       const accionText = isObsequio ? 'Recepción de obsequio' : 'Compra';
@@ -552,20 +587,20 @@ router.post('/ventas', async (req, res) => {
     const conn = await pool.getConnection();
     await conn.beginTransaction();
     try {
-      for (const id of idsToSell) {
-        if (isMuerte) {
-          await conn.query(
-            'INSERT INTO ganado_mortalidad (id_animal, causa_presunta, diagnostico_veterinario, fecha, impacto_economico) VALUES (?, ?, ?, ?, ?)',
-            [id, causa_presunta || 'No especificada', diagnostico_veterinario, fecha, impacto_economico || 0]
-          );
-          await conn.query('UPDATE ganado_animales SET estado = ? WHERE id_animal = ?', ['Muerto', id]);
-        } else {
-          await conn.query(
-            'INSERT INTO ganado_ventas (fecha, id_animal, comprador, valor, peso_venta_kg, observaciones) VALUES (?, ?, ?, ?, ?, ?)',
-            [fecha, id, comprador || (isObsequio ? 'Beneficiario Obsequio' : ''), valorUnitario, pesoUnitario, isObsequio ? 'Salida por Obsequio' : '']
-          );
-          await conn.query('UPDATE ganado_animales SET estado = ? WHERE id_animal = ?', ['Vendido', id]);
-        }
+      if (isMuerte) {
+        const mortData = idsToSell.map(id => [id, causa_presunta || 'No especificada', diagnostico_veterinario, fecha, impacto_economico || 0]);
+        await conn.query(
+          'INSERT INTO ganado_mortalidad (id_animal, causa_presunta, diagnostico_veterinario, fecha, impacto_economico) VALUES ?',
+          [mortData]
+        );
+        await conn.query('UPDATE ganado_animales SET estado = ? WHERE id_animal IN (?)', ['Muerto', idsToSell]);
+      } else {
+        const ventaData = idsToSell.map(id => [fecha, id, comprador || (isObsequio ? 'Beneficiario Obsequio' : ''), valorUnitario, pesoUnitario, isObsequio ? 'Salida por Obsequio' : '']);
+        await conn.query(
+          'INSERT INTO ganado_ventas (fecha, id_animal, comprador, valor, peso_venta_kg, observaciones) VALUES ?',
+          [ventaData]
+        );
+        await conn.query('UPDATE ganado_animales SET estado = ? WHERE id_animal IN (?)', ['Vendido', idsToSell]);
       }
 
       // Accounting integration

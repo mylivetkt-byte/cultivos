@@ -1,10 +1,10 @@
 import express from 'express';
+import { getDb } from '../utils/db.js';
 const router = express.Router();
 
 router.get('/stats', async (req, res) => {
   try {
-    const db = req.tenantPool;
-    if (!db) return res.status(500).json({ error: 'Tenant pool not found' });
+    const db = getDb(req);
 
     // 1. Get Top Buyers (by total USD)
     const [topCompradores] = await db.query(`
@@ -98,7 +98,7 @@ router.get('/stats', async (req, res) => {
 
 router.get('/ventas', async (req, res) => {
   try {
-    const db = req.tenantPool;
+    const db = getDb(req);
     const [rows] = await db.query(`
       SELECT v.*, c.nombre as comprador, t.nombre as transportadora
       FROM com_ventas_historial v

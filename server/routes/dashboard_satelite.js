@@ -1,6 +1,7 @@
 import express from 'express';
 import wellknown from 'wellknown';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 // Helper to convert WKT string to GeoJSON, returns null if conversion fails
 function wktToGeoJSON(wkt) {
@@ -15,10 +16,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getLoteIndicadoresReales } from '../utils/satelliteData.js';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 // 1. Obtener jerarquía: Clientes -> Fincas -> Lotes
 router.get('/jerarquia', async (req, res) => {

@@ -9,7 +9,7 @@ const DB_CONFIG = {
   user: process.env.MYSQL_USER || 'root',
   password: process.env.MYSQL_PASSWORD || '',
   waitForConnections: true,
-  connectionLimit: 5,
+  connectionLimit: parseInt(process.env.DB_TENANT_LIMIT, 10) || 50,
   queueLimit: 0,
   connectTimeout: 5000,
 };

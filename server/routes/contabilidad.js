@@ -1,11 +1,8 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 // 1. Obtener Periodos Contables
 router.get('/periodos', async (req, res) => {
@@ -655,7 +652,7 @@ router.get('/consultas/balance-mensual', async (req, res) => {
 
   router.get('/reportes/libro-auxiliar', async (req, res) => {
     try {
-      const { tenantId, fecha_inicio, fecha_fin, id_finca, cuenta_inicio, cuenta_fin, id_tercero } = req.query;
+      const { tenantId, fecha_inicio, fecha_fin, id_finca, cuenta_inicio, cuenta_fin, id_tercero, id_centro_costo } = req.query;
       const fInicio = fecha_inicio || '2000-01-01';
       const fFin = fecha_fin || '2099-12-31';
 
@@ -667,6 +664,11 @@ router.get('/consultas/balance-mensual', async (req, res) => {
         filterSql += ' AND d.id_centro_costo IN (SELECT id_centro_costo FROM centros_costo WHERE id_finca = ?) ';
         paramsAnt.push(id_finca);
         paramsMov.push(id_finca);
+      }
+      if (id_centro_costo) {
+        filterSql += ' AND d.id_centro_costo = ? ';
+        paramsAnt.push(id_centro_costo);
+        paramsMov.push(id_centro_costo);
       }
       if (id_tercero) {
         filterSql += ' AND d.id_tercero = ? ';

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
 import { authFetch } from '../../utils/api';
+import { customStyles } from '../PremiumSelect';
 
 function OrdenCompraCapturer({ tenantId }) {
   const [proveedores, setProveedores] = useState([]);

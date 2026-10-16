@@ -1,100 +1,176 @@
-# README.md
+# SAS Agrícolas - Sistema de Gestión Agropecuaria
 
-## ðŸŽ‰ Sas AgrÃ­colas â€“ Mejor software agrÃ­cola de Colombia y CentroamÃ©rica
-
-This project is a **premiumâ€‘grade** fullâ€‘stack web application for managing agricultural operations: purchase orders, inventory, livestock, and analytics.  It follows modern UI/UX guidelines (dark mode, Inter typography, microâ€‘animations) and is ready for **auditorÃ­a** with CI/CD, testing, backup, and loadâ€‘testing pipelines.
+Plataforma integral para la gestión de operaciones agrícolas, incluyendo planificación de cultivos, seguimiento de labores, monitoreo de rendimientos, integración con IA y funcionalidad offline para entornos rurales con conectividad limitada.
 
 ---
-### ðŸ“¦â€¯Stack Overview
-- **Frontend** â€“ Vite + React (portâ€¯5173) with custom CSS design system (`src/App.css`, `src/index.css`).
-- **API** â€“ Express.js (portâ€¯3002) exposing REST endpoints (`/api/*`).
-- **Database** â€“ MySQLâ€¯8 (exposed on hostâ€¯3307).  Connection details are read from a `.env` file.
-- **Docker** â€“ Multiâ€‘stage `Dockerfile` and `docker-compose.yml` for local development and production.
-- **CI/CD** â€“ GitHub Actions workflow (`.github/workflows/main.yml`) runs lint, tests, builds the client and Docker image.
-- **Testing** â€“ Jest + React Testing Library (coverageâ€¯â‰ˆâ€¯63â€¯%).  Includes a special test for the `reactâ€‘select` component.
-- **Backup & Load Test** â€“ Scripts `db_backup.cjs` and `load-test/k6-test.js` (see below).
+
+## Índice### ?? Características Principales (Sprints Completados)
+- **Modo Offline First** (Service Worker + IndexedDB)
+- **Sincronización Automática** (Cola local + resolución de conflictos)
+- **Datos Limpios + KPIs de Impacto** (Costos/kg/ha/lote, Merma %, FCR)
+- **IA Práctica** (ChatBot con OmniRoute+Claude, alertas climáticas)
+- **Arquitectura Modular** (Feature folders organizados por dominio)
+- **Preparación para Partners** (Export-ready, campos exportable)
 
 ---
-### ðŸš€â€¯Getting Started (Development)
-1. **Prerequisites**
-   - Nodeâ€¯18 (or later)
-   - Dockerâ€¯&â€¯Dockerâ€‘Compose
-   - MySQL client (optional, for manual DB work)
-2. **Clone & install**
-   ```bash
-   git clone <repo-url>
-   cd sas-app
-   npm ci
-   ```
-3. **Run with Docker Compose** (recommended)
-   ```bash
-   docker compose up --build
-   ```
-   The services will be available at:
-   - UI: <http://localhost:5173>
-   - API: <http://localhost:3002>
-   - MySQL: `localhost:3307`
-4. **Or run locally** (frontend only)
-   ```bash
-   npm run dev   # starts Vite dev server on 5173
-   ```
-   Ensure the API server (`c:\sas-app\server\index.js`) is running on portâ€¯3002.
+
+## ?? Primeros Pasos (Entorno Local)
+### 1. Clona el repositorio`ash
+git clone https://github.com/tu-usuario/sas-agricolas.git
+cd sas-agricolas
+cp .env.example .env
+`
+
+### 2. Instala dependencias
+`ash
+npm install
+`
+
+### 3. Configura tu base de datos MySQL
+Asegúrate de tener MySQL corriendo localmente:`ash
+mysql -u root -p
+CREATE DATABASE sas_agricolas CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+`
+
+### 4. Aplica migraciones de base de datos
+`ash
+npm run db:migrate
+`
+
+### 5. Inicia el servidor de desarrollo
+`ash
+npm run dev
+`
+- **API**: http://localhost:3002
+- **Frontend React**: http://localhost:5173
 
 ---
-### ðŸ§ªâ€¯Testing & Coverage
-```bash
-npm test          # runs Jest with coverage
-npm run lint      # optional lint step (ESLint + Prettier)
-```
-The CI workflow fails if tests do not pass.
+
+## ?? Scripts y Comandos### Scripts de desarrollo
+| Comando | Descripción |
+|---------|-------------|
+| 
+pm run dev | Inicia servidor y cliente concurrentemente |
+| 
+pm run dev:server | Inicia solo el servidor Express |
+| 
+pm run dev:client | Inicia el servidor de desarrollo Vite |
+| 
+pm run build | Compila la aplicación para producción |
+| 
+pm run db:migrate | Ejecuta migraciones pendientes de la base de datos |
+| 
+pm run db:reset | Restablece la base de datos (?? Destructivo) |
+| 
+pm run lint | Verifica problemas en el código según ESLint |
 
 ---
-### ðŸ“¦â€¯Docker Production Build
-```bash
-docker build -t sas-agricolas .
-# Run container (example)
-docker run -p 3002:3002 -p 5173:5173 sas-agricolas
-```
-You can also push the image to Docker Hub â€“ uncomment the `deploy` step in the GitHub Actions workflow and provide `DOCKER_USERNAME`/`DOCKER_PASSWORD` secrets.
+
+## ?? Pruebas### Pruebas Unitarias (Jest)
+`ash
+npm test
+npm run coverage # Para ver reporte de cobertura
+`
+
+### Pruebas End-to-End (k6)
+Antes de desplegar, ejecuta las pruebas de carga para validar rendimiento:
+
+`ash
+cd scripts
+k6 run load-test.k6.js --vus 100 --duration 30s
+`
+
+Resultado esperado:
+- **Latencia (p95)** < **500ms**
+- **Tasa de errores** < **1%**
 
 ---
-### ðŸ“â€¯Backup Script (`db_backup.cjs`)
-```bash
-node db_backup.cjs   # creates backup/YYYY-MM-DD.sql in the project root
-```
-The script connects to the MySQL container, dumps all tables to a timestamped SQL file, and logs the operation.  It can be scheduled via a cron job (see `schedule` tool) or run manually before major migrations.
+
+## ?? Endpoints API Clave### Autenticación
+- POST /api/auth/login - Iniciar sesión
+- GET /api/auth/verify - Verificar token
+
+### Producción y Análisis
+- GET /api/kpis/produccion/:fincaId - Obtener KPIs de producción
+- POST /api/kpis/costos-unitarios - Registrar costos unitarios (kg/ha/lote)
+- POST /api/kpis/merma - Registrar métricas de merma
+- POST /api/kpis/conversion-alimenticia - Registrar FCR (Feed Conversion Ratio)
+- GET /api/kpis/exportar/:fincaId - Exportar reporte completo (CSV/PDF)
+
+### Sincronización Offline
+- GET /api/sync/pull - Descargar cambios desde el servidor
+- POST /api/sync/push - Enviar operaciones realizadas offline
+
+### IA y Notificaciones
+- POST /api/ai-diagnosis/query - Consulta al asistente de IA
+- GET /api/ai-diagnosis/dashboard/:fincaId - Widgets IA para dashboard
 
 ---
-### âš¡â€¯Load Test (`load-test/k6-test.js`)
-```bash
-k6 run load-test/k6-test.js
-```
-The script simulates **50 virtual users for 30â€¯seconds** performing a POST request to create a purchase order.  It asserts that the 90thâ€‘percentile latency stays below **200â€¯ms**.
+
+## ?? Despliegue### Entornos Disponibles
+| Entorno | API Endpoint | Base de Datos |
+|---------|--------------|---------------|
+| Staging | https://api-staging.sas-agricolas.com | RDS MySQL (Staging) |
+| Producción | https://api.sas-agricolas.com | RDS MySQL (Producción) |
+
+### Despliegue Manual (Solo si CI/CD falla)
+1. **Build Docker**:
+   `ash
+   docker build -t mi-usuario/sas-agricolas:latest .
+   docker push mi-usuario/sas-agricolas:latest
+   `
+2. **Actualizar Task Definition**:
+   `ash
+   aws ecs register-task-definition --cli-input-json file://ecs/taskdef.json --region us-east-1
+   `
+3. **Forzar nuevo despliegue**:
+   `ash
+   aws ecs update-service --cluster mi-cluster --service sas-agricolas-service-prod --force-new-deployment --region us-east-1
+   `
+
+### Rollback de Emergencia (Script Automatizado)
+`ash
+./scripts/rollback.sh
+`
+El script:
+1. Busca el **último snapshot automático** de la base de datos.
+2. Restaura una nueva instancia a partir de ese snapshot.
+3. Actualiza el servicio ECS para apuntar a la nueva instancia DB.
 
 ---
-### ðŸŽ¨â€¯UI Premium Details
-- **Typography** â€“ *Inter* loaded from Google Fonts (`src/index.css`).
-- **Color palette** â€“ Dark and light mode variables defined in `:root`.
-- **Microâ€‘animations** â€“ `.hover-effect` class adds subtle lift and shadow.
-- **Accessibility** â€“ All form controls have `aria-label` attributes.
+
+## ?? Seguridad### Variables Sensibles
+- **NO versionar** archivos .env.staging y .env.prod.
+- Usa **GitHub Secrets** para almacenar credenciales en pipelines.
+- Mantén las claves de JWT, AWS, OmniRoute y OpenWeather actualizadas.
+
+### Recomendaciones de Seguridad para Producción
+- Cambiar JWT_SECRET a una cadena larga y aleatoria.
+- Limitar acceso a Secrets Manager mediante roles de IAM.
+- Validar y sanitizar todos los inputs en los endpoints.
+- Habilitar HTTPS/TLS en todas las comunicaciones externas.
 
 ---
-### ðŸ“šâ€¯AuditorÃ­a Checklist
-- [x] CI passes on every push.
-- [x] Unit tests with coverage >â€¯60â€¯% (targetâ€¯â‰¥â€¯80â€¯%).
-- [x] Docker images build cleanly.
-- [x] Backup script generates reproducible SQL dump.
-- [x] Load test validates performance under load.
-- [x] UI meets WCAGâ€¯AA (contrast, focus, ARIA).
-- [ ] **Documentation** â€“ README (this file) and Swagger API docs (`/swagger`).
+
+## ?? Exportación de Datos para Partners### Endpoints Disponibles
+- GET /api/export/historico?tables[]=fincas,lotes,costos_unitarios&formato=csv - Exportar histórico
+- API Documentada en OpenAPI Specification (adjunta en docs/export.schema.json)
+
+### Formato de Exportación
+Los datos pueden exportarse en:
+- **CSV**: Compatible con Excel, Power BI, etc.
+- **JSON**: Ideal para consumo programático
 
 ---
-### ðŸ¤â€¯Contributing
-1. Fork the repository.
-2. Create a feature branch.
-3. Run tests (`npm test`).
-4. Submit a Pull Request.
+
+## ?? Soporte y Colaboradores
+- **Documentación Oficial**: [docs.sas-agricolas.com](https://docs.sas-agricolas.com)
+- **Canal de Emergencias (Slack)**: #sas-agricolas-dev
+- **Reporte de Bugs**: Abrir un [issue](https://github.com/tu-usuario/sas-agricolas/issues) en GitHub.
 
 ---
-### ðŸ“žâ€¯Support
-For questions, open an issue or contact the development team at `dev@sas-agricolas.com`.
+
+# ?? Contacto
+¿Listo para lanzar a producción? ¡Ejecuta el pipeline en GitHub Actions y notifica al equipo cuando esté todo verde!
+
+> Última actualización: 2024

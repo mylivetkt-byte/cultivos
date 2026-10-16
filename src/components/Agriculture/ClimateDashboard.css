@@ -136,7 +136,7 @@
 
 .text-green { color: #10b981; }
 .text-red { color: #ef4444; }
-.text-slate { color: #64748b; }
+.text-slate { color: var(--text-secondary); }
 
 .summary-divider {
   height: 1px;

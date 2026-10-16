@@ -1,12 +1,9 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 import { requireRole } from '../utils/auth.js';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 // Endpoint para listar Fincas activas
 router.get('/fincas', async (req, res) => {
@@ -59,11 +56,20 @@ router.post('/', async (req, res) => {
     let tratamientos = [];
     if (idsLotes.length > 0) {
       [tratamientos] = await db.query(`
-        SELECT r.id_lote, r.producto_comercial, r.ingrediente_activo, r.dosis_ha, r.fecha_creacion, e.nombre_comun as enfermedad
-        FROM registro_aplicaciones r
-        LEFT JOIN enfermedades e ON r.id_enfermedad = e.id_enfermedad
-        WHERE r.id_lote IN (?) AND DATE(r.fecha_creacion) BETWEEN ? AND ?
-      `, [idsLotes, fechaInicio, fechaFin]).catch(() => [[], []]); 
+        SELECT p.id_lote, 
+               rec.nombre_receta as producto_comercial, 
+               rec.tipo as ingrediente_activo, 
+               'N/A' as dosis_ha, 
+               p.fecha_ejecucion as fecha_creacion, 
+               l.nombre_comun as enfermedad
+        FROM app_programacion p
+        LEFT JOIN app_recetas rec ON p.id_receta = rec.id_receta
+        LEFT JOIN lib_fitosanitaria_ica l ON rec.id_enfermedad_plaga = l.id_enfermedad_plaga
+        WHERE p.id_lote IN (?) AND p.estado = 'Completada' AND DATE(p.fecha_ejecucion) BETWEEN ? AND ?
+      `, [idsLotes, fechaInicio, fechaFin]).catch((err) => { 
+        console.error("Error in tratamientos query:", err);
+        return [[], []]; 
+      }); 
       // Usamos .catch por si no existe id_enfermedad o fecha_creacion en registro_aplicaciones
     }
 
@@ -147,7 +153,7 @@ router.post('/', async (req, res) => {
         SELECT d.id_cuenta, c.codigo as codigo_cuenta, c.nombre as nombre_cuenta, d.descripcion, d.debito, d.credito, doc.fecha, doc.numero_doc
         FROM contab_detalles d
         JOIN contab_documentos doc ON d.id_documento = doc.id_documento
-        LEFT JOIN contab_cuentas c ON d.id_cuenta = c.id_cuenta
+        LEFT JOIN plan_contable c ON d.id_cuenta = c.id_cuenta
         WHERE d.id_centro_costo = ? AND DATE(doc.fecha) BETWEEN ? AND ?
         ORDER BY doc.fecha DESC
       `, [cc.id_centro_costo, fechaInicio, fechaFin]);

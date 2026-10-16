@@ -1,11 +1,8 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 function tenantFilter(req, tableAlias = '') {
   const tenantId = req.query.tenantId || req.body.tenantId;
@@ -22,7 +19,12 @@ function andTenantFilter(req, tableAlias = '') {
 // === 1. INVENTARIO ===
 router.get('/inventario', async (req, res) => {
   try {
-    const [rows] = await getDb(req).query(`SELECT * FROM vivero_inventario ${tenantFilter(req)} ORDER BY tipo, nombre`);
+    let filter = tenantFilter(req);
+    const { viveroId } = req.query;
+    if (viveroId && viveroId !== 'Todos') {
+      filter += ` AND id_vivero = ${pool.escape(viveroId)}`;
+    }
+    const [rows] = await getDb(req).query(`SELECT * FROM vivero_inventario ${filter} ORDER BY tipo, nombre`);
     res.json(rows);
   } catch (err) {
     console.error(err);
@@ -31,12 +33,12 @@ router.get('/inventario', async (req, res) => {
 });
 
 router.post('/inventario', async (req, res) => {
-  const { tenantId, tipo, nombre, proveedor, cantidad_disponible, unidad_medida, costo_unitario } = req.body;
+  const { tenantId, tipo, nombre, proveedor, cantidad_disponible, unidad_medida, costo_unitario, id_vivero } = req.body;
   try {
     const [result] = await getDb(req).query(
-      `INSERT INTO vivero_inventario (id_tenant, tipo, nombre, proveedor, cantidad_disponible, unidad_medida, costo_unitario) 
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [tenantId, tipo, nombre, proveedor, cantidad_disponible, unidad_medida, costo_unitario]
+      `INSERT INTO vivero_inventario (id_tenant, tipo, nombre, proveedor, cantidad_disponible, unidad_medida, costo_unitario, id_vivero) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [tenantId, tipo, nombre, proveedor, cantidad_disponible, unidad_medida, costo_unitario, id_vivero || null]
     );
     res.json({ insertId: result.insertId });
   } catch (err) {
@@ -49,11 +51,16 @@ router.post('/inventario', async (req, res) => {
 router.get('/camadas', async (req, res) => {
   try {
     // Use 'c' alias to avoid ambiguous id_tenant when JOINing with vivero_inventario
+    let filter = tenantFilter(req, 'c');
+    const { viveroId } = req.query;
+    if (viveroId && viveroId !== 'Todos') {
+      filter += ` AND c.id_vivero = ${pool.escape(viveroId)}`;
+    }
     const [rows] = await getDb(req).query(`
       SELECT c.*, i.nombre as nombre_semilla 
       FROM vivero_camadas c
       JOIN vivero_inventario i ON c.id_item_semilla = i.id_item
-      ${tenantFilter(req, 'c')}
+      ${filter}
       ORDER BY c.fecha_siembra_bandeja DESC
     `);
     
@@ -72,40 +79,48 @@ router.get('/camadas', async (req, res) => {
 });
 
 router.post('/camadas', async (req, res) => {
-  const { tenantId, id_item_semilla, codigo_camada, fecha_siembra_bandeja, fecha_germinacion_esperada, cantidad_sembrada, ubicacion_vivero } = req.body;
+  const { tenantId, id_item_semilla, codigo_camada, fecha_siembra_bandeja, fecha_germinacion_esperada, cantidad_sembrada, ubicacion_vivero, id_vivero } = req.body;
+  const connection = await getDb(req).getConnection();
   try {
     // Start transaction to also deduct seeds from inventory
-    await getDb(req).query('START TRANSACTION');
+    await connection.beginTransaction();
 
-    const [result] = await getDb(req).query(
+    const [result] = await connection.query(
       `INSERT INTO vivero_camadas 
-       (id_tenant, id_item_semilla, codigo_camada, fecha_siembra_bandeja, fecha_germinacion_esperada, cantidad_sembrada, cantidad_actual, ubicacion_vivero) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [tenantId, id_item_semilla, codigo_camada, fecha_siembra_bandeja, fecha_germinacion_esperada, cantidad_sembrada, cantidad_sembrada, ubicacion_vivero]
+       (id_tenant, id_item_semilla, codigo_camada, fecha_siembra_bandeja, fecha_germinacion_esperada, cantidad_sembrada, cantidad_actual, ubicacion_vivero, id_vivero) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [tenantId, id_item_semilla, codigo_camada, fecha_siembra_bandeja, fecha_germinacion_esperada, cantidad_sembrada, cantidad_sembrada, ubicacion_vivero, id_vivero || null]
     );
 
     // Deduct seeds (we assume 1 seed per plant for simplicity, though unit might be kg)
-    await getDb(req).query(
+    await connection.query(
       `UPDATE vivero_inventario SET cantidad_disponible = cantidad_disponible - ? WHERE id_item = ?`,
       [cantidad_sembrada, id_item_semilla]
     );
 
-    await getDb(req).query('COMMIT');
+    await connection.commit();
     res.json({ insertId: result.insertId });
   } catch (err) {
-    await getDb(req).query('ROLLBACK');
+    await connection.rollback();
     console.error(err);
     res.status(500).json({ error: 'Error creating camada' });
+  } finally {
+    connection.release();
   }
 });
 
 // === 3. MOVIMIENTOS Y VENTAS (Integración Contable) ===
 router.get('/movimientos', async (req, res) => {
   try {
-    const { tenantId, fechaInicio, fechaFin, idSemilla, idEmpleado } = req.query;
+    const { tenantId, fechaInicio, fechaFin, idSemilla, idEmpleado, viveroId } = req.query;
     
     let tF = tenantId ? 'WHERE m.id_tenant = ?' : 'WHERE 1=1';
     const params = tenantId ? [tenantId] : [];
+
+    if (viveroId && viveroId !== 'Todos') {
+      tF += ' AND (c.id_vivero = ? OR i.id_vivero = ?)';
+      params.push(viveroId, viveroId);
+    }
 
     if (fechaInicio && fechaFin) {
       tF += ' AND DATE(m.fecha) BETWEEN ? AND ?';
@@ -153,25 +168,26 @@ router.get('/movimientos', async (req, res) => {
 });
 
 router.post('/movimientos', async (req, res) => {
-  const { tenantId, id_camada, id_item, tipo_movimiento, cantidad, id_empleado_responsable, observaciones, precio_venta_total } = req.body;
+  const { tenantId, id_camada, id_item, tipo_movimiento, cantidad, id_empleado_responsable, observaciones, precio_venta_total, id_lote_destino } = req.body;
+  const connection = await getDb(req).getConnection();
   try {
-    await getDb(req).query('START TRANSACTION');
+    await connection.beginTransaction();
 
-    const [result] = await getDb(req).query(
+    const [result] = await connection.query(
       `INSERT INTO vivero_movimientos 
-       (id_tenant, id_camada, id_item, tipo_movimiento, cantidad, id_empleado_responsable, observaciones, precio_venta_total) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [tenantId, id_camada, id_item, tipo_movimiento, cantidad, id_empleado_responsable, observaciones, precio_venta_total || 0]
+       (id_tenant, id_camada, id_item, tipo_movimiento, cantidad, id_empleado_responsable, observaciones, precio_venta_total, id_lote_destino) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [tenantId, id_camada, id_item, tipo_movimiento, cantidad, id_empleado_responsable, observaciones, precio_venta_total || 0, id_lote_destino || null]
     );
 
     // Deduct from inventory or camada
     if (id_camada) {
-      await getDb(req).query(`UPDATE vivero_camadas SET cantidad_actual = cantidad_actual - ? WHERE id_camada = ?`, [cantidad, id_camada]);
+      await connection.query(`UPDATE vivero_camadas SET cantidad_actual = cantidad_actual - ? WHERE id_camada = ?`, [cantidad, id_camada]);
       // Update status if 0
-      await getDb(req).query(`UPDATE vivero_camadas SET estado = 'Agotada' WHERE id_camada = ? AND cantidad_actual <= 0`, [id_camada]);
+      await connection.query(`UPDATE vivero_camadas SET estado = 'Agotada' WHERE id_camada = ? AND cantidad_actual <= 0`, [id_camada]);
     } else if (id_item) {
       const modifier = tipo_movimiento === 'Ingreso' ? '+' : '-';
-      await getDb(req).query(`UPDATE vivero_inventario SET cantidad_disponible = cantidad_disponible ${modifier} ? WHERE id_item = ?`, [cantidad, id_item]);
+      await connection.query(`UPDATE vivero_inventario SET cantidad_disponible = cantidad_disponible ${modifier} ? WHERE id_item = ?`, [cantidad, id_item]);
     }
 
     // Integración con Nómina: Crear registro en labores_diarias para seguimiento
@@ -187,7 +203,7 @@ router.post('/movimientos', async (req, res) => {
       };
       const categoria = categoriaMap[tipo_movimiento] || 'Semilleros';
 
-      await getDb(req).query(`
+      await connection.query(`
         INSERT INTO labores_diarias
         (id_tenant, categoria, descripcion_labor, fecha_planificada, id_empleado, estado, fecha_completado)
         VALUES (?, ?, ?, CURDATE(), ?, 'Completada', NOW())
@@ -201,51 +217,61 @@ router.post('/movimientos', async (req, res) => {
 
     // Integración Contable: Si es una VENTA, generar asiento de ingreso
     if (tipo_movimiento === 'Venta' && precio_venta_total > 0) {
-      const [ctaCaja] = await getDb(req).query("SELECT id_cuenta FROM plan_contable WHERE codigo LIKE '11%' LIMIT 1"); // Caja/Bancos
+      const [ctaCaja] = await connection.query("SELECT id_cuenta FROM plan_contable WHERE codigo LIKE '11%' LIMIT 1"); // Caja/Bancos
       const idCuentaCaja = ctaCaja.length ? ctaCaja[0].id_cuenta : 1;
       
-      const [ctaIngreso] = await getDb(req).query("SELECT id_cuenta FROM plan_contable WHERE codigo LIKE '4%' LIMIT 1"); // Ingresos
+      const [ctaIngreso] = await connection.query("SELECT id_cuenta FROM plan_contable WHERE codigo LIKE '4%' LIMIT 1"); // Ingresos
       const idCuentaIngreso = ctaIngreso.length ? ctaIngreso[0].id_cuenta : 4;
 
-      const [tipos] = await getDb(req).query("SELECT id_tipo_comp FROM comprobantes_tipos WHERE nombre LIKE '%Ingreso%' LIMIT 1");
+      const [tipos] = await connection.query("SELECT id_tipo_comp FROM comprobantes_tipos WHERE nombre LIKE '%Ingreso%' LIMIT 1");
       const idTipo = tipos.length ? tipos[0].id_tipo_comp : 1;
 
-      const [periodos] = await getDb(req).query("SELECT id_periodo FROM periodos_contables WHERE estado = 'Abierto' LIMIT 1");
+      const [periodos] = await connection.query("SELECT id_periodo FROM periodos_contables WHERE estado = 'Abierto' LIMIT 1");
       const idPeriodo = periodos.length ? periodos[0].id_periodo : 1;
 
       const concepto = `Venta Vivero: ${observaciones || 'Plántulas/Insumos'}`;
+      const descripcionComp = `Venta Vivero Automática: ${concepto.substring(0, 100)}`;
       
-      const [insComp] = await getDb(req).query(`
-        INSERT INTO comprobantes (id_tenant, id_tipo_comp, id_periodo, consecutivo, fecha, concepto, total, estado)
-        VALUES (?, ?, ?, ?, CURDATE(), ?, ?, 'Contabilizado')
-      `, [tenantId, idTipo, idPeriodo, `VTA-${result.insertId}`, concepto, precio_venta_total]);
+      const [insComp] = await connection.query(`
+        INSERT INTO contab_comprobantes (id_tenant, id_periodo, id_tipo_comp, numero, descripcion, estado)
+        VALUES (?, ?, ?, ?, ?, 'Contabilizado')
+      `, [tenantId, idPeriodo, idTipo, `VTA-${result.insertId}`, descripcionComp]);
 
       const idComp = insComp.insertId;
 
-      await getDb(req).query(`
-        INSERT INTO comprobantes_detalle (id_comprobante, id_cuenta, debito, credito, descripcion)
+      const [insDoc] = await connection.query(`
+        INSERT INTO contab_documentos (id_tenant, id_comprobante, id_tipo_doc, numero_doc, fecha, concepto, estado, tabla_origen, id_origen)
+        VALUES (?, ?, ?, ?, CURDATE(), ?, 'Contabilizado', 'vivero_salidas', ?)
+      `, [tenantId, idComp, idTipo, `VTA-${result.insertId}`, concepto, result.insertId]);
+      const idDoc = insDoc.insertId;
+
+      await connection.query(`
+        INSERT INTO contab_detalles (id_documento, id_cuenta, descripcion, valor_base, debito, credito)
         VALUES 
-        (?, ?, ?, 0, 'Ingreso Caja/Bancos Vivero'),
-        (?, ?, 0, ?, 'Ingreso por Venta Vivero')
-      `, [idComp, idCuentaCaja, precio_venta_total, idComp, idCuentaIngreso, precio_venta_total]);
+        (?, ?, 'Ingreso Caja/Bancos Vivero', 0, ?, 0),
+        (?, ?, 'Ingreso por Venta Vivero', 0, 0, ?)
+      `, [idDoc, idCuentaCaja, precio_venta_total, idDoc, idCuentaIngreso, precio_venta_total]);
     }
 
-    await getDb(req).query('COMMIT');
+    await connection.commit();
     res.json({ success: true, insertId: result.insertId });
   } catch (err) {
-    await getDb(req).query('ROLLBACK');
+    await connection.rollback();
     console.error(err);
     res.status(500).json({ error: 'Error en movimiento de vivero' });
+  } finally {
+    connection.release();
   }
 });
 
 // === 4. SEGUIMIENTO FITOSANITARIO (Vinculado a Labores) ===
 router.post('/seguimiento', async (req, res) => {
   const { tenantId, id_camada, fecha_revision, porcentaje_afectacion, tipo_plaga_enfermedad, accion_tomada, id_empleado_revisor } = req.body;
+  const connection = await getDb(req).getConnection();
   try {
-    await getDb(req).query('START TRANSACTION');
+    await connection.beginTransaction();
 
-    const [result] = await getDb(req).query(
+    const [result] = await connection.query(
       `INSERT INTO vivero_seguimiento_fitosanitario 
        (id_tenant, id_camada, fecha_revision, porcentaje_afectacion, tipo_plaga_enfermedad, accion_tomada, id_empleado_revisor) 
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -254,18 +280,20 @@ router.post('/seguimiento', async (req, res) => {
 
     // Create automatically a Labor for applying the "accion_tomada"
     if (accion_tomada) {
-      await getDb(req).query(`
+      await connection.query(`
         INSERT INTO labores_diarias (id_tenant, categoria, descripcion_labor, fecha_planificada, id_empleado, estado)
         VALUES (?, 'Semilleros', ?, CURDATE(), ?, 'Planificada')
       `, [tenantId, `Aplicar tratamiento: ${accion_tomada} (Enfermedad: ${tipo_plaga_enfermedad})`, id_empleado_revisor]);
     }
 
-    await getDb(req).query('COMMIT');
+    await connection.commit();
     res.json({ insertId: result.insertId });
   } catch (err) {
-    await getDb(req).query('ROLLBACK');
+    await connection.rollback();
     console.error(err);
     res.status(500).json({ error: 'Error registrando seguimiento' });
+  } finally {
+    connection.release();
   }
 });
 
@@ -298,7 +326,17 @@ router.get('/filtros', async (req, res) => {
       WHERE tipo IN ('Semilla', 'Planta') ${tenantId ? 'AND id_tenant = ?' : ''}
     `, tQ);
 
-    res.json({ fincas, viveros, plantas });
+    // Lotes del tenant
+    const [lotes] = await getDb(req).query(`
+      SELECT l.id_lote, l.codigo, l.nombre, f.nombre as finca_nombre 
+      FROM lotes l 
+      JOIN nucleos n ON l.id_nucleo = n.id_nucleo 
+      JOIN fincas f ON n.id_finca = f.id_finca 
+      ${tenantId ? 'WHERE f.id_tenant = ? AND l.activo = 1' : 'WHERE l.activo = 1'}
+      ORDER BY f.nombre, l.nombre
+    `, tQ);
+
+    res.json({ fincas, viveros, plantas, lotes });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error fetching vivero filtros' });
@@ -489,6 +527,73 @@ router.get('/dashboard', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error fetching vivero dashboard stats' });
+  }
+});
+// === 6. SOLICITUD A BODEGA ===
+router.get('/bodega/insumos', async (req, res) => {
+  const { tenantId } = req.query;
+  try {
+    const [insumos] = await getDb(req).query(`
+      SELECT i.id_insumo, i.nombre, i.unidad_medida, b.nombre AS bodega_nombre, e.cantidad
+      FROM insumos i
+      LEFT JOIN inv_existencias e ON i.id_insumo = e.id_insumo
+      LEFT JOIN bod_bodegas b ON e.id_bodega = b.id_bodega
+      WHERE i.id_tenant = ?
+      ORDER BY i.nombre
+    `, [tenantId]);
+
+    // Agrupar existencias por insumo
+    const insumosMap = {};
+    for (const row of insumos) {
+      if (!insumosMap[row.id_insumo]) {
+        insumosMap[row.id_insumo] = {
+          id_insumo: row.id_insumo,
+          nombre: row.nombre,
+          unidad_medida: row.unidad_medida,
+          stockTotal: 0,
+          bodegas: []
+        };
+      }
+      if (row.bodega_nombre && row.cantidad > 0) {
+        insumosMap[row.id_insumo].stockTotal += Number(row.cantidad);
+        insumosMap[row.id_insumo].bodegas.push({
+          bodega: row.bodega_nombre,
+          cantidad: row.cantidad
+        });
+      }
+    }
+
+    res.json(Object.values(insumosMap));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error fetching insumos' });
+  }
+});
+
+router.post('/bodega/pedido', async (req, res) => {
+  const { tenantId, id_insumo, cantidad, id_empleado_solicitante, observaciones } = req.body;
+  const connection = await getDb(req).getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [result] = await connection.query(`
+      INSERT INTO solicitudes_pedido (id_tenant, id_empleado_solicitante, area_solicitante, fecha_necesidad, estado, observaciones)
+      VALUES (?, ?, 'Vivero', CURDATE(), 'Borrador', ?)
+    `, [tenantId, id_empleado_solicitante, observaciones]);
+
+    await connection.query(`
+      INSERT INTO solicitudes_detalle (id_solicitud, id_insumo, cantidad_solicitada, observaciones)
+      VALUES (?, ?, ?, 'Generado desde Vivero')
+    `, [result.insertId, id_insumo, cantidad]);
+
+    await connection.commit();
+    res.json({ success: true, id_solicitud: result.insertId });
+  } catch (err) {
+    await connection.rollback();
+    console.error(err);
+    res.status(500).json({ error: 'Error creando pedido' });
+  } finally {
+    connection.release();
   }
 });
 

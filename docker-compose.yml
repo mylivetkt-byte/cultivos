@@ -3,10 +3,11 @@ services:
   db:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: sas_agricolas
-      MYSQL_USER: sas_user
-      MYSQL_PASSWORD: sas_pass
+      # Credenciales desde .env (con defaults solo para dev local)
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-sas_agricolas}
+      MYSQL_USER: ${MYSQL_USER:-sas_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-sas_pass}
     ports:
       - "3307:3306"
     volumes:
@@ -23,6 +24,9 @@ services:
       dockerfile: Dockerfile
     command: node server/index.js
     env_file: .env
+    environment:
+      # Dentro de la red de compose, el bot se alcanza por su nombre de servicio.
+      WHATSAPP_BOT_URL: http://bot:3004
     ports:
       - "3002:3002"
     depends_on:
@@ -30,6 +34,26 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
+    restart: unless-stopped
+
+  # Bot de WhatsApp aislado: se comunica con el API solo dentro de la red
+  # interna (no se expone a la máquina host: solo `expose`, sin `ports`).
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: node server/whatsapp-bot.js
+    env_file: .env
+    environment:
+      WHATSAPP_BOT_HOST: 0.0.0.0
+      WHATSAPP_BOT_URL: http://127.0.0.1:3004
+    expose:
+      - "3004"
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+      - auth_info_baileys:/app/auth_info_baileys
     restart: unless-stopped
 
   client:
@@ -48,3 +72,4 @@ services:
 
 volumes:
   db_data:
+  auth_info_baileys:

@@ -1,12 +1,9 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 import ContabilidadService from '../services/ContabilidadService.js';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 // GET /api/cartera/estado-cuenta/:id_tercero
 router.get('/estado-cuenta/:id_tercero', async (req, res) => {
@@ -174,8 +171,6 @@ router.post('/abono', async (req, res) => {
       `, [id_cartera]);
     }
 
-    await connection.commit();
-
     // Integración Contable Automática
     if (id_finca) {
       // Usamos un tipo de documento 'genérico' en la configuración (ej. id=99 para abonos, o podemos hacer que el frontend lo mande)
@@ -190,11 +185,12 @@ router.post('/abono', async (req, res) => {
         monto_total: monto,
         concepto: `Abono a ${tipo} de Tercero ID ${id_tercero} ref: ${referencia}`,
         fecha: fecha,
-        id_usuario: id_usuario
-      }).catch(err => {
-        console.error("Warning: Contabilidad falló, pero el abono se registró.", err.message);
+        id_usuario: id_usuario,
+        connection: connection
       });
     }
+
+    await connection.commit();
 
     res.json({ success: true, message: 'Abono registrado correctamente' });
   } catch (error) {
@@ -341,8 +337,6 @@ router.post('/prestamo', async (req, res) => {
       VALUES (?, ?, 'Vigente')
     `, [id_documento, monto]);
 
-    await connection.commit();
-
     // 3. Contabilización Automática (Egreso de Caja/Bancos, Ingreso a CxC Trabajadores)
     if (id_finca) {
       await ContabilidadService.generarComprobanteAutomatico({
@@ -353,11 +347,12 @@ router.post('/prestamo', async (req, res) => {
         monto_total: monto,
         concepto: concepto || `Desembolso Préstamo ${numero_documento}`,
         fecha: fecha,
-        id_usuario: id_usuario || 1
-      }).catch(err => {
-        console.error("Warning: Contabilidad falló, pero el préstamo se registró.", err.message);
+        id_usuario: id_usuario || 1,
+        connection: connection
       });
     }
+
+    await connection.commit();
 
     res.json({ success: true, message: 'Préstamo registrado exitosamente', prestamo: { id_documento, numero_documento, monto, cuotas, concepto, fecha } });
   } catch (error) {

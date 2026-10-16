@@ -91,6 +91,7 @@ export default function TallerMasterDashboard({ tenantId }) {
                   dataSource={maquinas}
                   rowKey="id_maq_agro"
                   loading={loading}
+                  pagination={{ pageSize: 20 }}
                   columns={[
                     { title: 'Placa/ID', dataIndex: 'placa', render: t => <b>{t || 'N/A'}</b> },
                     { title: 'Tipo', dataIndex: 'tipo' },
@@ -117,6 +118,7 @@ export default function TallerMasterDashboard({ tenantId }) {
                   dataSource={mecanicos}
                   rowKey="id_empleado"
                   loading={loading}
+                  pagination={{ pageSize: 20 }}
                   columns={[
                     { title: 'Mecánico / Operario', render: (_, r) => <b>{r.nombres} {r.apellidos}</b> },
                     { title: 'OTs Atendidas', dataIndex: 'ots_atendidas', align: 'center', render: c => <Tag color="blue">{c} OTs</Tag> },
@@ -143,6 +145,7 @@ export default function TallerMasterDashboard({ tenantId }) {
                   dataSource={ots}
                   rowKey="id_orden_trabajo"
                   loading={loading}
+                  pagination={{ pageSize: 20 }}
                   columns={[
                     { title: 'OT #', dataIndex: 'numero_orden', render: n => <b>{n}</b> },
                     { title: 'Máquina', render: (_, r) => `[${r.placa}] ${r.maquina_nombre}` },

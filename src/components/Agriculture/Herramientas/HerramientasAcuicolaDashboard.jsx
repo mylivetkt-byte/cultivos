@@ -22,7 +22,7 @@ function HerramientasAcuicolaDashboard({ fincaId: globalFincaId }) {
   return (
     <div className="p-4" style={{ minHeight: '100vh', background: '#f8fafc', color: '#1e293b' }}>
       {/* Header & Global Filters */}
-      <div style={{ background: '#fff', padding: '20px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
+      <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #e2e8f0' }}>
         <h2 style={{ color: '#0ea5e9', margin: '0 0 15px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
           🛠️ Inventario de Herramientas Acuícolas
         </h2>
@@ -30,7 +30,7 @@ function HerramientasAcuicolaDashboard({ fincaId: globalFincaId }) {
         <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
           <div style={{ flex: '1', maxWidth: '300px' }}>
             <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b' }}>Finca Operativa</label>
-            <select value={fincaId} onChange={e => setFincaId(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', color: '#1e293b' }}>
+            <select value={fincaId} onChange={e => setFincaId(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'var(--bg-card)', color: '#1e293b' }}>
               <option value="">-- Todas las Fincas --</option>
               {fincas.map(f => <option key={f.id_finca} value={f.id_finca}>{f.nombre}</option>)}
             </select>
@@ -58,7 +58,7 @@ function HerramientasAcuicolaDashboard({ fincaId: globalFincaId }) {
       </div>
 
       {/* Active Tab Content */}
-      <div style={{ background: '#fff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', minHeight: '500px' }}>
+      <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', minHeight: '500px' }}>
         {activeTab === 'inventario' && <TabInventario fincaId={fincaId} fincas={fincas} />}
         {activeTab === 'movimientos' && <TabMovimientos fincaId={fincaId} fincas={fincas} />}
         {activeTab === 'pedidos' && <TabPedidos fincaId={fincaId} fincas={fincas} />}

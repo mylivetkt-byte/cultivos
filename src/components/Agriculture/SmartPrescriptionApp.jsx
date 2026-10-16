@@ -172,7 +172,7 @@ const SmartPrescriptionApp = () => {
       });
       const res = await response.json();
       if (res.data) {
-        alert(isViol ? 'Alerta enviada al Jefe de Producción de Violes exitosamente.' : 'Alerta de abastecimiento enviada a Compras exitosamente.');
+        alert(isViol ? 'Alerta enviada al Jefe de Producción de Bioles exitosamente.' : 'Alerta de abastecimiento enviada a Compras exitosamente.');
       } else {
         alert(res.error || 'Error enviando mensaje');
       }

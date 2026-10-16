@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
+import { customStyles } from '../PremiumSelect';
 
 function ProgramadorPrenez() {
   const [data, setData] = useState({

@@ -39,29 +39,29 @@ export default function RegisterPage({ onBack }) {
     }
   };
 
-  const inputStyle = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' };
-  const labelStyle = { display: 'block', marginBottom: '4px', fontWeight: '600', color: '#333', fontSize: '13px' };
+  const inputStyle = { width: '100%', padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' };
+  const labelStyle = { display: 'block', marginBottom: '4px', fontWeight: '600', color: 'var(--text-primary)', fontSize: '13px' };
   const groupStyle = { marginBottom: '14px' };
 
   return (
     <div className="login-container">
-      <div style={{ background: '#fff', padding: '40px', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div style={{ background: 'var(--bg-card)', padding: '40px', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <span style={{ fontSize: '40px' }}>🌿</span>
           <h1 style={{ margin: '8px 0 0', color: '#1a5f2a', fontSize: '22px' }}>Crear Mi Empresa</h1>
-          <p style={{ color: '#666', fontSize: '13px', margin: '4px 0 0' }}>Registra tu empresa para comenzar a usar SAS Agrícolas</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '4px 0 0' }}>Registra tu empresa para comenzar a usar AgroPaccioli</p>
         </div>
 
         {success ? (
           <div style={{ textAlign: 'center', padding: '20px' }}>
             <div style={{ fontSize: '48px', marginBottom: '12px' }}>✅</div>
             <h3 style={{ color: '#388e3c' }}>Empresa Creada</h3>
-            <p style={{ color: '#666' }}>Tu empresa ha sido registrada exitosamente. Un administrador del sistema la activará pronto.</p>
+            <p style={{ color: 'var(--text-secondary)' }}>Tu empresa ha sido registrada exitosamente. Un administrador del sistema la activará pronto.</p>
             <button onClick={onBack} style={{ marginTop: '16px', padding: '10px 24px', border: 'none', borderRadius: '6px', background: '#1976d2', color: '#fff', cursor: 'pointer' }}>Volver al Login</button>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <h3 style={{ marginBottom: '12px', color: '#333' }}>Datos de la Empresa</h3>
+            <h3 style={{ marginBottom: '12px', color: 'var(--text-primary)' }}>Datos de la Empresa</h3>
             <div style={groupStyle}>
               <label style={labelStyle}>Razón Social *</label>
               <input name="razon_social" value={form.razon_social} onChange={handleChange} required style={inputStyle} placeholder="Ej: Mi Empresa S.A.S." />
@@ -94,8 +94,8 @@ export default function RegisterPage({ onBack }) {
               </div>
             </div>
 
-            <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid #eee' }} />
-            <h3 style={{ marginBottom: '12px', color: '#333' }}>Tu Cuenta de Administrador</h3>
+            <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid var(--border-color)' }} />
+            <h3 style={{ marginBottom: '12px', color: 'var(--text-primary)' }}>Tu Cuenta de Administrador</h3>
             <div style={groupStyle}>
               <label style={labelStyle}>Username *</label>
               <input name="admin_username" value={form.admin_username} onChange={handleChange} required style={inputStyle} placeholder="admin" />
@@ -115,7 +115,7 @@ export default function RegisterPage({ onBack }) {
               {loading ? 'Creando...' : 'Crear Empresa'}
             </button>
 
-            <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13px', color: '#666' }}>
+            <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>
               ¿Ya tienes cuenta? <button type="button" onClick={onBack} style={{ border: 'none', background: 'none', color: '#1976d2', cursor: 'pointer', textDecoration: 'underline' }}>Iniciar Sesión</button>
             </p>
           </form>

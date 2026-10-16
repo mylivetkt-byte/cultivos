@@ -1,11 +1,8 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 // --- 1. CONTROL DE CONSECUTIVOS ---
 router.get('/control-consecutivos', async (req, res) => {
@@ -175,8 +172,7 @@ router.get('/conciliacion/libros', async (req, res) => {
         doc.numero_doc,
         doc.concepto
       FROM contab_detalles cd
-      JOIN contab_comprobantes comp ON cd.id_comprobante = comp.id_comprobante
-      JOIN contab_documentos doc ON doc.id_comprobante = comp.id_comprobante
+      JOIN contab_documentos doc ON cd.id_documento = doc.id_documento
       JOIN plan_contable pc ON cd.id_cuenta = pc.id_cuenta
       WHERE doc.id_tenant = ? AND (pc.codigo LIKE '1110%' OR pc.codigo LIKE '1120%')
     `;

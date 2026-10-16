@@ -1,12 +1,10 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 import { sendTextMessage } from '../services/whatsappService.js';
+import { contabilizarAplicacionCultivo } from '../services/contabilidadSync.js';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 // ============================================
 // BIBLIOTECA FITOSANITARIA (ICA)
@@ -219,20 +217,25 @@ router.post('/complete/:id', async (req, res) => {
 
     // 2. Update real quantities applied & Injection
     for (let ia of insumos_aplicados) {
+      // OBTENER EL COSTO UNITARIO PROMEDIO DEL KARDEX
+      const [stockRows] = await conn.query(`SELECT costo_promedio FROM inv_existencias WHERE id_bodega = 1 AND id_insumo = ? LIMIT 1`, [ia.id_insumo]);
+      const costoUnitario = stockRows.length > 0 ? parseFloat(stockRows[0].costo_promedio || 0) : 0;
+      const costoReal = ia.cantidad_real_aplicada * costoUnitario;
+      
       await conn.query(`
         UPDATE app_programacion_insumos
         SET cantidad_real_aplicada = ?, costo_total = ?
         WHERE id_programacion = ? AND id_insumo = ?
-      `, [ia.cantidad_real_aplicada, ia.costo_total || 0, id_programacion, ia.id_insumo]);
+      `, [ia.cantidad_real_aplicada, costoReal, id_programacion, ia.id_insumo]);
 
-      costoTotalAplicacion += parseFloat(ia.costo_total || 0);
+      costoTotalAplicacion += costoReal;
 
       // INVENTORY DEDUCTION (KARDEX) - Descuento del Insumo Puro o Mezcla
       await conn.query(`
         INSERT INTO inv_kardex (id_tenant, tipo_movimiento, id_documento, numero_documento, fecha_movimiento, 
           id_bodega, id_insumo, cantidad, costo_unitario, costo_total, observaciones)
-        VALUES (1, 'Egreso', 3, ?, NOW(), 1, ?, ?, 0, ?, ?)
-      `, [`PROG-${id_programacion}`, ia.id_insumo, ia.cantidad_real_aplicada, ia.costo_total || 0, `Aplicación en Lote`]);
+        VALUES (1, 'Egreso', 3, ?, NOW(), 1, ?, ?, ?, ?, ?)
+      `, [`PROG-${id_programacion}`, ia.id_insumo, ia.cantidad_real_aplicada, costoUnitario, costoReal, `Aplicación en Lote`]);
     }
 
     // 3. Register Control Envases (BPA)
@@ -258,10 +261,13 @@ router.post('/complete/:id', async (req, res) => {
         VALUES (1, ?, ?, 'Insumos / Aplicaciones', ?, ?, CURDATE(), 'Aprobado')
       `, [finca, lote, `Inyección automática: Aplicación PROG-${id_programacion}`, costoTotalAplicacion]);
       
-      await conn.query(`
-        INSERT INTO contab_comprobantes (id_tenant, id_finca, tipo_comprobante, numero_comprobante, fecha, concepto, monto_total, estado)
-        VALUES (1, ?, 'Egreso', ?, CURDATE(), ?, ?, 'Aprobado')
-      `, [finca, `APP-${id_programacion}`, `Costo de aplicación insumos lote ${lote}`, costoTotalAplicacion]);
+      // Llamada al Motor Contable por Partida Doble
+      try {
+        await contabilizarAplicacionCultivo(conn, 1, lote, costoTotalAplicacion, `PROG-${id_programacion}`);
+      } catch (contabErr) {
+        console.error('Error en Motor Contable (Partida Doble):', contabErr.message);
+        throw new Error(`Error contabilizando aplicación: ${contabErr.message}`);
+      }
 
       // Notificación de Cierre al Agrónomo
       const msgAgronomo = `✅ Aplicación PROG-${id_programacion} completada en Lote ID ${lote}. Operario: ${agronomo}. Costo Inyectado: $${costoTotalAplicacion}. Auditoría guardada.`;
@@ -277,6 +283,162 @@ router.post('/complete/:id', async (req, res) => {
   } finally {
     conn.release();
   }
+});
+
+// --- MEZCLAS TRANSACCIONALES ---
+router.post('/mezclas_transaccionales', async (req, res) => {
+  const { id_tenant, id_receta, lote_id, id_bodega, cantidad_litros, responsable_mezcla, producto } = req.body;
+  
+  const conn = await getDb(req).getConnection();
+  try {
+    await conn.beginTransaction();
+    
+    // 1. Obtener detalles de la receta
+    const [detalles] = await conn.query('SELECT id_insumo, dosis_recomendada FROM app_recetas_detalle WHERE id_receta = ?', [id_receta]);
+    
+    // 2. Validar stock e inventario
+    let costoTotal = 0;
+    const consumos = [];
+    
+    for(let d of detalles) {
+      // Suponemos que la dosis es por cada 200 Litros
+      const cantidadNecesaria = (parseFloat(d.dosis_recomendada) || 0) * (parseFloat(cantidad_litros) / 200);
+      
+      const [stock] = await conn.query('SELECT cantidad, costo_promedio, nombre_insumo FROM inv_existencias e JOIN inv_insumos i ON e.id_insumo=i.id_insumo WHERE e.id_bodega = ? AND e.id_insumo = ?', [id_bodega, d.id_insumo]);
+      
+      if(stock.length === 0 || parseFloat(stock[0].cantidad) < cantidadNecesaria) {
+        throw new Error(`Stock insuficiente para el insumo ${stock.length > 0 ? stock[0].nombre_insumo : 'ID '+d.id_insumo} en la bodega seleccionada. Se requieren ${cantidadNecesaria.toFixed(2)} pero hay ${stock.length > 0 ? stock[0].cantidad : 0}.`);
+      }
+      
+      const costoC = cantidadNecesaria * parseFloat(stock[0].costo_promedio || 0);
+      costoTotal += costoC;
+      
+      consumos.push({
+        id_insumo: d.id_insumo,
+        cantidad: cantidadNecesaria,
+        costoUnitario: parseFloat(stock[0].costo_promedio || 0),
+        costoTotal: costoC
+      });
+    }
+    
+    // 3. Crear Preparación de Mezcla
+    const [result] = await conn.query(
+      `INSERT INTO app_preparaciones_mezcla (id_tenant, id_receta, lote_id, producto, cantidad_litros, costo, responsable_mezcla, fecha_preparacion) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [id_tenant || 1, id_receta, lote_id, producto, cantidad_litros, costoTotal, responsable_mezcla]
+    );
+    const id_preparacion = result.insertId;
+    
+    // 4. Kardex y Asientos
+    for(let c of consumos) {
+      // Descontar inventario
+      await conn.query('UPDATE inv_existencias SET cantidad = cantidad - ? WHERE id_bodega = ? AND id_insumo = ?', [c.cantidad, id_bodega, c.id_insumo]);
+      
+      // Kardex
+      await conn.query(
+        `INSERT INTO inv_kardex (id_tenant, tipo_movimiento, id_documento, numero_documento, fecha_movimiento, id_bodega, id_insumo, cantidad, costo_unitario, costo_total, observaciones)
+           VALUES (?, 'Egreso', 5, ?, NOW(), ?, ?, ?, ?, ?, ?)`,
+        [id_tenant || 1, `MEZ-${id_preparacion}`, id_bodega, c.id_insumo, c.cantidad, c.costoUnitario, c.costoTotal, `Preparación Mezcla MEZ-${id_preparacion}`]
+      );
+    }
+    
+    await conn.commit();
+    res.json({ success: true, id_preparacion, costo: costoTotal });
+  } catch(e) {
+    await conn.rollback();
+    res.status(400).json({ error: e.message });
+  } finally {
+    conn.release();
+  }
+});
+
+router.delete('/mezclas_transaccionales/:id', async (req, res) => {
+  const id = req.params.id;
+  const conn = await getDb(req).getConnection();
+  
+  try {
+    await conn.beginTransaction();
+    
+    // Buscar consumos en kardex
+    const [kardex] = await conn.query('SELECT id_bodega, id_insumo, cantidad FROM inv_kardex WHERE numero_documento = ?', [`MEZ-${id}`]);
+    
+    for(let k of kardex) {
+      // Devolver inventario
+      await conn.query('UPDATE inv_existencias SET cantidad = cantidad + ? WHERE id_bodega = ? AND id_insumo = ?', [k.cantidad, k.id_bodega, k.id_insumo]);
+    }
+    
+    // Borrar Kardex
+    await conn.query('DELETE FROM inv_kardex WHERE numero_documento = ?', [`MEZ-${id}`]);
+    
+    // Borrar Mezcla
+    await conn.query('DELETE FROM app_preparaciones_mezcla WHERE id_preparacion = ?', [id]);
+    
+    await conn.commit();
+    res.json({ success: true });
+  } catch(e) {
+    await conn.rollback();
+    res.status(400).json({ error: e.message });
+  } finally {
+    conn.release();
+  }
+});
+
+router.put('/mezclas_transaccionales/:id', async (req, res) => {
+    const id_preparacion = req.params.id;
+    const { id_tenant, id_receta, lote_id, id_bodega, cantidad_litros, responsable_mezcla, producto } = req.body;
+    
+    const conn = await getDb(req).getConnection();
+    try {
+      await conn.beginTransaction();
+      
+      // 1. Revertir Kardex e inventario
+      const [kardex] = await conn.query('SELECT id_bodega, id_insumo, cantidad FROM inv_kardex WHERE numero_documento = ?', [`MEZ-${id_preparacion}`]);
+      for(let k of kardex) {
+        await conn.query('UPDATE inv_existencias SET cantidad = cantidad + ? WHERE id_bodega = ? AND id_insumo = ?', [k.cantidad, k.id_bodega, k.id_insumo]);
+      }
+      await conn.query('DELETE FROM inv_kardex WHERE numero_documento = ?', [`MEZ-${id_preparacion}`]);
+      
+      // 2. Calcular nuevos insumos
+      const [detalles] = await conn.query('SELECT id_insumo, dosis_recomendada FROM app_recetas_detalle WHERE id_receta = ?', [id_receta]);
+      let costoTotal = 0;
+      const consumos = [];
+      
+      for(let d of detalles) {
+        const cantidadNecesaria = (parseFloat(d.dosis_recomendada) || 0) * (parseFloat(cantidad_litros) / 200);
+        const [stock] = await conn.query('SELECT cantidad, costo_promedio, nombre_insumo FROM inv_existencias e JOIN inv_insumos i ON e.id_insumo=i.id_insumo WHERE e.id_bodega = ? AND e.id_insumo = ?', [id_bodega, d.id_insumo]);
+        
+        if(stock.length === 0 || parseFloat(stock[0].cantidad) < cantidadNecesaria) {
+          throw new Error(`Stock insuficiente para ${stock.length > 0 ? stock[0].nombre_insumo : 'ID '+d.id_insumo}. Se requieren ${cantidadNecesaria.toFixed(2)} pero hay ${stock.length > 0 ? stock[0].cantidad : 0}.`);
+        }
+        const costoC = cantidadNecesaria * parseFloat(stock[0].costo_promedio || 0);
+        costoTotal += costoC;
+        consumos.push({ id_insumo: d.id_insumo, cantidad: cantidadNecesaria, costoUnitario: parseFloat(stock[0].costo_promedio || 0), costoTotal: costoC });
+      }
+      
+      // 3. Update Mezcla
+      await conn.query(
+        `UPDATE app_preparaciones_mezcla SET id_receta=?, lote_id=?, producto=?, cantidad_litros=?, costo=?, responsable_mezcla=? WHERE id_preparacion=?`,
+        [id_receta, lote_id, producto, cantidad_litros, costoTotal, responsable_mezcla, id_preparacion]
+      );
+      
+      // 4. Nuevos asientos Kardex
+      for(let c of consumos) {
+        await conn.query('UPDATE inv_existencias SET cantidad = cantidad - ? WHERE id_bodega = ? AND id_insumo = ?', [c.cantidad, id_bodega, c.id_insumo]);
+        await conn.query(
+          `INSERT INTO inv_kardex (id_tenant, tipo_movimiento, id_documento, numero_documento, fecha_movimiento, id_bodega, id_insumo, cantidad, costo_unitario, costo_total, observaciones)
+             VALUES (?, 'Egreso', 5, ?, NOW(), ?, ?, ?, ?, ?, ?)`,
+          [id_tenant || 1, `MEZ-${id_preparacion}`, id_bodega, c.id_insumo, c.cantidad, c.costoUnitario, c.costoTotal, `Actualización Mezcla MEZ-${id_preparacion}`]
+        );
+      }
+      
+      await conn.commit();
+      res.json({ success: true, costo: costoTotal });
+    } catch(e) {
+      await conn.rollback();
+      res.status(400).json({ error: e.message });
+    } finally {
+      conn.release();
+    }
 });
 
 export default router;

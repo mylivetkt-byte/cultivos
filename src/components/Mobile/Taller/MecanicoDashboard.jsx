@@ -6,7 +6,7 @@ export default function MecanicoDashboard({ tenantId, activeTab, setActiveTab })
 
   if (activeTab === 'mis_ots') {
     return (
-      <div style={{height: '100%', overflow: 'auto', background: '#fff'}}>
+      <div style={{height: '100%', overflow: 'auto', background: 'var(--bg-card)'}}>
         {/* We can reuse TallerOrdenes and pass a prop to hide things or just use it as is for the demo */}
         <TallerOrdenes onBack={() => setActiveTab('home')} tenantId={tenantId} isMecanico={true} />
       </div>

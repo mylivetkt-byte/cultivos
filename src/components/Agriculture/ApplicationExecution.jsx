@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import PremiumSelect from '../PremiumSelect';
 import { authFetch } from '../../utils/api.js';
+import { Tooltip } from 'antd';
+import { InfoCircleOutlined } from '@ant-design/icons';
 import '../dashboard.css';
+
+const HelpTooltip = ({ text }) => (
+  <Tooltip title={text} color="#333" overlayInnerStyle={{ fontSize: '14px', borderRadius: '8px', border: '1px solid #60A5FA' }}>
+    <InfoCircleOutlined style={{ marginLeft: '8px', color: '#60A5FA', cursor: 'help' }} />
+  </Tooltip>
+);
 
 const ApplicationExecution = () => {
   const [schedules, setSchedules] = useState([]);
@@ -255,11 +263,11 @@ const ApplicationExecution = () => {
             <h4 style={{ color: '#F59E0B', borderBottom: '1px solid var(--border)', paddingBottom: '5px' }}>Etapa A: Salida de Bodega y Preparación de Mezcla</h4>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
               <div>
-                <label>Responsable de Entrega (Bodeguero)</label>
+                <label>Responsable de Entrega (Bodeguero) <HelpTooltip text="¿Quién le entregó los tarros o pimpinas en la bodega?" /></label>
                 <input type="text" className="form-control" required placeholder="Quién entregó el puro" value={responsableBodega} onChange={e => setResponsableBodega(e.target.value)} />
               </div>
               <div>
-                <label>Responsable de Mezcla</label>
+                <label>Responsable de Mezcla <HelpTooltip text="¿Quién hizo la mezcla o echó el agua a la bomba?" /></label>
                 <input type="text" className="form-control" required placeholder="Quién preparó" value={responsableMezcla} onChange={e => setResponsableMezcla(e.target.value)} />
               </div>
             </div>
@@ -310,15 +318,15 @@ const ApplicationExecution = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '15px', background: 'rgba(16,185,129,0.05)', padding: '15px', borderRadius: '8px' }}>
               <div>
-                <label>Volumen Total de Mezcla Preparada (Lts)</label>
+                <label>Volumen Total de Mezcla Preparada (Lts) <HelpTooltip text="¿Cuántos litros de agua con veneno o abono prepararon en total?" /></label>
                 <input type="number" step="0.1" required className="form-control" value={mezclaTotalRecibida} onChange={e => setMezclaTotalRecibida(parseFloat(e.target.value) || 0)} />
               </div>
               <div>
-                <label>Volumen Total Aplicado en Lote (Lts)</label>
+                <label>Volumen Total Aplicado en Lote (Lts) <HelpTooltip text="De todo lo que prepararon, ¿cuánto le echaron realmente al cultivo?" /></label>
                 <input type="number" step="0.1" required className="form-control" value={mezclaTotalAplicada} onChange={e => setMezclaTotalAplicada(parseFloat(e.target.value) || 0)} />
               </div>
               <div>
-                <label>Sobrante de Mezcla (Inventario)</label>
+                <label>Sobrante de Mezcla (Inventario) <HelpTooltip text="Esto fue lo que sobró en la bomba o tanque y se guardará." /></label>
                 <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: (mezclaTotalRecibida - mezclaTotalAplicada) > 0 ? '#F59E0B' : '#10B981' }}>
                   {(mezclaTotalRecibida - mezclaTotalAplicada).toFixed(1)} Lts
                 </div>
@@ -334,7 +342,7 @@ const ApplicationExecution = () => {
                     <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', alignItems: 'center', marginBottom: '10px' }}>
                       <strong>{e.insumo_nombre}</strong>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.85em' }}>Envases Vacíos Generados</label>
+                        <label style={{ display: 'block', fontSize: '0.85em' }}>Envases Vacíos Generados <HelpTooltip text="¿Cuántos tarros vacíos de este veneno le quedaron?" /></label>
                         <input 
                           type="number" style={{ width: '80px', padding: '4px' }}
                           value={e.cantidad_envases_vacios}
@@ -349,12 +357,12 @@ const ApplicationExecution = () => {
                         <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.85em' }}>
                           <input type="checkbox" checked={e.lavado_triple_realizado} onChange={ev => {
                             const newE = [...envases]; newE[idx].lavado_triple_realizado = ev.target.checked; setEnvases(newE);
-                          }}/> Triple Lavado + Perforado
+                          }}/> Triple Lavado + Perforado <HelpTooltip text="¿Lavó el tarro 3 veces con agua y lo chuzó para que no lo vuelvan a usar?" />
                         </label>
                         <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.85em' }}>
                           <input type="checkbox" checked={e.entregado_centro_acopio} onChange={ev => {
                             const newE = [...envases]; newE[idx].entregado_centro_acopio = ev.target.checked; setEnvases(newE);
-                          }}/> Entregado a Acopio
+                          }}/> Entregado a Acopio <HelpTooltip text="¿Entregó los tarros vacíos en la bodega de reciclaje?" />
                         </label>
                       </div>
                     </div>
@@ -365,7 +373,7 @@ const ApplicationExecution = () => {
 
             <h4 style={{ color: '#3B82F6', borderBottom: '1px solid var(--border)', paddingBottom: '5px', marginTop: '30px' }}>Bitácora de Equipos (Mantenimiento)</h4>
             <div className="form-group full-width">
-              <label>Novedades de la Máquina / Tractor / Dron durante la labor:</label>
+              <label>Novedades de la Máquina / Tractor / Dron durante la labor: <HelpTooltip text="¿Se le dañó alguna boquilla, manguera o notó algo raro en la máquina?" /></label>
               <textarea 
                 rows="3" 
                 placeholder="Ej. La bomba presentó fugas, limpieza de boquillas realizada..."

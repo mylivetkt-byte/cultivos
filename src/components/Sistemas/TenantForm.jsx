@@ -2,6 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { fetchApi, API_BASE } from '../../utils/api';
 import { calcularDV } from '../../utils/dian';
 
+// Simple toast notification function since we don't have a global one imported
+const showToast = (msg) => {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  Object.assign(t.style, {
+    position: 'fixed', bottom: '20px', right: '20px', background: '#4caf50',
+    color: 'white', padding: '12px 24px', borderRadius: '4px', zIndex: 9999,
+    boxShadow: '0 2px 5px rgba(0,0,0,0.2)', transition: 'opacity 0.3s'
+  });
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+};
+
 export default function TenantForm({ onBack, onSaved, editTenant = null, isEmbedded = false }) {
   const [form, setForm] = useState({
     razon_social: editTenant?.razon_social || '',
@@ -35,6 +48,40 @@ export default function TenantForm({ onBack, onSaved, editTenant = null, isEmbed
   const [loading, setLoading] = useState(false);
   const [departamentos, setDepartamentos] = useState([]);
   const [municipios, setMunicipios] = useState([]);
+
+  useEffect(() => {
+    if (editTenant) {
+      setForm({
+        razon_social: editTenant.razon_social || '',
+        nombre_comercial: editTenant.nombre_comercial || '',
+        tipo_documento: editTenant.tipo_documento || 'NIT',
+        nit: editTenant.nit || '',
+        dv: editTenant.dv || '',
+        tipo_contribuyente: editTenant.tipo_contribuyente || 'Persona Jurídica',
+        regimen_tributario: editTenant.regimen_tributario || '',
+        responsabilidades_fiscales: editTenant.responsabilidades_fiscales || '',
+        codigo_ciiu: editTenant.codigo_ciiu || '',
+        pais: editTenant.pais || 'Colombia',
+        departamento_fiscal: editTenant.departamento_fiscal || '',
+        municipio_fiscal: editTenant.municipio_fiscal || '',
+        direccion_fiscal: editTenant.direccion_fiscal || '',
+        telefono_contacto: editTenant.telefono_contacto || '',
+        correo_facturacion: editTenant.correo_facturacion || '',
+        moneda_local: editTenant.moneda_local || 'COP',
+        huso_horario: editTenant.huso_horario || 'America/Bogota',
+        plan_suscripcion: editTenant.plan_suscripcion || 'Basic',
+        limite_hectareas: editTenant.limite_hectareas || 50,
+        limite_usuarios: editTenant.limite_usuarios || 3,
+        admin_username: '',
+        admin_email: '',
+        admin_password: '',
+        logo_path: editTenant.logo_path || '',
+      });
+      if (editTenant.logo_path) {
+        setLogoPreview(editTenant.logo_path.startsWith('http') ? editTenant.logo_path : `${API_BASE.replace('/api', '')}${editTenant.logo_path.startsWith('/') ? '' : '/'}${editTenant.logo_path}`);
+      }
+    }
+  }, [editTenant]);
 
   useEffect(() => {
     fetchApi('/municipios/departamentos')
@@ -93,6 +140,7 @@ export default function TenantForm({ onBack, onSaved, editTenant = null, isEmbed
         });
       }
 
+      showToast('Empresa guardada exitosamente');
       onSaved?.();
     } catch (err) {
       setError(err.message);
@@ -101,8 +149,8 @@ export default function TenantForm({ onBack, onSaved, editTenant = null, isEmbed
     }
   };
 
-  const inputStyle = { width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px' };
-  const labelStyle = { display: 'block', marginBottom: '4px', fontWeight: '600', color: '#333', fontSize: '13px' };
+  const inputStyle = { width: '100%', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '14px', background: 'var(--bg)', color: 'var(--text)' };
+  const labelStyle = { display: 'block', marginBottom: '4px', fontWeight: '600', color: 'var(--text-primary)', fontSize: '13px' };
   const groupStyle = { marginBottom: '16px' };
 
   const handleLogoChange = (e) => {
@@ -129,7 +177,7 @@ export default function TenantForm({ onBack, onSaved, editTenant = null, isEmbed
       {error && <div style={{ color: '#d32f2f', background: '#ffebee', padding: '10px', borderRadius: '6px', marginBottom: '15px' }}>{error}</div>}
 
       <form onSubmit={handleSubmit}>
-        <h3 style={{ color: '#2c3e50', borderBottom: '2px solid #eee', paddingBottom: '8px', marginBottom: '16px' }}>Información General</h3>
+        <h3 style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '16px' }}>Información General</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div style={groupStyle}>
             <label style={labelStyle}>Razón Social *</label>
@@ -173,7 +221,7 @@ export default function TenantForm({ onBack, onSaved, editTenant = null, isEmbed
             <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
               <input type="file" accept="image/*" onChange={handleLogoChange} style={{ ...inputStyle, flex: 1, padding: '4px' }} />
               {logoPreview && (
-                <div style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd', background: '#f5f5f5' }}>
+                <div style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)', background: 'var(--bg-main)' }}>
                   <img src={logoPreview} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                 </div>
               )}
@@ -181,7 +229,7 @@ export default function TenantForm({ onBack, onSaved, editTenant = null, isEmbed
           </div>
         </div>
 
-        <h3 style={{ color: '#2c3e50', borderBottom: '2px solid #eee', paddingBottom: '8px', marginTop: '24px', marginBottom: '16px' }}>Datos Tributarios (DIAN)</h3>
+        <h3 style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginTop: '24px', marginBottom: '16px' }}>Datos Tributarios (DIAN)</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div style={groupStyle}>
             <label style={labelStyle}>Tipo de Documento</label>
@@ -235,7 +283,7 @@ export default function TenantForm({ onBack, onSaved, editTenant = null, isEmbed
           </div>
         </div>
 
-        <h3 style={{ color: '#2c3e50', borderBottom: '2px solid #eee', paddingBottom: '8px', marginTop: '24px', marginBottom: '16px' }}>Ubicación y Contacto Fiscal</h3>
+        <h3 style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginTop: '24px', marginBottom: '16px' }}>Ubicación y Contacto Fiscal</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div style={{ ...groupStyle, gridColumn: '1 / -1' }}>
             <label style={labelStyle}>Dirección Fiscal</label>
@@ -267,7 +315,7 @@ export default function TenantForm({ onBack, onSaved, editTenant = null, isEmbed
 
         {!editTenant && (
           <>
-            <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid #eee' }} />
+            <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid var(--border-color)' }} />
             <h3 style={{ marginBottom: '16px' }}>Datos del Administrador</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div style={groupStyle}>
@@ -287,7 +335,7 @@ export default function TenantForm({ onBack, onSaved, editTenant = null, isEmbed
         )}
 
         <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
-          <button type="button" onClick={onBack} style={{ padding: '10px 20px', border: '1px solid #ddd', borderRadius: '6px', background: '#fff', cursor: 'pointer' }}>Cancelar</button>
+          <button type="button" onClick={onBack} style={{ padding: '10px 20px', border: '1px solid var(--border-color)', borderRadius: '6px', background: 'var(--bg-card)', cursor: 'pointer' }}>Cancelar</button>
           <button type="submit" disabled={loading} style={{ padding: '10px 20px', border: 'none', borderRadius: '6px', background: '#1976d2', color: '#fff', cursor: 'pointer' }}>
             {loading ? 'Guardando...' : 'Guardar'}
           </button>

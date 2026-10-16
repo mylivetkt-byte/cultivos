@@ -1,11 +1,8 @@
 import { Router } from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 // GET /api/tables — list all tables with row counts
 router.get('/', async (req, res) => {
@@ -24,7 +21,142 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/tables/modules — tables organized by module/prefix groups
+// GET /api/tables/finca & /api/tables/fincas — get fincas table data with tenant filtering
+const getFincasHandler = async (req, res) => {
+  try {
+    const id_tenant = req.query.tenantId || req.user?.id_tenant || 1;
+    const [rows] = await pool.query(`
+      SELECT id_finca as id, id_finca, nombre, codigo, 
+             departamento, municipio, vereda,
+             hectareas_totales, id_tenant, activo
+      FROM fincas
+      WHERE (id_tenant = ? OR ? IS NULL) AND activo = 1
+      ORDER BY nombre ASC
+    `, [id_tenant, id_tenant]);
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('Error fetching fincas:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+router.get('/finca', getFincasHandler);
+router.get('/fincas', getFincasHandler);
+
+// GET /api/tables/lotes — get lotes table data with tenant/finca filtering
+router.get('/lotes', async (req, res) => {
+  try {
+    const id_tenant = req.query.tenantId || req.user?.id_tenant || 1;
+    const id_finca = req.query.fincaId || req.query.id_finca;
+    let sql = `
+      SELECT l.id_lote as id, l.id_lote, l.nombre, l.codigo, l.id_nucleo,
+             n.id_finca, f.nombre as finca_nombre
+      FROM lotes l
+      LEFT JOIN nucleos n ON l.id_nucleo = n.id_nucleo
+      LEFT JOIN fincas f ON n.id_finca = f.id_finca
+      WHERE (f.id_tenant = ? OR f.id_tenant IS NULL) AND l.activo = 1
+    `;
+    const params = [id_tenant];
+    if (id_finca) {
+      sql += ' AND n.id_finca = ?';
+      params.push(id_finca);
+    }
+    sql += ' ORDER BY l.nombre ASC';
+    const [rows] = await pool.query(sql, params);
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('Error fetching lotes:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/tables/viveros — get viveros table data with tenant/finca filtering
+router.get('/viveros', async (req, res) => {
+  try {
+    const id_tenant = req.query.tenantId || req.user?.id_tenant || 1;
+    const id_finca = req.query.fincaId || req.query.id_finca;
+    let sql = `
+      SELECT v.id_vivero as id, v.id_vivero, v.nombre, v.codigo, v.id_finca,
+             f.nombre as finca_nombre
+      FROM viveros v
+      LEFT JOIN fincas f ON v.id_finca = f.id_finca
+      WHERE (v.id_tenant = ? OR v.id_tenant IS NULL) AND v.activo = 1
+    `;
+    const params = [id_tenant];
+    if (id_finca) {
+      sql += ' AND (v.id_finca = ? OR v.id_finca IS NULL)';
+      params.push(id_finca);
+    }
+    sql += ' ORDER BY v.nombre ASC';
+    const [rows] = await pool.query(sql, params);
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('Error fetching viveros:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/tables/nucleos — get nucleos table data with tenant/finca filtering
+router.get('/nucleos', async (req, res) => {
+  try {
+    const id_tenant = req.query.tenantId || req.user?.id_tenant || 1;
+    const id_finca = req.query.fincaId || req.query.id_finca;
+    let sql = `
+      SELECT n.id_nucleo as id, n.id_nucleo, n.nombre, n.codigo, n.id_finca,
+             f.nombre as finca_nombre
+      FROM nucleos n
+      LEFT JOIN fincas f ON n.id_finca = f.id_finca
+      WHERE (f.id_tenant = ? OR f.id_tenant IS NULL) AND n.activo = 1
+    `;
+    const params = [id_tenant];
+    if (id_finca) {
+      sql += ' AND n.id_finca = ?';
+      params.push(id_finca);
+    }
+    sql += ' ORDER BY n.nombre ASC';
+    const [rows] = await pool.query(sql, params);
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('Error fetching nucleos:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/table/empleados — get empleados table data with tenant filtering
+router.get('/empleados', async (req, res) => {
+  try {
+    const id_tenant = req.query.tenantId || 1;
+    const [rows] = await pool.query(`
+      SELECT id_empleado as id, CONCAT(nombres, ' ', IFNULL(apellidos, '')) as nombre,
+             ruc_cedula as cedula, valor_hora as tarifa_hora, estado, id_tenant
+      FROM rrhh_empleados
+      WHERE id_tenant = ? AND estado IN ('Activo', 'Inactivo')
+    `, [id_tenant]);
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('Error fetching empleados:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/table/maquinas — get maquinaria table data with tenant filtering
+router.get('/maquinas', async (req, res) => {
+  try {
+    const id_tenant = req.query.tenantId || 1;
+    const [rows] = await pool.query(`
+      SELECT id_maq_agro as id, marca_modelo as nombre, placa, 
+             costo_hora_estimado as costo_hora, 
+             horometro_actual as horometro
+      FROM agroind_maquinaria_equipo
+      WHERE id_tenant = ? AND activo = 1
+    `, [id_tenant]);
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('Error fetching maquinas:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/tables/modules — get table modules structure data
 router.get('/modules', async (req, res) => {
   try {
     const [tables] = await getDb(req).query(

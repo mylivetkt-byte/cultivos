@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
 import { exportToExcel } from '../../utils/exportExcel';
 import { authFetch } from '../../utils/api';
+import { customStyles } from '../PremiumSelect';
 
 function AccountStatement({ tenantId }) {
   const [terceros, setTerceros] = useState([]);

@@ -4,15 +4,12 @@ import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 import { createTenantDatabase, getTenantPool, invalidatePool } from '../db-tenant.js';
 import { requireRole } from '../utils/auth.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const router = Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 // All sistemas routes require Super_Admin
 router.use(requireRole('Super_Admin'));
@@ -88,7 +85,10 @@ router.post('/tenant', async (req, res) => {
       razon_social, nombre_comercial, nit, pais = 'Colombia',
       moneda_local = 'COP', huso_horario = 'America/Bogota',
       plan_suscripcion = 'Basic', limite_hectareas = 50, limite_usuarios = 3,
-      admin_username, admin_email, admin_password
+      admin_username, admin_email, admin_password,
+      tipo_documento, dv, tipo_contribuyente, regimen_tributario,
+      responsabilidades_fiscales, codigo_ciiu, direccion_fiscal,
+      departamento_fiscal, municipio_fiscal, correo_facturacion, telefono_contacto
     } = req.body;
 
     if (!razon_social || !nombre_comercial || !nit) {
@@ -143,10 +143,16 @@ router.post('/tenant', async (req, res) => {
     const [result] = await getDb(req).query(`
       INSERT INTO tenants (db_name, nit, razon_social, nombre_comercial, pais, moneda_local,
         huso_horario, plan_suscripcion, fecha_inicio_suscripcion, estado_suscripcion,
-        limite_hectareas, limite_usuarios, activo, fecha_creacion)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), 'Pendiente', ?, ?, 1, NOW())
+        limite_hectareas, limite_usuarios, activo, fecha_creacion,
+        tipo_documento, dv, tipo_contribuyente, regimen_tributario,
+        responsabilidades_fiscales, codigo_ciiu, direccion_fiscal,
+        departamento_fiscal, municipio_fiscal, correo_facturacion, telefono_contacto)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURDATE(), 'Pendiente', ?, ?, 1, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [dbName, nit, razon_social, nombre_comercial, pais, moneda_local,
-        huso_horario, plan_suscripcion, limite_hectareas, limite_usuarios]);
+        huso_horario, plan_suscripcion, limite_hectareas, limite_usuarios,
+        tipo_documento, dv, tipo_contribuyente, regimen_tributario,
+        responsabilidades_fiscales, codigo_ciiu, direccion_fiscal,
+        departamento_fiscal, municipio_fiscal, correo_facturacion, telefono_contacto]);
 
     const idTenant = result.insertId;
 
@@ -178,7 +184,10 @@ router.put('/tenant/:id', async (req, res) => {
     const { id } = req.params;
     const {
       razon_social, nombre_comercial, nit, pais, moneda_local,
-      huso_horario, plan_suscripcion, limite_hectareas, limite_usuarios
+      huso_horario, plan_suscripcion, limite_hectareas, limite_usuarios,
+      tipo_documento, dv, tipo_contribuyente, regimen_tributario,
+      responsabilidades_fiscales, codigo_ciiu, direccion_fiscal,
+      departamento_fiscal, municipio_fiscal, correo_facturacion, telefono_contacto
     } = req.body;
 
     // Check NIT unique (excluding current)
@@ -202,10 +211,24 @@ router.put('/tenant/:id', async (req, res) => {
         huso_horario = COALESCE(?, huso_horario),
         plan_suscripcion = COALESCE(?, plan_suscripcion),
         limite_hectareas = COALESCE(?, limite_hectareas),
-        limite_usuarios = COALESCE(?, limite_usuarios)
+        limite_usuarios = COALESCE(?, limite_usuarios),
+        tipo_documento = COALESCE(?, tipo_documento),
+        dv = COALESCE(?, dv),
+        tipo_contribuyente = COALESCE(?, tipo_contribuyente),
+        regimen_tributario = COALESCE(?, regimen_tributario),
+        responsabilidades_fiscales = COALESCE(?, responsabilidades_fiscales),
+        codigo_ciiu = COALESCE(?, codigo_ciiu),
+        direccion_fiscal = COALESCE(?, direccion_fiscal),
+        departamento_fiscal = COALESCE(?, departamento_fiscal),
+        municipio_fiscal = COALESCE(?, municipio_fiscal),
+        correo_facturacion = COALESCE(?, correo_facturacion),
+        telefono_contacto = COALESCE(?, telefono_contacto)
       WHERE id_tenant = ?
     `, [razon_social, nombre_comercial, nit, pais, moneda_local,
-        huso_horario, plan_suscripcion, limite_hectareas, limite_usuarios, id]);
+        huso_horario, plan_suscripcion, limite_hectareas, limite_usuarios,
+        tipo_documento, dv, tipo_contribuyente, regimen_tributario,
+        responsabilidades_fiscales, codigo_ciiu, direccion_fiscal,
+        departamento_fiscal, municipio_fiscal, correo_facturacion, telefono_contacto, id]);
 
     res.json({ success: true, message: 'Tenant actualizado' });
   } catch (err) {

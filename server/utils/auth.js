@@ -2,8 +2,16 @@ import jwt from 'jsonwebtoken';
 import pool from '../db.js';
 import { getTenantPool } from '../db-tenant.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'sas-agricolas-secret-key-change-in-production';
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const JWT_SECRET = process.env.JWT_SECRET || (NODE_ENV === 'production' ? '' : 'agropaccioli-dev-only-insecure-secret');
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET no está definido. Configúralo en el archivo .env antes de arrancar en producción.');
+}
+if (!process.env.JWT_SECRET) {
+  console.warn('⚠️ JWT_SECRET no definido en .env: usando clave insegura SOLO para desarrollo.');
+}
 
 export function generateToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
@@ -27,10 +35,25 @@ export async function getUserPermissions(rol) {
   return rows;
 }
 
+export async function getUserGranularPermissions(userId) {
+  const [rows] = await pool.query(`
+    SELECT f.ruta, p.acceder, p.consultar, p.nuevo, p.editar, p.eliminar, p.imprimir, p.excel, p.pdf, p.whatsapp 
+    FROM sys_permisos_usuarios p
+    JOIN sys_formularios f ON p.id_formulario = f.id_formulario
+    WHERE p.id_usuario = ? AND p.acceder = 1
+  `, [userId]);
+  return rows;
+}
+
+export async function getUserFincas(userId) {
+  const [rows] = await pool.query('SELECT id_finca FROM sys_usuarios_fincas WHERE id_usuario = ?', [userId]);
+  return rows.map(r => r.id_finca);
+}
+
 export async function getUserWithTenant(userId) {
   const [rows] = await pool.query(`
     SELECT u.id_usuario, u.username, u.email, u.id_tenant, u.rol, u.activo,
-           t.nombre_comercial as tenant_nombre, t.nit as tenant_nit, t.db_name
+           t.razon_social as tenant_nombre, t.nit as tenant_nit, t.db_name
     FROM usuarios u
     JOIN tenants t ON u.id_tenant = t.id_tenant
     WHERE u.id_usuario = ? AND u.activo = 1 AND t.activo = 1
@@ -38,13 +61,15 @@ export async function getUserWithTenant(userId) {
   if (rows.length === 0) return null;
   const user = rows[0];
   user.permisos = await getUserPermissions(user.rol);
+  user.granular = await getUserGranularPermissions(user.id_usuario);
+  user.fincas = await getUserFincas(user.id_usuario);
   return user;
 }
 
 export async function authenticateUser(username, password) {
   const [rows] = await pool.query(`
-    SELECT u.id_usuario, u.username, u.password_hash, u.id_tenant, u.rol, u.activo,
-           t.nombre_comercial as tenant_nombre, t.activo as tenant_activo, t.db_name
+    SELECT u.id_usuario, u.username, u.password_hash, u.id_tenant, u.rol, u.activo, u.requiere_cambio_clave,
+           t.razon_social as tenant_nombre, t.activo as tenant_activo, t.db_name
     FROM usuarios u
     JOIN tenants t ON u.id_tenant = t.id_tenant
     WHERE (u.username = ? OR u.email = ?) AND u.activo = 1
@@ -63,15 +88,20 @@ export async function authenticateUser(username, password) {
   if (!valid) return null;
 
   const permisos = await getUserPermissions(user.rol);
+  const granular = await getUserGranularPermissions(user.id_usuario);
+  const fincas = await getUserFincas(user.id_usuario);
 
   return {
     id_usuario: user.id_usuario,
     username: user.username,
     id_tenant: user.id_tenant,
     rol: user.rol,
+    requiere_cambio_clave: !!user.requiere_cambio_clave,
     tenant_nombre: user.tenant_nombre,
     db_name: user.db_name,
-    permisos
+    permisos,
+    granular,
+    fincas
   };
 }
 
@@ -101,7 +131,18 @@ export async function tenantPoolMiddleware(req, res, next) {
   }
 
   try {
-    req.tenantPool = await getTenantPool(req.dbName);
+    let targetDbName = req.dbName;
+    
+    // Override para SuperAdmin consultando datos de otro tenant
+    if (req.user && req.user.rol === 'Super_Admin' && req.query.tenantId && String(req.query.tenantId) !== String(req.user.id_tenant)) {
+      const [rows] = await pool.query('SELECT db_name FROM tenants WHERE id_tenant = ?', [req.query.tenantId]);
+      if (rows.length > 0 && rows[0].db_name) {
+        targetDbName = rows[0].db_name;
+        console.log('[AUTH] Overriding tenant DB to', targetDbName, 'for SuperAdmin managing tenant', req.query.tenantId);
+      }
+    }
+
+    req.tenantPool = await getTenantPool(targetDbName);
     next();
   } catch (err) {
     console.error('Error connecting to tenant DB:', err);

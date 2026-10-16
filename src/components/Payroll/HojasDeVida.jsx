@@ -54,7 +54,7 @@ export default function HojasDeVida({ tenantId }) {
         <!DOCTYPE html>
         <html>
           <head>
-            <title>Documento Oficial - SAS Agrícolas</title>
+            <title>Documento Oficial - AgroPaccioli</title>
             <style>
               body { 
                 margin: 0; 
@@ -237,7 +237,7 @@ export default function HojasDeVida({ tenantId }) {
       <div style={{ display: 'none' }}>
         <div ref={printRef}>
           {printState.data && (
-            <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto', color: '#000' }}>
+            <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto', color: 'var(--text-primary)' }}>
               
               {/* HOJA DE VIDA TEMPLATE */}
               {printState.doc === 'resume' && (
@@ -251,7 +251,7 @@ export default function HojasDeVida({ tenantId }) {
                       <div style={{ fontSize: '14px', lineHeight: '1.6', display: 'flex', gap: '24px' }}>
                         <div>
                           <p style={{ margin: 0 }}><strong>Cédula:</strong> {printState.data.documento}</p>
-                          <p style={{ margin: 0 }}><strong>Sede:</strong> {printState.data.finca_nombre || 'SAS Agrícolas'}</p>
+                          <p style={{ margin: 0 }}><strong>Sede:</strong> {printState.data.finca_nombre || 'AgroPaccioli'}</p>
                         </div>
                         <div>
                           <p style={{ margin: 0 }}><strong>Teléfono:</strong> {printState.data.telefono || 'N/A'}</p>
@@ -284,19 +284,19 @@ export default function HojasDeVida({ tenantId }) {
                   <div style={{ display: 'flex', gap: '40px' }}>
                     <div style={{ flex: '0 0 250px' }}>
                       <div style={{ marginBottom: '24px' }}>
-                        <h3 style={{ fontSize: '12px', textTransform: 'uppercase', borderBottom: '1px solid #ccc', paddingBottom: '4px', marginBottom: '8px', color: '#333' }}>Perfil</h3>
+                        <h3 style={{ fontSize: '12px', textTransform: 'uppercase', borderBottom: '1px solid #ccc', paddingBottom: '4px', marginBottom: '8px', color: 'var(--text-primary)' }}>Perfil</h3>
                         <p style={{ fontSize: '14px', margin: '0 0 4px 0' }}><strong>Nivel:</strong> {printState.data.nivel_academico || 'No especificado'}</p>
                         <p style={{ fontSize: '14px', margin: '0' }}><strong>Estado CV:</strong> {printState.data.estado_hoja}</p>
                       </div>
 
                       <div style={{ marginBottom: '24px' }}>
-                        <h3 style={{ fontSize: '12px', textTransform: 'uppercase', borderBottom: '1px solid #ccc', paddingBottom: '4px', marginBottom: '8px', color: '#333' }}>Emergencia</h3>
+                        <h3 style={{ fontSize: '12px', textTransform: 'uppercase', borderBottom: '1px solid #ccc', paddingBottom: '4px', marginBottom: '8px', color: 'var(--text-primary)' }}>Emergencia</h3>
                         <p style={{ fontSize: '14px', margin: '0 0 4px 0' }}>{printState.data.contacto_emergencia_nombre || 'No registrado'}</p>
                         <p style={{ fontSize: '14px', margin: '0' }}>{printState.data.contacto_emergencia_telefono || '---'}</p>
                       </div>
 
                       <div>
-                        <h3 style={{ fontSize: '12px', textTransform: 'uppercase', borderBottom: '1px solid #ccc', paddingBottom: '4px', marginBottom: '8px', color: '#333' }}>Dotación</h3>
+                        <h3 style={{ fontSize: '12px', textTransform: 'uppercase', borderBottom: '1px solid #ccc', paddingBottom: '4px', marginBottom: '8px', color: 'var(--text-primary)' }}>Dotación</h3>
                         <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '14px', lineHeight: '1.8' }}>
                           <li><strong>Camisa:</strong> {printState.data.talla_camisa || '-'}</li>
                           <li><strong>Pantalón:</strong> {printState.data.talla_pantalon || '-'}</li>
@@ -307,23 +307,23 @@ export default function HojasDeVida({ tenantId }) {
 
                     <div style={{ flex: 1 }}>
                       <div style={{ marginBottom: '32px' }}>
-                        <h3 style={{ fontSize: '14px', textTransform: 'uppercase', borderBottom: '1px solid #ccc', paddingBottom: '4px', marginBottom: '12px', color: '#333' }}>Experiencia</h3>
+                        <h3 style={{ fontSize: '14px', textTransform: 'uppercase', borderBottom: '1px solid #ccc', paddingBottom: '4px', marginBottom: '12px', color: 'var(--text-primary)' }}>Experiencia</h3>
                         <p style={{ fontSize: '14px', lineHeight: '1.6', textAlign: 'justify', whiteSpace: 'pre-wrap', margin: 0 }}>
                           {printState.data.experiencia_previa || 'No se ha registrado experiencia previa.'}
                         </p>
                       </div>
 
                       <div>
-                        <h3 style={{ fontSize: '14px', textTransform: 'uppercase', borderBottom: '1px solid #ccc', paddingBottom: '4px', marginBottom: '12px', color: '#333' }}>Observaciones</h3>
-                        <div style={{ backgroundColor: '#f9f9f9', padding: '16px', border: '1px solid #eee', fontSize: '14px', fontStyle: 'italic', lineHeight: '1.6' }}>
+                        <h3 style={{ fontSize: '14px', textTransform: 'uppercase', borderBottom: '1px solid #ccc', paddingBottom: '4px', marginBottom: '12px', color: 'var(--text-primary)' }}>Observaciones</h3>
+                        <div style={{ backgroundColor: '#f9f9f9', padding: '16px', border: '1px solid var(--border-color)', fontSize: '14px', fontStyle: 'italic', lineHeight: '1.6' }}>
                           "{printState.data.observaciones_jefe || 'Sin observaciones registradas.'}"
                         </div>
                       </div>
                     </div>
                   </div>
                   
-                  <div style={{ marginTop: '60px', paddingTop: '16px', borderTop: '1px solid #eee', textAlign: 'center', fontSize: '11px', color: '#999' }}>
-                    Generado por SAS Agrícolas - {new Date().toLocaleDateString('es-CO')}
+                  <div style={{ marginTop: '60px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', textAlign: 'center', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                    Generado por AgroPaccioli - {new Date().toLocaleDateString('es-CO')}
                   </div>
                 </div>
               )}
@@ -332,7 +332,7 @@ export default function HojasDeVida({ tenantId }) {
               {printState.doc === 'recommendation' && (
                 <div style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '16px' }}>
                   <div style={{ textAlign: 'right', marginBottom: '60px', lineHeight: '1.6' }}>
-                    <p style={{ margin: 0, fontWeight: 'bold' }}>{printState.data.finca_nombre || 'SAS Agrícolas'}</p>
+                    <p style={{ margin: 0, fontWeight: 'bold' }}>{printState.data.finca_nombre || 'AgroPaccioli'}</p>
                     <p style={{ margin: 0 }}>{new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                   </div>
                   
@@ -342,7 +342,7 @@ export default function HojasDeVida({ tenantId }) {
                     <p style={{ marginBottom: '20px' }}>
                       Por medio de la presente comunicación, certificamos formalmente que el(la) señor(a) <strong>{printState.data.nombre_completo}</strong>, 
                       identificado(a) con cédula de ciudadanía número <strong>{printState.data.documento}</strong>, se encuentra vinculado(a) laboralmente con 
-                      nuestra compañía desempeñando el cargo de <strong>{printState.data.cargo}</strong>, con asignación operativa en el centro de trabajo <strong>{printState.data.finca_nombre || 'SAS Agrícolas'}</strong>.
+                      nuestra compañía desempeñando el cargo de <strong>{printState.data.cargo}</strong>, con asignación operativa en el centro de trabajo <strong>{printState.data.finca_nombre || 'AgroPaccioli'}</strong>.
                     </p>
                     
                     <p style={{ marginBottom: '20px' }}>
@@ -358,7 +358,7 @@ export default function HojasDeVida({ tenantId }) {
                   <div style={{ marginTop: '80px' }}>
                     <div style={{ width: '300px', borderTop: '1px solid #000', marginBottom: '8px' }}></div>
                     <p style={{ margin: '0 0 4px 0', fontWeight: 'bold', fontFamily: 'Arial, sans-serif', fontSize: '14px' }}>Departamento de Recursos Humanos</p>
-                    <p style={{ margin: 0, fontFamily: 'Arial, sans-serif', fontSize: '14px' }}>{printState.data.finca_nombre || 'SAS Agrícolas'}</p>
+                    <p style={{ margin: 0, fontFamily: 'Arial, sans-serif', fontSize: '14px' }}>{printState.data.finca_nombre || 'AgroPaccioli'}</p>
                   </div>
                 </div>
               )}

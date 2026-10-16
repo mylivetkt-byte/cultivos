@@ -5,9 +5,9 @@ import path from 'path';
 
 const router = express.Router();
 
-// GET logo path for the current tenant (uses auth middleware to set req.tenantId)
+// GET logo path for the current tenant
 router.get('/', async (req, res) => {
-  const tenantId = req.tenantId || req.query.tenantId;
+  const tenantId = (req.user?.rol === 'Super_Admin' && req.query.tenantId) ? req.query.tenantId : req.tenantId;
   if (!tenantId) return res.status(400).json({ error: 'tenantId requerido' });
   try {
     const config = await getConfig(tenantId);
@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
 
 // POST to set logo path
 router.post('/', async (req, res) => {
-  const tenantId = req.tenantId || req.body.tenantId;
+  const tenantId = (req.user?.rol === 'Super_Admin' && req.body.tenantId) ? req.body.tenantId : req.tenantId;
   const { logoPath, base64 } = req.body;
   
   if (!tenantId) return res.status(400).json({ error: 'tenantId requerido' });

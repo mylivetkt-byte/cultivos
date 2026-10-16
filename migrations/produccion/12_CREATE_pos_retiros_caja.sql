@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS pos_retiros_caja (id_retiro INT AUTO_INCREMENT PRIMARY KEY, id_arqueo INT NOT NULL, id_usuario_autoriza INT NOT NULL, monto DECIMAL(12,2) NOT NULL, observaciones VARCHAR(255), fecha_retiro DATETIME DEFAULT CURRENT_TIMESTAMP);

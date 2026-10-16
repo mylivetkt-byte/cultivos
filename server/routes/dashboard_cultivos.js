@@ -1,10 +1,11 @@
 import { Router } from 'express';
+import { getDb } from '../utils/db.js';
 
 const router = Router();
 
 router.get('/kpis', async (req, res) => {
   try {
-    const db = req.tenantPool;
+    const db = getDb(req);
     const [[{ totalHectareas, totalLotes, totalSiembras }]] = await db.query(`
       SELECT 
         SUM(l.hectareas) as totalHectareas,
@@ -28,7 +29,7 @@ router.get('/kpis', async (req, res) => {
 
 router.get('/distribucion', async (req, res) => {
   try {
-    const db = req.tenantPool;
+    const db = getDb(req);
     const [rows] = await db.query(`
       SELECT 
         c.nombre as cultivo, 
@@ -49,7 +50,7 @@ router.get('/distribucion', async (req, res) => {
 
 router.get('/produccion', async (req, res) => {
   try {
-    const db = req.tenantPool;
+    const db = getDb(req);
     // Producción por mes en los ultimos 12 meses, agrupada por cultivo
     const [rows] = await db.query(`
       SELECT 
@@ -86,7 +87,7 @@ router.get('/produccion', async (req, res) => {
 
 router.get('/avanzado', async (req, res) => {
   try {
-    const db = req.tenantPool;
+    const db = getDb(req);
     
     // 1. Fenología (Radar Chart)
     const [fenologiaRows] = await db.query(`

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import TenantForm from './TenantForm';
 import FincasTab from './FincasTab';
+import BodegasTab from './BodegasTab';
 import ResolucionesDIANTab from './ResolucionesDIANTab';
 
 export default function EmpresaManager({ onBack, onSaved, editTenant = null }) {
@@ -13,9 +14,9 @@ export default function EmpresaManager({ onBack, onSaved, editTenant = null }) {
   const tabStyle = (isActive) => ({
     padding: '12px 24px',
     cursor: isNew && !isActive ? 'not-allowed' : 'pointer',
-    background: isActive ? '#fff' : '#f5f5f5',
+    background: isActive ? 'var(--bg-card)' : 'var(--bg-main)',
     borderBottom: isActive ? '3px solid #1976d2' : '3px solid transparent',
-    color: isActive ? '#1976d2' : '#666',
+    color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
     fontWeight: isActive ? '600' : '400',
     transition: 'all 0.3s ease',
     borderTop: 'none',
@@ -26,20 +27,20 @@ export default function EmpresaManager({ onBack, onSaved, editTenant = null }) {
   });
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1000px', margin: '0 auto', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', maxHeight: '90vh', overflowY: 'auto' }}>
+    <div style={{ padding: '20px', maxWidth: '1000px', margin: '0 auto', background: 'var(--bg-card)', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', maxHeight: '90vh', overflowY: 'auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
         {onBack && (
-          <button onClick={onBack} style={{ border: 'none', background: '#f5f5f5', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.background = '#e0e0e0'} onMouseLeave={(e) => e.currentTarget.style.background = '#f5f5f5'}>
+          <button onClick={onBack} style={{ border: 'none', background: 'var(--bg-main)', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.background = '#e0e0e0'} onMouseLeave={(e) => e.currentTarget.style.background = '#f5f5f5'}>
             ←
           </button>
         )}
         <div>
-          <h2 style={{ margin: 0, color: '#2c3e50', fontSize: '24px' }}>{editTenant ? `Administrar Empresa: ${editTenant.razon_social}` : 'Registrar Nueva Empresa'}</h2>
-          <p style={{ margin: '4px 0 0', color: '#7f8c8d', fontSize: '14px' }}>Configura los datos principales y las fincas asociadas.</p>
+          <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '24px' }}>{editTenant ? `Administrar Empresa: ${editTenant.razon_social}` : 'Registrar Nueva Empresa'}</h2>
+          <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '14px' }}>Configura los datos principales y las fincas asociadas.</p>
         </div>
       </div>
 
-      <div style={{ display: 'flex', borderBottom: '1px solid #eee', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '24px' }}>
         <button style={tabStyle(activeTab === 'basicos')} onClick={() => setActiveTab('basicos')}>
           Datos Básicos
         </button>
@@ -52,6 +53,16 @@ export default function EmpresaManager({ onBack, onSaved, editTenant = null }) {
           title={isNew ? 'Debes guardar la empresa primero' : ''}
         >
           Fincas
+        </button>
+        <button 
+          style={tabStyle(activeTab === 'bodegas')} 
+          onClick={() => {
+            if (!isNew) setActiveTab('bodegas');
+          }}
+          disabled={isNew}
+          title={isNew ? 'Debes guardar la empresa primero' : ''}
+        >
+          Bodegas
         </button>
         <button 
           style={tabStyle(activeTab === 'resoluciones')} 
@@ -71,6 +82,9 @@ export default function EmpresaManager({ onBack, onSaved, editTenant = null }) {
         )}
         {activeTab === 'fincas' && !isNew && (
           <FincasTab tenantId={editTenant.id_tenant} />
+        )}
+        {activeTab === 'bodegas' && !isNew && (
+          <BodegasTab tenantId={editTenant.id_tenant} />
         )}
         {activeTab === 'resoluciones' && !isNew && (
           <ResolucionesDIANTab tenantId={editTenant.id_tenant} />

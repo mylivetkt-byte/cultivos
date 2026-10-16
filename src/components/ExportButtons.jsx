@@ -5,17 +5,18 @@ import { exportToExcel } from '../utils/exportExcel';
 import { exportToPdf } from '../utils/exportPdf';
 import { useAuth } from '../context/AuthContext';
 
-const ExportButtons = ({ data, columns, filename = 'Reporte' }) => {
+const ExportButtons = ({ data, columns, filename = 'Reporte', extraMetadata = {} }) => {
   const { user, tenantId } = useAuth();
   const hasData = data && data.length > 0;
 
   const getMetadata = () => {
     return {
-      empresa: 'SAS Agrícolas',
+      empresa: 'AgroPaccioli',
       finca: 'Finca Operativa', // Fallback, context can be used if available
       usuario: user?.nombre || user?.username || 'Administrador',
       rol: user?.rol || 'No asignado',
-      reportName: filename
+      reportName: filename,
+      ...extraMetadata
     };
   };
 

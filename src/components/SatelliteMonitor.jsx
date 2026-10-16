@@ -370,7 +370,7 @@ function SatelliteMonitor() {
         <h2 className="catalog-title">📡 Centro de Control Satelital Copernicus</h2>
       </div>
 
-      <p style={{ marginBottom: 20, color: '#666', fontSize: '14px', lineHeight: '1.6' }}>
+      <p style={{ marginBottom: 20, color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.6' }}>
         Configure la autenticación y verifique el estado de las conexiones con los satélites 
         <strong> Sentinel-1 (Radar)</strong> y <strong>Sentinel-2 (Multiespectral)</strong>. 
         Este módulo interactúa directamente con el servidor Keycloak OIDC de 
@@ -424,7 +424,7 @@ function SatelliteMonitor() {
                   </span>
                 </div>
 
-                <div style={{ fontSize: 13, color: '#666', marginBottom: 15 }}>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 15 }}>
                   <strong>Copernicus OIDC Endpoint:</strong> 
                   <code style={{ display: 'block', background: 'var(--bg)', padding: '6px 10px', borderRadius: 4, marginTop: 4, wordBreak: 'break-all' }}>
                     {conn.endpoint_url}
@@ -648,7 +648,7 @@ function SatelliteMonitor() {
             <h3 style={{ fontSize: 18, margin: 0, color: 'var(--sb)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <span>📦</span> Producción Bajo Demanda (Copernicus ODP)
             </h3>
-            <span style={{ fontSize: 12, color: '#666' }}>
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
               Interactúe con la API OData ODP para procesar productos desde datos crudos (Level-0) a imágenes listas para análisis.
             </span>
           </div>
@@ -663,7 +663,7 @@ function SatelliteMonitor() {
                 border: '1px solid var(--bd)',
                 borderRadius: 'var(--rs)',
                 fontSize: 14,
-                background: '#fff'
+                background: 'var(--bg-card)'
               }}
             >
               {connections.map(c => (
@@ -686,7 +686,7 @@ function SatelliteMonitor() {
         {loadingODP ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 0', gap: 15 }}>
             <div className="spinner" />
-            <span style={{ fontSize: 14, color: '#666' }}>Conectando con Copernicus ODP y cargando workflows/órdenes...</span>
+            <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Conectando con Copernicus ODP y cargando workflows/órdenes...</span>
           </div>
         ) : !connections.find(c => String(c.id_conexion) === activeConnId)?.api_key ? (
           <div style={{
@@ -719,7 +719,7 @@ function SatelliteMonitor() {
                       border: '1px solid var(--bd)',
                       borderRadius: 'var(--rs)',
                       fontSize: 14,
-                      background: '#fff'
+                      background: 'var(--bg-card)'
                     }}
                   >
                     {workflows.map(w => (
@@ -790,7 +790,7 @@ function SatelliteMonitor() {
                       <div style={{ fontSize: 11, color: '#777', marginTop: 2 }}>
                         {order.WorkflowName}
                       </div>
-                      <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>
+                      <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>
                         Enviada: {order.SubmissionDate ? new Date(order.SubmissionDate).toLocaleString() : 'N/A'}
                       </div>
                     </div>
@@ -818,7 +818,7 @@ function SatelliteMonitor() {
                 ))}
 
                 {orders.length === 0 && (
-                  <div style={{ padding: '40px 0', textAlign: 'center', color: '#999', fontSize: 13 }}>
+                  <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13 }}>
                     No hay órdenes de producción registradas para esta cuenta.
                   </div>
                 )}
@@ -847,6 +847,48 @@ function SatelliteMonitor() {
             }}
           >
             🌱 Salud Vegetal (NDVI)
+          </button>
+          <button 
+            onClick={() => setActiveTab('ndre')}
+            style={{
+              padding: '10px 16px',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'ndre' ? '3px solid var(--p)' : '3px solid transparent',
+              color: activeTab === 'ndre' ? 'var(--p)' : '#666',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            🍇 Canopia Densa (NDRE)
+          </button>
+          <button 
+            onClick={() => setActiveTab('gndvi')}
+            style={{
+              padding: '10px 16px',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'gndvi' ? '3px solid var(--p)' : '3px solid transparent',
+              color: activeTab === 'gndvi' ? 'var(--p)' : '#666',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            🍃 Clorofila (GNDVI)
+          </button>
+          <button 
+            onClick={() => setActiveTab('savi')}
+            style={{
+              padding: '10px 16px',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'savi' ? '3px solid var(--p)' : '3px solid transparent',
+              color: activeTab === 'savi' ? 'var(--p)' : '#666',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            🌾 Suelo Ajustado (SAVI)
           </button>
           <button 
             onClick={() => setActiveTab('water')}
@@ -889,6 +931,20 @@ function SatelliteMonitor() {
             }}
           >
             🐛 Plagas y Anomalías
+          </button>
+          <button 
+            onClick={() => setActiveTab('ground-truth')}
+            style={{
+              padding: '10px 16px',
+              background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'ground-truth' ? '3px solid var(--p)' : '3px solid transparent',
+              color: activeTab === 'ground-truth' ? 'var(--p)' : '#666',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            📍 Verificación Terrestre
           </button>
           <button 
             onClick={() => setActiveTab('climate')}
@@ -952,6 +1008,87 @@ function evaluatePixel(sample) {
   return [0.1, 0.6, 0.1, sample.dataMask]; // Vegetación sana densa
 }`}
             </pre>
+          </div>
+        )}
+
+        {activeTab === 'ndre' && (
+          <div>
+            <h4>Índice Red-Edge de Diferencia Normalizada (NDRE) - Sentinel-2</h4>
+            <p style={{ fontSize: 14, color: '#444', lineHeight: 1.6 }}>
+              En etapas avanzadas del cultivo o en canopias densas (palma de aceite, café, caña de azúcar, maíz en floración), el NDVI sufre de un fenómeno conocido como <strong>saturación óptica</strong>. El <strong>NDRE</strong> soluciona esta limitación reemplazando la banda roja por la <strong>Banda 5 (Red Edge, 705nm)</strong>, que penetra significativamente más profundo en las capas medias e inferiores del follaje.
+            </p>
+            <h5 style={{ marginTop: 15, marginBottom: 8 }}>Ecuación Matemática</h5>
+            <code style={{ display: 'block', background: '#272822', color: '#f8f8f2', padding: '12px 16px', borderRadius: 6, fontSize: 15, fontFamily: 'monospace' }}>
+              NDRE = (B08 - B05) / (B08 + B05)
+            </code>
+            <h5 style={{ marginTop: 20, marginBottom: 8 }}>Evalscript Sentinel Hub (NDRE)</h5>
+            <pre style={{ background: '#272822', color: '#f8f8f2', padding: 15, borderRadius: 6, fontSize: 13, overflowX: 'auto' }}>{`// Sentinel-2 L2A Evalscript para NDRE
+function setup() {
+  return { input: ["B08", "B05", "dataMask"], output: { bands: 4 } };
+}
+function evaluatePixel(sample) {
+  let ndre = (sample.B08 - sample.B05) / (sample.B08 + sample.B05);
+  if (ndre < 0.1) return [0.8, 0.2, 0.2, sample.dataMask]; // Estrés o senescencia
+  if (ndre < 0.25) return [0.9, 0.8, 0.2, sample.dataMask]; // Vigor medio
+  if (ndre < 0.45) return [0.4, 0.8, 0.2, sample.dataMask]; // Follaje activo
+  return [0, 0.5, 0.1, sample.dataMask]; // Canopia densa óptima
+}`}</pre>
+          </div>
+        )}
+
+        {activeTab === 'gndvi' && (
+          <div>
+            <h4>Índice Verde de Vegetación (GNDVI) - Contenido de Clorofila</h4>
+            <p style={{ fontSize: 14, color: '#444', lineHeight: 1.6 }}>
+              El <strong>GNDVI</strong> utiliza el contraste entre el infrarrojo cercano (Banda 8) y la <strong>Banda Verde (B03, 560nm)</strong>. Es de 3 a 5 veces más sensible a la concentración de clorofila activa en las hojas que el NDVI tradicional, lo que lo hace el mejor indicador para monitorear el estado nutricional de nitrógeno en pleno llenado vegetativo.
+            </p>
+            <h5 style={{ marginTop: 15, marginBottom: 8 }}>Ecuación Matemática</h5>
+            <code style={{ display: 'block', background: '#272822', color: '#f8f8f2', padding: '12px 16px', borderRadius: 6, fontSize: 15, fontFamily: 'monospace' }}>
+              GNDVI = (B08 - B03) / (B08 + B03)
+            </code>
+            <h5 style={{ marginTop: 20, marginBottom: 8 }}>Evalscript Sentinel Hub (GNDVI)</h5>
+            <pre style={{ background: '#272822', color: '#f8f8f2', padding: 15, borderRadius: 6, fontSize: 13, overflowX: 'auto' }}>{`// Sentinel-2 L2A Evalscript para GNDVI
+function setup() {
+  return { input: ["B08", "B03", "dataMask"], output: { bands: 4 } };
+}
+function evaluatePixel(sample) {
+  let gndvi = (sample.B08 - sample.B03) / (sample.B08 + sample.B03);
+  if (gndvi < 0.15) return [0.8, 0.2, 0.2, sample.dataMask];
+  if (gndvi < 0.35) return [0.9, 0.8, 0.2, sample.dataMask];
+  if (gndvi < 0.6) return [0.3, 0.7, 0.2, sample.dataMask];
+  return [0, 0.45, 0.1, sample.dataMask];
+}`}</pre>
+          </div>
+        )}
+
+        {activeTab === 'savi' && (
+          <div>
+            <h4>Índice de Vegetación Ajustado al Suelo (SAVI)</h4>
+            <p style={{ fontSize: 14, color: '#444', lineHeight: 1.6 }}>
+              Durante las fases de germinación, emergencia y primera brotación, la reflectancia del suelo desnudo distorsiona severamente las firmas espectrales. El <strong>SAVI</strong> introduce un factor de corrección de brillo del suelo ($L = 0.5$) para aislar la respuesta de las plántulas y evitar falsos diagnósticos de estrés.
+            </p>
+            <h5 style={{ marginTop: 15, marginBottom: 8 }}>Ecuación Matemática</h5>
+            <code style={{ display: 'block', background: '#272822', color: '#f8f8f2', padding: '12px 16px', borderRadius: 6, fontSize: 15, fontFamily: 'monospace' }}>
+              SAVI = ((B08 - B04) / (B08 + B04 + 0.5)) * 1.5
+            </code>
+          </div>
+        )}
+
+        {activeTab === 'ground-truth' && (
+          <div>
+            <h4>Verificación en Campo (Ground-Truthing)</h4>
+            <p style={{ fontSize: 14, color: '#444', lineHeight: 1.6 }}>
+              El principio de oro de la agricultura de precisión es que <strong>ningún mapa satelital sustituye la visita al campo</strong>. El módulo de Ground-Truthing permite al agrónomo inspeccionar las anomalías detectadas desde el espacio, registrar el diagnóstico in situ con GPS, tomar fotos de evidencia y generar una orden de labor correctiva.
+            </p>
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: 16, marginTop: 15 }}>
+              <h5 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Protocolo Integrado en el Sistema:</h5>
+              <ol style={{ margin: 0, paddingLeft: 20, color: '#475569', fontSize: 13, lineHeight: 1.8 }}>
+                <li>Detección multitemporal satelital (caída súbita de NDVI o NDRE mayor al 15%).</li>
+                <li>Generación de alerta y punto de inspección geoespacial.</li>
+                <li>Visita del agrónomo con la app móvil [SmartPrescriptionApp.jsx](file:///c:/sas-app/src/components/Agriculture/SmartPrescriptionApp.jsx).</li>
+                <li>Validación en la tabla central <code>sat_verificaciones_campo</code> con auditoría permanente.</li>
+              </ol>
+            </div>
           </div>
         )}
 

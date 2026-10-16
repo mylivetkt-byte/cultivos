@@ -1,12 +1,13 @@
 // routes/cosechasDetalle.js
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 
 const router = express.Router();
 
 // GET /api/cosechas/:cosechaId/detalle - list details for a harvest
 router.get('/:cosechaId/detalle', async (req, res) => {
-  const db = req.tenantPool || pool;
+  const db = getDb(req);
   const { cosechaId } = req.params;
   try {
     const [rows] = await db.query('SELECT * FROM cosechas_detalle WHERE id_cosecha = ?', [cosechaId]);
@@ -19,7 +20,7 @@ router.get('/:cosechaId/detalle', async (req, res) => {
 
 // POST /api/cosechas/:cosechaId/detalle - add a detail record
 router.post('/:cosechaId/detalle', async (req, res) => {
-  const db = req.tenantPool || pool;
+  const db = getDb(req);
   const { cosechaId } = req.params;
   const { tipo_insumo, cantidad, unidad } = req.body;
   if (!tipo_insumo || cantidad == null) {

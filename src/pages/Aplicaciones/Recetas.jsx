@@ -79,10 +79,35 @@ export default function Recetas({ tenantId }) {
     setForm({ ...form, detalles: form.detalles.filter((_, i) => i !== idx) });
   };
 
+  const [targetMarket, setTargetMarket] = useState('Local');
+
+  const getMarketWarnings = () => {
+    const warnings = [];
+    form.detalles.forEach(d => {
+      const ins = insumos.find((i) => i.id_insumo === d.id_insumo);
+      if (ins && ins.nombre) {
+        const nameUpper = ins.nombre.toUpperCase();
+        if (targetMarket === 'Europa' || targetMarket === 'USA') {
+          if (nameUpper.includes('CLORPIRIFOS') || nameUpper.includes('PARAQUAT') || nameUpper.includes('FIPRONIL') || nameUpper.includes('CARBOFURAN')) {
+            warnings.push(`🚫 ${ins.nombre} está PROHIBIDO en el mercado: ${targetMarket}.`);
+          }
+        }
+        if (targetMarket === 'Europa') {
+           if (nameUpper.includes('GLIFOSATO') || nameUpper.includes('MANCOZEB') || nameUpper.includes('DICLORVOS')) {
+              warnings.push(`⚠️ ${ins.nombre} tiene LMR extremadamente restrictivo en Europa.`);
+           }
+        }
+      }
+    });
+    return warnings;
+  };
+
+  const marketWarnings = getMarketWarnings();
+
   return (
     <div className="dashboard-container">
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>🧪 Recetario General</h2>
+        <h2>🧪 Recetario General y Compliance</h2>
         <button className="btn btn-primary btn-sm" onClick={() => setShowModal(true)}>+ Nueva Receta</button>
       </div>
 
@@ -123,15 +148,25 @@ export default function Recetas({ tenantId }) {
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" style={{ maxWidth: '700px' }} onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" style={{ maxWidth: '750px' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Nueva Receta</h3>
+              <h3>Nueva Receta Fitosanitaria</h3>
               <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>Nombre Receta *</label>
-                <input className="form-control" value={form.nombre_receta} onChange={(e) => setForm({ ...form, nombre_receta: e.target.value })} required />
+              <div className="form-row">
+                <div className="form-group" style={{ flex: 2 }}>
+                  <label>Nombre Receta *</label>
+                  <input className="form-control" value={form.nombre_receta} onChange={(e) => setForm({ ...form, nombre_receta: e.target.value })} required />
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label>Auditoría: Mercado Destino</label>
+                  <select className="form-control" style={{ border: targetMarket !== 'Local' ? '1px solid #3b82f6' : '', background: targetMarket !== 'Local' ? '#eff6ff' : '' }} value={targetMarket} onChange={(e) => setTargetMarket(e.target.value)}>
+                    <option value="Local">Mercado Local</option>
+                    <option value="USA">Exportación: Estados Unidos</option>
+                    <option value="Europa">Exportación: Unión Europea</option>
+                  </select>
+                </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -156,6 +191,15 @@ export default function Recetas({ tenantId }) {
                 <label>Recomendaciones de Seguridad</label>
                 <textarea className="form-control" rows="2" value={form.recomendaciones_seguridad} onChange={(e) => setForm({ ...form, recomendaciones_seguridad: e.target.value })} />
               </div>
+
+              {marketWarnings.length > 0 && (
+                <div style={{ backgroundColor: '#fee2e2', border: '1px solid #ef4444', borderRadius: '4px', padding: '10px', marginTop: '10px' }}>
+                  <h5 style={{ margin: '0 0 5px 0', color: '#b91c1c' }}>Auditoría de Inocuidad (Mercado: {targetMarket})</h5>
+                  <ul style={{ margin: 0, paddingLeft: '20px', color: '#991b1b', fontSize: '12px' }}>
+                    {marketWarnings.map((w, i) => <li key={i}>{w}</li>)}
+                  </ul>
+                </div>
+              )}
 
               <div className="card" style={{ marginTop: '10px', padding: '10px' }}>
                 <h5>Insumos de la Receta</h5>

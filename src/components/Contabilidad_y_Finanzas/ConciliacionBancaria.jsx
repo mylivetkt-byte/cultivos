@@ -84,17 +84,17 @@ const ConciliacionBancaria = ({ tenantId }) => {
   const conciliadosExt = extractos.filter(e => e.estado_conciliacion === 'Conciliado');
 
   return (
-    <div style={{ margin: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+    <div style={{ margin: '20px', background: 'var(--card-bg)', color: 'var(--text)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
       <div style={{ background: 'linear-gradient(90deg, #047857 0%, #065f46 100%)', padding: '24px', color: 'white', borderTopLeftRadius: '8px', borderTopRightRadius: '8px' }}>
         <h2 style={{ margin: '0 0 8px 0' }}>🏦 Conciliación Bancaria</h2>
         <p style={{ margin: 0, color: '#a7f3d0' }}>Cruce automático y manual entre Extractos Bancarios y Libros Auxiliares.</p>
       </div>
       
       <div style={{ padding: '24px' }}>
-        <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '24px', display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
+        <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '24px', display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
           <div style={{ flex: 1, maxWidth: '200px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' }}>Mes a Conciliar</label>
-            <input type="month" value={mes} onChange={e => setMes(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%' }} />
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '4px' }}>Mes a Conciliar</label>
+            <input type="month" value={mes} onChange={e => setMes(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', width: '100%' }} />
           </div>
           <div>
             <button onClick={fetchData} style={{ background: '#3b82f6', color: 'white', padding: '9px 24px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
@@ -109,8 +109,8 @@ const ConciliacionBancaria = ({ tenantId }) => {
         <div style={{ display: 'flex', gap: '20px', height: '500px' }}>
           
           {/* Extracto Bancario */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-            <div style={{ background: '#f1f5f9', padding: '12px', borderBottom: '1px solid #e2e8f0', fontWeight: 'bold', textAlign: 'center' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
+            <div style={{ background: 'var(--bg-main)', padding: '12px', borderBottom: '1px solid var(--border)', fontWeight: 'bold', textAlign: 'center' }}>
               Extracto Bancario (Pendientes: {pendientesExt.length})
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
@@ -123,12 +123,12 @@ const ConciliacionBancaria = ({ tenantId }) => {
                     padding: '12px', 
                     marginBottom: '8px', 
                     borderRadius: '6px', 
-                    border: selectedExtracto?.id_extracto === e.id_extracto ? '2px solid #3b82f6' : '1px solid #cbd5e1',
-                    background: selectedExtracto?.id_extracto === e.id_extracto ? '#eff6ff' : 'white',
+                    border: selectedExtracto?.id_extracto === e.id_extracto ? '2px solid #3b82f6' : '1px solid var(--border)',
+                    background: selectedExtracto?.id_extracto === e.id_extracto ? 'rgba(59, 130, 246, 0.15)' : 'var(--card-bg)',
                     cursor: 'pointer'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px', color: '#64748b' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px', color: 'var(--text-muted)' }}>
                     <span>{new Date(e.fecha).toLocaleDateString()}</span>
                     <span>Ref: {e.referencia}</span>
                   </div>
@@ -168,8 +168,8 @@ const ConciliacionBancaria = ({ tenantId }) => {
           </div>
 
           {/* Libros Auxiliares */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-            <div style={{ background: '#f1f5f9', padding: '12px', borderBottom: '1px solid #e2e8f0', fontWeight: 'bold', textAlign: 'center' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
+            <div style={{ background: 'var(--bg-main)', padding: '12px', borderBottom: '1px solid var(--border)', fontWeight: 'bold', textAlign: 'center' }}>
               Libros Contables (Pendientes: {libros.length})
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
@@ -182,16 +182,16 @@ const ConciliacionBancaria = ({ tenantId }) => {
                     padding: '12px', 
                     marginBottom: '8px', 
                     borderRadius: '6px', 
-                    border: selectedLibro?.id_detalle === l.id_detalle ? '2px solid #3b82f6' : '1px solid #cbd5e1',
-                    background: selectedLibro?.id_detalle === l.id_detalle ? '#eff6ff' : 'white',
+                    border: selectedLibro?.id_detalle === l.id_detalle ? '2px solid #3b82f6' : '1px solid var(--border)',
+                    background: selectedLibro?.id_detalle === l.id_detalle ? 'rgba(59, 130, 246, 0.15)' : 'var(--card-bg)',
                     cursor: 'pointer'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px', color: '#64748b' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px', color: 'var(--text-muted)' }}>
                     <span>{new Date(l.fecha).toLocaleDateString()}</span>
                     <span>Doc: {l.numero_doc}</span>
                   </div>
-                  <div style={{ fontSize: '11px', color: '#475569', marginBottom: '2px' }}>{l.cuenta_codigo} - {l.cuenta_nombre}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>{l.cuenta_codigo} - {l.cuenta_nombre}</div>
                   <div style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '4px' }}>{l.concepto}</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
                     {parseFloat(l.debito) > 0 ? (
@@ -207,7 +207,7 @@ const ConciliacionBancaria = ({ tenantId }) => {
           
         </div>
 
-        <div style={{ marginTop: '20px', padding: '16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold' }}>
+        <div style={{ marginTop: '20px', padding: '16px', background: 'var(--bg-main)', border: '1px solid var(--border)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold' }}>
           <div>Total Extracto Conciliado: {conciliadosExt.length} registros</div>
           <div>Progreso: {extractos.length > 0 ? Math.round((conciliadosExt.length / extractos.length) * 100) : 0}%</div>
         </div>

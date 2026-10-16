@@ -471,7 +471,7 @@ function EmployeeFormModal({ isOpen, onClose, mode = 'add', pkValue, defaultValu
           {/* PESTAÑA MENORES */}
           {activeTab === 'menores' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', animation: 'fadeIn 0.3s ease-in-out', background: '#fff7ed', padding: '24px', borderRadius: '12px', border: '1px solid #ffedd5' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#ffffff', padding: '16px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-card)', padding: '16px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                 <input type="checkbox" id="tiene_permiso" name="tiene_permiso_mintrabajo" checked={formData.tiene_permiso_mintrabajo} onChange={handleChange} style={{ width: '20px', height: '20px', accentColor: '#ea580c', cursor: 'pointer' }} />
                 <label htmlFor="tiene_permiso" style={{ fontWeight: '700', color: '#1e293b', cursor: 'pointer', margin: 0 }}>
                   Cuenta con Permiso del Inspector Laboral / Ministerio de Trabajo
@@ -481,17 +481,17 @@ function EmployeeFormModal({ isOpen, onClose, mode = 'add', pkValue, defaultValu
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label style={{ fontWeight: '600', color: '#334155' }}>Nombre Completo del Tutor Legal</label>
-                  <input type="text" name="nombre_tutor_legal" value={formData.nombre_tutor_legal || ''} onChange={handleChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff' }} placeholder="Madre, Padre o Acudiente" />
+                  <input type="text" name="nombre_tutor_legal" value={formData.nombre_tutor_legal || ''} onChange={handleChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'var(--bg-card)' }} placeholder="Madre, Padre o Acudiente" />
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label style={{ fontWeight: '600', color: '#334155' }}>Identificación del Tutor</label>
-                  <input type="text" name="identificacion_tutor" value={formData.identificacion_tutor || ''} onChange={handleChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff' }} />
+                  <input type="text" name="identificacion_tutor" value={formData.identificacion_tutor || ''} onChange={handleChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'var(--bg-card)' }} />
                 </div>
               </div>
 
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label style={{ fontWeight: '600', color: '#334155' }}>Restricciones de Horario o Labor</label>
-                <textarea name="restriccion_horaria" value={formData.restriccion_horaria || ''} onChange={handleChange} rows="3" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', resize: 'vertical' }} placeholder="Ej: No puede laborar después de las 6:00 PM, máximo 6 horas diarias. No exposición a químicos agropecuarios." />
+                <textarea name="restriccion_horaria" value={formData.restriccion_horaria || ''} onChange={handleChange} rows="3" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'var(--bg-card)', resize: 'vertical' }} placeholder="Ej: No puede laborar después de las 6:00 PM, máximo 6 horas diarias. No exposición a químicos agropecuarios." />
               </div>
 
               <div style={{ padding: '16px', background: '#ffedd5', borderRadius: '8px', color: '#9a3412', fontSize: '13px', lineHeight: '1.5', fontWeight: '500' }}>
@@ -512,17 +512,17 @@ function EmployeeFormModal({ isOpen, onClose, mode = 'add', pkValue, defaultValu
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label style={{ fontWeight: '600', color: '#7f1d1d' }}>Fecha de Retiro</label>
-                  <input type="date" name="fecha_retiro" value={liquidationData?.fecha_liquidacion ? liquidationData.fecha_liquidacion.substring(0, 10) : formData.fecha_retiro || ''} onChange={handleChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #fca5a5', background: '#fff' }} />
+                  <input type="date" name="fecha_retiro" value={liquidationData?.fecha_liquidacion ? liquidationData.fecha_liquidacion.substring(0, 10) : formData.fecha_retiro || ''} onChange={handleChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #fca5a5', background: 'var(--bg-card)' }} />
                 </div>
               </div>
 
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label style={{ fontWeight: '600', color: '#7f1d1d' }}>Motivo de Retiro</label>
-                <input type="text" name="motivo_retiro" value={liquidationData?.motivo_retiro || formData.motivo_retiro || ''} onChange={handleChange} placeholder="Ej: Renuncia voluntaria, Fin de obra, Despido justificado..." style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #fca5a5', background: '#fff' }} />
+                <input type="text" name="motivo_retiro" value={liquidationData?.motivo_retiro || formData.motivo_retiro || ''} onChange={handleChange} placeholder="Ej: Renuncia voluntaria, Fin de obra, Despido justificado..." style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #fca5a5', background: 'var(--bg-card)' }} />
               </div>
 
               {liquidationData && (
-                <div style={{ marginTop: '10px', padding: '16px', background: '#ffffff', borderRadius: '8px', border: '1px solid #fecaca', boxShadow: '0 2px 4px rgba(220, 38, 38, 0.05)' }}>
+                <div style={{ marginTop: '10px', padding: '16px', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid #fecaca', boxShadow: '0 2px 4px rgba(220, 38, 38, 0.05)' }}>
                   <h4 style={{ margin: '0 0 12px 0', color: '#991b1b', fontSize: '14px' }}>Resumen Financiero Pagado</h4>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <span style={{ color: '#475569' }}>Total Liquidado:</span>

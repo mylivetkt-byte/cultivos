@@ -210,7 +210,7 @@ export default function KardexDashboard({ tenantId }) {
   ];
 
   return (
-    <div style={{ padding: 24, background: '#f5f5f5', minHeight: '100vh' }}>
+    <div style={{ padding: 24, background: 'var(--bg-main)', minHeight: '100vh' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <Title level={2} style={{ margin: 0, color: '#1f1f1f' }}>Centro de Comando: Kárdex y Rastreo</Title>

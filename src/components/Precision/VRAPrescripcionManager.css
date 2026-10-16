@@ -1,0 +1,267 @@
+.vra-prescripcion-container {
+  padding: 24px;
+  background: var(--bg-primary, #f8fafc);
+  min-height: calc(100vh - 70px);
+}
+
+.vra-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+  background: #ffffff;
+  padding: 20px 24px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.badge-modulo-vra {
+  display: inline-block;
+  background: #fef3c7;
+  color: #b45309;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border: 1px solid #fde68a;
+  margin-bottom: 6px;
+}
+
+.btn-primary-vra {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: #d97706;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.25);
+}
+
+.btn-primary-vra:hover {
+  background: #b45309;
+}
+
+.source-badge {
+  display: inline-block;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.btn-export-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.btn-export-badge.isoxml {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+.btn-export-badge.isoxml:hover {
+  background: #dcfce7;
+}
+
+.btn-export-badge.geojson {
+  background: #f0f9ff;
+  color: #0369a1;
+  border-color: #bae6fd;
+}
+
+.btn-export-badge.geojson:hover {
+  background: #e0f2fe;
+}
+
+/* LAYOUT MAPA */
+.vra-map-layout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 950px) {
+  .vra-map-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.vra-details-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.vra-details-card h3 {
+  margin: 6px 0 2px 0;
+  font-size: 17px;
+  color: #0f172a;
+}
+
+.zonas-breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.zonas-breakdown-list h4 {
+  margin: 0;
+  font-size: 13px;
+  color: #475569;
+  font-weight: 700;
+}
+
+.zona-item-row {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.zona-color-indicator {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.zona-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.zona-sub-meta {
+  font-size: 11px;
+  color: #334155;
+  display: flex;
+  gap: 6px;
+}
+
+.export-pack-box {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.export-pack-box h4 {
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  color: #475569;
+}
+
+.export-buttons-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-download-console {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.btn-download-console.isoxml {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.btn-download-console.isoxml:hover {
+  background: #0369a1;
+}
+
+.btn-download-console.geojson {
+  background: #f1f5f9;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+.btn-download-console.geojson:hover {
+  background: #e2e8f0;
+}
+
+.vra-map-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 10px;
+}
+
+/* PREVIEW ZONAS MODAL */
+.preview-zonas-box {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.preview-zonas-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.preview-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  border: 2px solid;
+}
+
+.pill-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.preview-savings-note {
+  font-size: 12px;
+  color: #047857;
+  background: #ecfdf5;
+  padding: 6px 12px;
+  border-radius: 6px;
+}

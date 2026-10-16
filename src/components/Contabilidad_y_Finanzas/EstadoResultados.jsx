@@ -1,5 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../utils/api';
+import { Select } from 'antd';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+const { Option } = Select;
+
+const darkSelectStyles = `
+  .dark-select .ant-select-selector {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+    height: 38px !important;
+    padding-top: 3px !important;
+    border-radius: 4px !important;
+  }
+  .dark-select .ant-select-selection-search-input {
+    color: var(--text) !important;
+    height: 36px !important;
+  }
+  .dark-select .ant-select-selection-item {
+    color: var(--text) !important;
+    line-height: 30px !important;
+  }
+  .dark-select .ant-select-arrow {
+    color: var(--text-muted) !important;
+  }
+  .dark-select-dropdown {
+    background-color: var(--card-bg) !important;
+  }
+  .dark-select-dropdown .ant-select-item {
+    color: var(--text-muted) !important;
+  }
+  .dark-select-dropdown .ant-select-item-option-active,
+  .dark-select-dropdown .ant-select-item-option-selected {
+    background-color: var(--border) !important;
+    color: var(--text) !important;
+  }
+`;
 
 const EstadoResultados = ({ tenantId }) => {
   const [data, setData] = useState([]);
@@ -65,8 +102,8 @@ const EstadoResultados = ({ tenantId }) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 2 }).format(amount);
   };
 
-  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' };
-  const inputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', background: 'white', width: '100%' };
+  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '4px' };
+  const inputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', width: '100%', height: '38px' };
 
   // Agrupación de datos
   const ingresos = data.filter(d => d.clase === '4');
@@ -89,14 +126,14 @@ const EstadoResultados = ({ tenantId }) => {
     return (
       <>
         <tr>
-          <td colSpan="2" style={{ fontWeight: 'bold', padding: '12px 8px', background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>{title}</td>
+          <td colSpan="2" style={{ fontWeight: 'bold', padding: '12px 8px', background: 'var(--bg-main)', borderBottom: '1px solid #cbd5e1' }}>{title}</td>
         </tr>
         {items.map((item, idx) => {
           const debito = parseFloat(item.total_debito);
           const credito = parseFloat(item.total_credito);
           const saldo = isDebitNormal ? (debito - credito) : (credito - debito);
           return (
-            <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+            <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
               <td style={{ padding: '8px 8px 8px 24px' }}>{item.cuenta_codigo} - {item.cuenta_nombre}</td>
               <td style={{ textAlign: 'right', padding: '8px' }}>{formatCurrency(saldo)}</td>
             </tr>
@@ -106,30 +143,45 @@ const EstadoResultados = ({ tenantId }) => {
     );
   };
 
+  const chartData = [
+    { name: 'Ingresos Operacionales', value: totalIngresos > 0 ? totalIngresos : 0, color: '#10b981' },
+    { name: 'Costos de Producción/Ventas', value: totalCostos > 0 ? totalCostos : 0, color: '#f59e0b' },
+    { name: 'Gastos Operacionales', value: totalGastos > 0 ? totalGastos : 0, color: '#ef4444' }
+  ].filter(item => item.value > 0);
+
   return (
-    <div style={{ margin: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+    <div style={{ margin: '20px', background: 'var(--card-bg)', color: 'var(--text)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+      <style>{darkSelectStyles}</style>
       {/* HEADER NO IMPRIMIBLE */}
       <div className="no-print">
-        <div style={{ background: 'linear-gradient(90deg, #1e293b 0%, #334155 100%)', padding: '24px', color: 'white' }}>
+        <div style={{ background: 'linear-gradient(90deg, #1e293b 0%, #334155 100%)', padding: '24px', color: 'white', borderTopLeftRadius: '8px', borderTopRightRadius: '8px' }}>
           <h2 style={{ margin: '0 0 8px 0' }}>📊 Estado de Resultados</h2>
           <p style={{ margin: 0, color: '#cbd5e1' }}>Reporte de Pérdidas y Ganancias</p>
         </div>
         <div style={{ padding: '24px' }}>
-          <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+          <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '24px' }}>
             <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '16px' }}>
               <div style={{ flex: 1, minWidth: '200px' }}>
                 <label style={labelStyle}>Finca (Subempresa)</label>
-                <select value={idFinca} onChange={(e) => setIdFinca(e.target.value)} style={inputStyle}>
-                  <option value="">-- Toda la Empresa --</option>
+                <Select
+                  showSearch
+                  optionFilterProp="children"
+                  value={idFinca || undefined}
+                  onChange={(val) => setIdFinca(val || '')}
+                  className="w-full dark-select"
+                  placeholder="-- Toda la Empresa --"
+                  allowClear
+                >
+                  <Option value="">-- Toda la Empresa --</Option>
                   {fincas.map(f => (
-                    <option key={f.id_finca} value={f.id_finca}>{f.codigo} - {f.nombre}</option>
+                    <Option key={f.id_finca} value={f.id_finca}>{f.codigo} - {f.nombre}</Option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                <div style={{ display: 'flex', background: '#e2e8f0', borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
-                  <button onClick={() => setModoTiempo('fechas')} style={{ padding: '8px 16px', border: 'none', background: modoTiempo === 'fechas' ? '#2563eb' : 'transparent', color: modoTiempo === 'fechas' ? 'white' : '#475569', fontWeight: 'bold', cursor: 'pointer' }}>📅 Fechas</button>
-                  <button onClick={() => setModoTiempo('lapsos')} style={{ padding: '8px 16px', border: 'none', background: modoTiempo === 'lapsos' ? '#2563eb' : 'transparent', color: modoTiempo === 'lapsos' ? 'white' : '#475569', fontWeight: 'bold', cursor: 'pointer' }}>⏱️ Lapsos</button>
+                <div style={{ display: 'flex', background: 'var(--border)', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)', height: '38px' }}>
+                  <button onClick={() => setModoTiempo('fechas')} style={{ padding: '0 16px', height: '100%', border: 'none', background: modoTiempo === 'fechas' ? '#2563eb' : 'transparent', color: modoTiempo === 'fechas' ? 'white' : '#475569', fontWeight: 'bold', cursor: 'pointer' }}>📅 Fechas</button>
+                  <button onClick={() => setModoTiempo('lapsos')} style={{ padding: '0 16px', height: '100%', border: 'none', background: modoTiempo === 'lapsos' ? '#2563eb' : 'transparent', color: modoTiempo === 'lapsos' ? 'white' : '#475569', fontWeight: 'bold', cursor: 'pointer' }}>⏱️ Lapsos</button>
                 </div>
               </div>
             </div>
@@ -141,26 +193,38 @@ const EstadoResultados = ({ tenantId }) => {
                 </>
               ) : (
                 <>
-                  <div>
+                  <div style={{ width: '150px' }}>
                     <label style={labelStyle}>Lapso Inicial</label>
-                    <select value={idLapsoInicio} onChange={(e) => setIdLapsoInicio(e.target.value)} style={inputStyle}>
-                      <option value="">-- Seleccionar --</option>
-                      {lapsos.map(L => <option key={L.id_periodo} value={L.id_periodo}>{L.ano}-{String(L.mes).padStart(2,'0')}</option>)}
-                    </select>
+                    <Select
+                      showSearch
+                      optionFilterProp="children"
+                      value={idLapsoInicio || undefined}
+                      onChange={(val) => setIdLapsoInicio(val || '')}
+                      className="w-full dark-select"
+                      placeholder="-- Seleccionar --"
+                    >
+                      {lapsos.map(L => <Option key={L.id_periodo} value={L.id_periodo}>{L.ano}-{String(L.mes).padStart(2,'0')}</Option>)}
+                    </Select>
                   </div>
-                  <div>
+                  <div style={{ width: '150px' }}>
                     <label style={labelStyle}>Lapso Final</label>
-                    <select value={idLapsoFin} onChange={(e) => setIdLapsoFin(e.target.value)} style={inputStyle}>
-                      <option value="">-- Seleccionar --</option>
-                      {lapsos.map(L => <option key={L.id_periodo} value={L.id_periodo}>{L.ano}-{String(L.mes).padStart(2,'0')}</option>)}
-                    </select>
+                    <Select
+                      showSearch
+                      optionFilterProp="children"
+                      value={idLapsoFin || undefined}
+                      onChange={(val) => setIdLapsoFin(val || '')}
+                      className="w-full dark-select"
+                      placeholder="-- Seleccionar --"
+                    >
+                      {lapsos.map(L => <Option key={L.id_periodo} value={L.id_periodo}>{L.ano}-{String(L.mes).padStart(2,'0')}</Option>)}
+                    </Select>
                   </div>
                 </>
               )}
-              <button onClick={fetchReporte} style={{ background: '#22c55e', color: 'white', padding: '9px 24px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', marginLeft: 'auto' }}>
+              <button onClick={fetchReporte} style={{ background: '#22c55e', color: 'white', padding: '0 24px', height: '38px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', marginLeft: 'auto' }}>
                 {loading ? 'Consultando...' : '▶ Generar Reporte'}
               </button>
-              <button onClick={() => window.print()} style={{ background: '#3b82f6', color: 'white', padding: '9px 24px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+              <button onClick={() => window.print()} style={{ background: '#3b82f6', color: 'white', padding: '0 24px', height: '38px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
                 🖨️ Imprimir
               </button>
             </div>
@@ -170,13 +234,44 @@ const EstadoResultados = ({ tenantId }) => {
       </div>
 
       {/* REPORTE IMPRIMIBLE */}
-      <div className="printable-report" style={{ padding: '40px', background: 'white' }}>
+      <div className="printable-report" style={{ padding: '0 40px 40px 40px', background: 'var(--card-bg)', color: 'var(--text)' }}>
+        
+        {/* GRÁFICO VISUAL (Se oculta al imprimir por defecto, pero aporta UX interactiva) */}
+        {data.length > 0 && chartData.length > 0 && (
+          <div className="no-print" style={{ marginBottom: '30px', padding: '20px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg-main)' }}>
+            <h3 style={{ margin: '0 0 16px 0', textAlign: 'center', color: 'var(--text-muted)' }}>Composición de Resultados</h3>
+            <div style={{ width: '100%', height: '300px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(1)}%)`}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => formatCurrency(value)} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
           <h1 style={{ margin: '0 0 8px 0', fontSize: '24px' }}>ESTADO DE RESULTADOS INTEGRAL</h1>
-          <h3 style={{ margin: 0, fontWeight: 'normal', color: '#475569' }}>
+          <h3 style={{ margin: 0, fontWeight: 'normal', color: 'var(--text-muted)' }}>
             {idFinca ? `Finca/Subempresa: ${fincas.find(f => f.id_finca.toString() === idFinca)?.nombre}` : 'Empresa Consolidada'}
           </h3>
-          <p style={{ margin: '8px 0 0 0', color: '#64748b' }}>
+          <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)' }}>
             {modoTiempo === 'fechas' ? `Desde ${fechaInicio} hasta ${fechaFin}` : `Lapso ${idLapsoInicio} a ${idLapsoFin}`}
           </p>
         </div>
@@ -186,16 +281,16 @@ const EstadoResultados = ({ tenantId }) => {
             {renderSection('INGRESOS OPERACIONALES', ingresos, false)}
             <tr>
               <td style={{ padding: '12px 8px', fontWeight: 'bold', textAlign: 'right' }}>TOTAL INGRESOS</td>
-              <td style={{ padding: '12px 8px', fontWeight: 'bold', textAlign: 'right', borderTop: '2px solid #334155' }}>{formatCurrency(totalIngresos)}</td>
+              <td style={{ padding: '12px 8px', fontWeight: 'bold', textAlign: 'right', borderTop: '2px solid var(--border)' }}>{formatCurrency(totalIngresos)}</td>
             </tr>
 
             {renderSection('COSTOS DE VENTAS Y PRODUCCIÓN', costos, true)}
             <tr>
               <td style={{ padding: '12px 8px', fontWeight: 'bold', textAlign: 'right' }}>TOTAL COSTOS</td>
-              <td style={{ padding: '12px 8px', fontWeight: 'bold', textAlign: 'right', borderTop: '2px solid #334155' }}>{formatCurrency(totalCostos)}</td>
+              <td style={{ padding: '12px 8px', fontWeight: 'bold', textAlign: 'right', borderTop: '2px solid var(--border)' }}>{formatCurrency(totalCostos)}</td>
             </tr>
 
-            <tr style={{ background: '#f8fafc' }}>
+            <tr style={{ background: 'var(--bg-main)' }}>
               <td style={{ padding: '16px 8px', fontWeight: 'bold', fontSize: '16px' }}>UTILIDAD BRUTA</td>
               <td style={{ padding: '16px 8px', fontWeight: 'bold', fontSize: '16px', textAlign: 'right' }}>{formatCurrency(utilidadBruta)}</td>
             </tr>
@@ -203,19 +298,19 @@ const EstadoResultados = ({ tenantId }) => {
             {renderSection('GASTOS OPERACIONALES', gastos, true)}
             <tr>
               <td style={{ padding: '12px 8px', fontWeight: 'bold', textAlign: 'right' }}>TOTAL GASTOS</td>
-              <td style={{ padding: '12px 8px', fontWeight: 'bold', textAlign: 'right', borderTop: '2px solid #334155' }}>{formatCurrency(totalGastos)}</td>
+              <td style={{ padding: '12px 8px', fontWeight: 'bold', textAlign: 'right', borderTop: '2px solid var(--border)' }}>{formatCurrency(totalGastos)}</td>
             </tr>
 
             <tr>
               <td style={{ padding: '20px 8px', fontWeight: 'bold', fontSize: '18px', color: utilidadNeta >= 0 ? '#16a34a' : '#dc2626' }}>UTILIDAD (PÉRDIDA) NETA DEL EJERCICIO</td>
-              <td style={{ padding: '20px 8px', fontWeight: 'bold', fontSize: '18px', textAlign: 'right', color: utilidadNeta >= 0 ? '#16a34a' : '#dc2626', borderTop: '3px double #334155' }}>{formatCurrency(utilidadNeta)}</td>
+              <td style={{ padding: '20px 8px', fontWeight: 'bold', fontSize: '18px', textAlign: 'right', color: utilidadNeta >= 0 ? '#16a34a' : '#dc2626', borderTop: '3px double var(--border)' }}>{formatCurrency(utilidadNeta)}</td>
             </tr>
           </tbody>
         </table>
 
         <div style={{ marginTop: '80px', display: 'flex', justifyContent: 'space-around' }}>
-          <div style={{ textAlign: 'center', width: '250px', borderTop: '1px solid #334155', paddingTop: '8px' }}>Representante Legal</div>
-          <div style={{ textAlign: 'center', width: '250px', borderTop: '1px solid #334155', paddingTop: '8px' }}>Contador Público</div>
+          <div style={{ textAlign: 'center', width: '250px', borderTop: '1px solid var(--border)', paddingTop: '8px' }}>Representante Legal</div>
+          <div style={{ textAlign: 'center', width: '250px', borderTop: '1px solid var(--border)', paddingTop: '8px' }}>Contador Público</div>
         </div>
       </div>
     </div>

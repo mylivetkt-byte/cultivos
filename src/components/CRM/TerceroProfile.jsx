@@ -61,7 +61,7 @@ function TerceroProfile({ tenantId, terceroId, onBack }) {
           {perfil.cupo_credito > 0 && (
             <div>
               <div style={{ fontSize: '12px', marginBottom: '5px' }}>Uso de Cupo: {cupoUtilizado.toFixed(1)}%</div>
-              <div style={{ width: '100%', height: '10px', background: '#e0e0e0', borderRadius: '5px' }}>
+              <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '5px' }}>
                 <div style={{ height: '100%', width: `${Math.min(100, Math.max(0, cupoUtilizado))}%`, background: cupoUtilizado > 90 ? '#ff4d4f' : cupoUtilizado > 70 ? '#faad14' : '#00c49f', borderRadius: '5px' }}></div>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
+import { jsPDF } from 'jspdf';
 import { fetchGPSConnections, fetchGPSAssignments, pingGPSTelemetry, fetchGPSTrajectory } from '../utils/api';
 
 // Helper to parse WKT strings
@@ -62,7 +63,6 @@ function GPSTracker({ tenantId, fincaId, nucleoId }) {
   const [simLocationMode, setSimLocationMode] = useState('in'); // 'in' or 'out' or 'moving'
   const [simHeading, setSimHeading] = useState(0);
 
-  // Load telemetry data from API
   const loadTelemetryData = useCallback(async () => {
     try {
       const conns = await fetchGPSConnections({ tenantId });
@@ -77,6 +77,26 @@ function GPSTracker({ tenantId, fincaId, nucleoId }) {
       setLoading(false);
     }
   }, [tenantId]);
+
+  const deviceHistoryRef = useRef({});
+
+  // Track idle time
+  useEffect(() => {
+    const now = Date.now();
+    connections.forEach(conn => {
+      const prev = deviceHistoryRef.current[conn.id_dispositivo];
+      if (!prev) {
+        deviceHistoryRef.current[conn.id_dispositivo] = { lat: conn.lat, lng: conn.lng, idleStart: conn.velocidad === 0 ? now : null };
+      } else {
+        const moved = Math.abs(prev.lat - conn.lat) > 0.0001 || Math.abs(prev.lng - conn.lng) > 0.0001;
+        if (moved || conn.velocidad > 0) {
+          deviceHistoryRef.current[conn.id_dispositivo] = { lat: conn.lat, lng: conn.lng, idleStart: conn.velocidad === 0 ? now : null };
+        } else {
+          if (!prev.idleStart) prev.idleStart = now;
+        }
+      }
+    });
+  }, [connections]);
 
   // Load initial data and set up automatic polling every 10 seconds
   useEffect(() => {
@@ -182,13 +202,36 @@ function GPSTracker({ tenantId, fincaId, nucleoId }) {
         // Find if this connection has an active assignment and its zone status
         const activeAss = assignments.find(a => a.tipo_entidad === conn.tipo_entidad && a.id_entidad === conn.id_entidad);
         const inZone = activeAss ? activeAss.dentro_zona_actual === 1 : true;
-        const color = inZone ? '#00E676' : '#FF1744'; // Green = inside/no assignment, Red = outside
+        
+        // Speed & Idle Logic
+        const isSpeeding = conn.velocidad > 40; // 40 km/h limit
+        let isIdle = false;
+        let idleMinutes = 0;
+        const devHist = deviceHistoryRef.current[conn.id_dispositivo];
+        if (devHist && devHist.idleStart) {
+          idleMinutes = Math.floor((Date.now() - devHist.idleStart) / 60000);
+          isIdle = idleMinutes >= 15; // 15 mins without moving
+        }
+
+        let color = inZone ? '#00E676' : '#FF1744'; // Green = inside/no assignment, Red = outside
+        let extraClasses = '';
+        let statusBadge = '';
+        
+        if (isSpeeding) {
+          color = '#FF1744'; // Red border
+          extraClasses = 'gps-alert-speeding';
+          statusBadge = '<span style="background: #ef4444; color: white; padding: 2px 4px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 6px;">Exceso Vel.</span>';
+        } else if (isIdle) {
+          color = '#FFB300'; // Orange border
+          extraClasses = 'gps-alert-idle';
+          statusBadge = `<span style="background: #f59e0b; color: white; padding: 2px 4px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 6px;">Inactivo ${idleMinutes}m</span>`;
+        }
 
         // Emoji by Entity Type
         const avatar = conn.tipo_entidad === 'Empleado' ? '👤' : (conn.tipo_entidad === 'Vehiculo' ? '🚚' : '🚜');
 
         const deviceIcon = L.divIcon({
-          className: 'custom-gps-marker',
+          className: `custom-gps-marker ${extraClasses}`,
           html: `<div style="
             display: flex;
             align-items: center;
@@ -229,11 +272,11 @@ function GPSTracker({ tenantId, fincaId, nucleoId }) {
         const detailsHtml = `
           <div style="font-family: Inter, sans-serif; color: #1e293b; min-width: 200px; padding: 4px;">
             <h4 style="margin: 0 0 6px 0; font-size: 14px; font-weight: bold; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-              <span>${avatar}</span> ${conn.nombre_entidad}
+              <span>${avatar}</span> ${conn.nombre_entidad} ${statusBadge}
             </h4>
             <div style="font-size: 12px; margin-bottom: 4px;"><strong>Identificador:</strong> ${conn.identificador_gps}</div>
             <div style="font-size: 12px; margin-bottom: 4px;"><strong>Estado GPS:</strong> <span style="color: ${conn.estado === 'Activo' ? '#10b981' : '#ef4444'}; font-weight: bold;">${conn.estado}</span></div>
-            <div style="font-size: 12px; margin-bottom: 4px;"><strong>Velocidad:</strong> ${conn.velocidad} km/h</div>
+            <div style="font-size: 12px; margin-bottom: 4px; color: ${isSpeeding ? '#ef4444' : '#1e293b'};"><strong>Velocidad:</strong> ${conn.velocidad} km/h</div>
             <div style="font-size: 12px; margin-bottom: 6px;"><strong>Dirección:</strong> ${conn.direccion}°</div>
             ${activeAss ? `
               <div style="
@@ -246,7 +289,7 @@ function GPSTracker({ tenantId, fincaId, nucleoId }) {
                 border: 1px solid ${inZone ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'};
               ">
                 📌 Labor: ${activeAss.descripcion_labor}<br/>
-                🚨 Estado: ${inZone ? 'EN ZONA ASIGNADA' : 'FUERA DE ZONA'}
+                🚨 Estado Geocerca: ${inZone ? 'EN ZONA ASIGNADA' : 'FUERA DE ZONA'}
               </div>
             ` : `<div style="font-size: 11px; color: #64748b; font-style: italic;">Sin labores geolocalizadas asignadas hoy.</div>`}
           </div>
@@ -379,6 +422,76 @@ function GPSTracker({ tenantId, fincaId, nucleoId }) {
     };
   }, [simIntervalId]);
 
+  // Generar Reporte PDF de Ruta Diaria (Cumplimiento Geocerca)
+  const generateGPSReport = () => {
+    if (!selectedDevice || historyPath.length === 0) {
+      alert('Seleccione un dispositivo en el mapa que tenga historial de recorrido.');
+      return;
+    }
+
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setTextColor(30, 41, 59);
+    doc.text("Reporte de Cumplimiento GPS", 105, 20, { align: "center" });
+    
+    doc.setFontSize(12);
+    doc.text(`Fecha de Reporte: ${new Date().toLocaleString()}`, 105, 30, { align: "center" });
+    
+    doc.setLineWidth(0.5);
+    doc.line(20, 35, 190, 35);
+    
+    // Entity Info
+    doc.setFontSize(14);
+    doc.text("Información de Entidad", 20, 45);
+    doc.setFontSize(11);
+    doc.text(`Nombre: ${selectedDevice.nombre_entidad}`, 20, 55);
+    doc.text(`Tipo: ${selectedDevice.tipo_entidad}`, 20, 62);
+    doc.text(`ID Dispositivo (GPS): ${selectedDevice.identificador_gps}`, 20, 69);
+    
+    // Calculate Stats
+    const totalPings = historyPath.length;
+    let pingsIn = 0;
+    let pingsOut = 0;
+    let maxSpeed = 0;
+    
+    historyPath.forEach(h => {
+      if (h.dentro_zona === 1) pingsIn++;
+      else pingsOut++;
+      if (h.velocidad > maxSpeed) maxSpeed = h.velocidad;
+    });
+    
+    const percentIn = ((pingsIn / totalPings) * 100).toFixed(1);
+    
+    doc.setFontSize(14);
+    doc.text("Resumen de Recorrido Georeferenciado", 20, 85);
+    doc.setFontSize(11);
+    doc.text(`Total de Puntos Registrados: ${totalPings}`, 20, 95);
+    doc.text(`Puntos DENTRO de Geocerca Asignada: ${pingsIn} (${percentIn}%)`, 20, 102);
+    doc.text(`Puntos FUERA de Geocerca Asignada: ${pingsOut} (${(100 - percentIn).toFixed(1)}%)`, 20, 109);
+    doc.text(`Velocidad Máxima Registrada: ${parseFloat(maxSpeed).toFixed(1)} km/h`, 20, 116);
+    
+    doc.setFontSize(12);
+    if (percentIn < 80) {
+      doc.setTextColor(239, 68, 68); // Red
+      doc.text("ALERTA: Bajo cumplimiento de geocerca (< 80% del tiempo en zona).", 20, 130);
+      doc.setTextColor(30, 41, 59);
+    } else {
+      doc.setTextColor(16, 185, 129); // Green
+      doc.text("ESTADO OK: Cumplimiento óptimo de geocerca.", 20, 130);
+      doc.setTextColor(30, 41, 59);
+    }
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text("Generado automáticamente por SAS - Módulo GPS", 105, 280, { align: "center" });
+    
+    // Save
+    const safeName = (selectedDevice.nombre_entidad || 'Entidad').replace(/[^a-zA-Z0-9]/g, '_');
+    doc.save(`Reporte_Cumplimiento_GPS_${safeName}.pdf`);
+  };
+
   return (
     <div className="gps-tracker-container" style={{
       display: 'flex',
@@ -386,6 +499,26 @@ function GPSTracker({ tenantId, fincaId, nucleoId }) {
       height: '100%',
       gap: '16px'
     }}>
+      <style>{`
+        @keyframes pulse-red-border {
+          0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+          70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        @keyframes pulse-orange-border {
+          0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+          70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        .gps-alert-speeding > div {
+          animation: pulse-red-border 1s infinite !important;
+          border-color: #ef4444 !important;
+        }
+        .gps-alert-idle > div {
+          animation: pulse-orange-border 2s infinite !important;
+          border-color: #f59e0b !important;
+        }
+      `}</style>
       <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h2>Seguimiento Georeferenciado de Personal y Equipos</h2>
@@ -518,6 +651,22 @@ function GPSTracker({ tenantId, fincaId, nucleoId }) {
             </div>
           </div>
 
+          {selectedDevice && (
+            <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: 'var(--radius)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#10b981' }}>📄 Reporte de Cumplimiento</h4>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                Exporte el historial de recorrido de <strong>{selectedDevice.nombre_entidad}</strong> para auditar si se mantuvo dentro de la geocerca.
+              </p>
+              <button 
+                className="btn-action" 
+                style={{ width: '100%', backgroundColor: '#10b981', color: '#fff', fontSize: '12px', padding: '8px' }}
+                onClick={generateGPSReport}
+              >
+                📥 Descargar Reporte PDF
+              </button>
+            </div>
+          )}
+
           {/* Real-time Simulator Panel */}
           <div style={{
             marginTop: 'auto',
@@ -580,7 +729,7 @@ function GPSTracker({ tenantId, fincaId, nucleoId }) {
                       padding: '6px',
                       fontSize: '11px',
                       background: simulationActive ? '#f44336' : '#00F0FF',
-                      color: '#000',
+                      color: 'var(--text-primary)',
                       fontWeight: 'bold',
                       border: 'none'
                     }}

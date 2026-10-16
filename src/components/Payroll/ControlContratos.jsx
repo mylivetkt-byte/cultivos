@@ -54,7 +54,7 @@ export default function ControlContratos({ tenantId, fincaId }) {
   });
 
   const categoriasCompletas = [
-    'Agricolas','Ganaderas','Acuicola','Violes','Semillero','Vias','Jardines','Cosechas','Finca','Otros',
+    'Agricolas','Ganaderas','Acuicola','Bioles','Semillero','Vias','Jardines','Cosechas','Finca','Otros',
     'Plateo', 'Poda', 'Siembra', 'Mantenimiento Drenajes', 'Sanidad Vegetal', 'Fertilización', 'Mantenimiento de Vías'
   ];
   
@@ -230,7 +230,7 @@ export default function ControlContratos({ tenantId, fincaId }) {
     doc.setTextColor(0);
     doc.setFontSize(11);
     
-    const textoPartes = `Entre los suscritos, por una parte SAS Agrícolas (en adelante EL CONTRATANTE), y por la otra ${selectedContrato.responsable_nombre || '_______________________'} (en adelante EL CONTRATISTA), se ha celebrado el presente CONTRATO DE OBRA O LABOR DETERMINADA, el cual se regirá por las siguientes cláusulas:`;
+    const textoPartes = `Entre los suscritos, por una parte AgroPaccioli (en adelante EL CONTRATANTE), y por la otra ${selectedContrato.responsable_nombre || '_______________________'} (en adelante EL CONTRATISTA), se ha celebrado el presente CONTRATO DE OBRA O LABOR DETERMINADA, el cual se regirá por las siguientes cláusulas:`;
     
     const splitPartes = doc.splitTextToSize(textoPartes, 170);
     doc.text(splitPartes, margenIzq, y);
@@ -323,7 +323,7 @@ export default function ControlContratos({ tenantId, fincaId }) {
     if (!selectedContrato) return;
     const { responsable_nombre, director_nombre, nombre_obra, saldo_pendiente, valor_total, total_abonado } = selectedContrato;
     
-    let text = `*SAS Agrícolas - Detalle de Contrato*\n\n`;
+    let text = `*AgroPaccioli - Detalle de Contrato*\n\n`;
     text += `🚜 *Obra/Labor:* ${nombre_obra}\n`;
     text += `👷 *Contratista:* ${responsable_nombre || 'N/A'}\n`;
     if (director_nombre) text += `👨‍💼 *Director de Destino:* ${director_nombre}\n`;

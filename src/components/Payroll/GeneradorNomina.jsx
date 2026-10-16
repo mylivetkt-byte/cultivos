@@ -448,21 +448,21 @@ export default function GeneradorNomina({ tenantId, fincaId }) {
                 <button 
                   onClick={() => handleImprimirDesprendibles(detallesModal.id)}
                   disabled={generandoPdf}
-                  className="btn" style={{ background: '#fff', color: 'var(--primary)', fontWeight: 'bold' }}
+                  className="btn" style={{ background: 'var(--bg-card)', color: 'var(--primary)', fontWeight: 'bold' }}
                 >
                   {generandoPdf ? 'Generando...' : '🖨️ Desprendibles PDF'}
                 </button>
                 <button 
                   onClick={() => handleSabanaNomina(detallesModal.id)}
                   disabled={generandoPdf}
-                  className="btn" style={{ background: '#fff', color: 'var(--primary)', fontWeight: 'bold' }}
+                  className="btn" style={{ background: 'var(--bg-card)', color: 'var(--primary)', fontWeight: 'bold' }}
                 >
                   {generandoPdf ? 'Generando...' : '📊 Sábana Maestra PDF'}
                 </button>
                 <button 
                   onClick={() => handleReporteBancario(detallesModal.id)}
                   disabled={generandoPdf}
-                  className="btn" style={{ background: '#fff', color: 'var(--primary)', fontWeight: 'bold' }}
+                  className="btn" style={{ background: 'var(--bg-card)', color: 'var(--primary)', fontWeight: 'bold' }}
                 >
                   {generandoPdf ? 'Generando...' : '🏦 Autorización Bancaria PDF'}
                 </button>

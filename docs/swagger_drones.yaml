@@ -1,0 +1,93 @@
+openapi: 3.0.0
+info:
+  title: API Drones AgTech
+  version: 1.0.0
+  description: Endpoints para gestión de flota, misiones, importación y reportes de drones.
+paths:
+  /api/drones/equipos:
+    post:
+      summary: Alta transaccional de un nuevo dron
+      description: Crea un registro en `maquinaria` y otro en `equipos_dron` transaccionalmente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id_tenant:
+                  type: integer
+                id_finca:
+                  type: integer
+                codigo:
+                  type: string
+                nombre:
+                  type: string
+                numero_serie:
+                  type: string
+                catalogo_modelo_id:
+                  type: integer
+      responses:
+        '200':
+          description: Dron creado exitosamente
+          
+  /api/drones/misiones:
+    post:
+      summary: Programar nueva misión
+      description: Valida licencia de piloto (RN1) y estado del dron antes de programar la misión.
+      responses:
+        '200':
+          description: Misión programada
+
+  /api/drones/misiones/{id}/estado:
+    put:
+      summary: Actualizar estado de misión
+      description: Iniciar o abortar misión.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                estado:
+                  type: string
+                  enum: [en_curso, abortada]
+      responses:
+        '200':
+          description: Estado actualizado
+          
+  /api/drones/misiones/{id}/cierre:
+    post:
+      summary: Cerrar misión
+      description: Finaliza la misión, suma horas al dron, descuenta inventario, actualiza lote_historial y genera alerta (RN2).
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Misión cerrada
+          
+  /api/drones/reportes/horas:
+    get:
+      summary: Reporte de horas por modelo
+      responses:
+        '200':
+          description: Lista de horas voladas por modelo de dron.
+
+  /api/drones/alertas/generar:
+    get:
+      summary: Job de generación de alertas
+      description: Evalúa licencias próximas a vencer, mantenimientos requeridos y estado de baterías.
+      responses:
+        '200':
+          description: Alertas generadas

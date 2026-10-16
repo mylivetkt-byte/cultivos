@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { authFetch } from '../../utils/api';
+import { customStyles } from '../PremiumSelect';
 
 function AnalisisCompras({ tenantId }) {
   const [insumos, setInsumos] = useState([]);
@@ -67,7 +68,7 @@ function AnalisisCompras({ tenantId }) {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="custom-tooltip" style={{ background: '#fff', padding: '10px', border: '1px solid #ccc', color: '#333' }}>
+        <div className="custom-tooltip" style={{ background: 'var(--bg-card)', padding: '10px', border: '1px solid #ccc', color: 'var(--text-primary)' }}>
           <p className="label" style={{ fontWeight: 'bold', margin: '0 0 5px 0' }}>{label}</p>
           <p style={{ margin: 0 }}><strong>Proveedor:</strong> {data.proveedor}</p>
           <p style={{ margin: 0 }}><strong>Orden:</strong> {data.orden}</p>

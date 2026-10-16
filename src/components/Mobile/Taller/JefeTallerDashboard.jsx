@@ -9,7 +9,7 @@ export default function JefeTallerDashboard({ tenantId, activeTab, setActiveTab 
   
   if (activeTab === 'ordenes') {
     return (
-      <div style={{height: '100%', overflow: 'auto', background: '#fff'}}>
+      <div style={{height: '100%', overflow: 'auto', background: 'var(--bg-card)'}}>
         <TallerOrdenes onBack={() => setActiveTab('home')} tenantId={tenantId} />
       </div>
     );
@@ -17,7 +17,7 @@ export default function JefeTallerDashboard({ tenantId, activeTab, setActiveTab 
   
   if (activeTab === 'nueva_ot') {
     return (
-      <div style={{height: '100%', overflow: 'auto', background: '#fff'}}>
+      <div style={{height: '100%', overflow: 'auto', background: 'var(--bg-card)'}}>
         <TallerNuevaOT onBack={() => setActiveTab('home')} tenantId={tenantId} />
       </div>
     );
@@ -25,7 +25,7 @@ export default function JefeTallerDashboard({ tenantId, activeTab, setActiveTab 
 
   if (activeTab === 'inventario') {
     return (
-      <div style={{height: '100%', overflow: 'auto', background: '#fff'}}>
+      <div style={{height: '100%', overflow: 'auto', background: 'var(--bg-card)'}}>
         <TallerInventario onBack={() => setActiveTab('home')} tenantId={tenantId} />
       </div>
     );
@@ -33,7 +33,7 @@ export default function JefeTallerDashboard({ tenantId, activeTab, setActiveTab 
 
   if (activeTab === 'historial_pedidos') {
     return (
-      <div style={{height: '100%', overflow: 'auto', background: '#fff'}}>
+      <div style={{height: '100%', overflow: 'auto', background: 'var(--bg-card)'}}>
         <TallerHistorialPedidos onBack={() => setActiveTab('home')} tenantId={tenantId} />
       </div>
     );
@@ -41,7 +41,7 @@ export default function JefeTallerDashboard({ tenantId, activeTab, setActiveTab 
 
   if (activeTab === 'cierre_final') {
     return (
-      <div style={{height: '100%', overflow: 'auto', background: '#fff'}}>
+      <div style={{height: '100%', overflow: 'auto', background: 'var(--bg-card)'}}>
         <TallerCierreFinal onBack={() => setActiveTab('home')} tenantId={tenantId} />
       </div>
     );

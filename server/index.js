@@ -2,6 +2,7 @@ import 'dotenv/config';
 import path from 'path';
 import logoRouter from './routes/logoPath.js';
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import basculasRouter from './routes/basculas.js';
 import tablesRouter from './routes/tables.js';
@@ -31,14 +32,43 @@ import tomasFisicasRouter from './routes/tomas_fisicas.js';
 import pedidosInternosRouter from './routes/pedidos_internos.js';
 import custodiaRepuestosRouter from './routes/custodia_repuestos.js';
 import tallerRouter from './routes/taller.js';
+import tallerPreliquidacionRouter from './routes/taller_preliquidacion.js';
 import comercializacionRouter from './routes/comercializacion.js';
 import cosechasRouter from './routes/cosechas.js';
 import cosechasDetalleRouter from './routes/cosechasDetalle.js';
 import cultivosRouter from './routes/cultivos.js';
 import cosechasAuditoriaRouter from './routes/cosechasAuditoria.js';
+import produccionRouter from './routes/produccion.js';
+import usuariosPermisosRouter from './routes/usuarios_permisos.js';
+import radarMaquinariaRouter from './routes/radar_maquinaria.js';
 import { authMiddleware, tenantPoolMiddleware } from './utils/auth.js';
+import { logger, initSentry, loggerMiddleware } from './utils/logger.js';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { startBackupCron } from './jobs/backup.js';
+
 const app = express();
+
+initSentry(app);
+startBackupCron();
+
 const auth = [authMiddleware, tenantPoolMiddleware];
+
+// ============================================================================
+// ESCUDOS DE SEGURIDAD (NIVEL 3)
+// ============================================================================
+app.use(helmet()); // Oculta cabeceras sensibles (X-Powered-By)
+
+// Bloquea IPs que hagan más de 500 peticiones en 15 minutos (Anti-DDoS básico)
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 500,
+  message: { error: 'Demasiadas peticiones desde esta IP, por favor intenta más tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(compression());
 
 app.get('/api/public-seed-cosechas', async (req, res) => {
   try {
@@ -99,18 +129,25 @@ import acuicolaProgramadorRouter from './routes/acuicola_programador.js';
 import acuicolaMolinoRouter from './routes/acuicola_molino.js';
 import acuicolaCosechasMobileRouter from './routes/acuicola_cosechas_mobile.js';
 import syncRouter from './routes/sync.js';
+import suelosRouter from './routes/suelos.js';
+import sensoresRouter from './routes/sensores.js';
+import riegoPrecisionRouter from './routes/riego_precision.js';
+import vraPrescripcionRouter from './routes/vra_prescripcion.js';
+import rendimientoRouter from './routes/rendimiento.js';
+import dronesRouter from './routes/drones.js';
 import pool from './db.js';
 
 
 const PORT = Number(process.env.PORT || 3002);
 
 app.use(cors());
+app.use(loggerMiddleware); // <--- INYECTAMOS EL LOGGER AQUÍ
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Public auth routes (no middleware)
-app.use('/api/auth', authRouter);
+app.use('/api/auth', apiLimiter, authRouter);
 
 // Health check (public)
 app.get('/api/health', (req, res) => {
@@ -118,6 +155,8 @@ app.get('/api/health', (req, res) => {
 });
 
 // Protected routes - all require authentication + tenant pool
+// Aplicamos un rate limit un poco más estricto a las rutas generales de API
+app.use('/api/', apiLimiter);
 
 app.use('/api/basculas', auth, basculasRouter);
 app.use('/api/tables', auth, tablesRouter);
@@ -144,18 +183,23 @@ app.use('/api/sistemas/dashboard-alta-gerencia', auth, gerenciaGlobalRouter);
 app.use('/api/sistemas/dashboard-finca-auditoria', auth, dashboardFincaAuditoriaRouter);
 app.use('/api/rrhh', auth, rrhhRouter);
 app.use('/api/satellite', auth, satelliteRouter);
+app.use('/api/suelos', auth, suelosRouter);
 app.use('/api/inventario', auth, bodegasAvanzadoRoutes);
 app.use('/api/cuadrilla', auth, cuadrillaRouter);
 app.use('/api/catalogo-cuadrillas', rrhhCuadrillasRouter);
-app.use('/api/reports', auth, reportsRouter);
+app.use('/api/reportes', auth, reportsRouter);
+// app.use('/api/notificaciones', auth, notificacionesRouter);
+app.use('/api/usuarios-permisos', auth, usuariosPermisosRouter);
 app.use('/api/traslados', auth, trasladosRouter);
 app.use('/api/configuracion', auth, configRouter);
 app.use('/api/config/logo', auth, logoRouter);
 app.use('/api/tomas-fisicas', auth, tomasFisicasRouter);
 app.use('/api/pedidos-internos', auth, pedidosInternosRouter);
 app.use('/api/custodia-repuestos', auth, custodiaRepuestosRouter);
+app.use('/api/taller/preliquidacion', auth, tallerPreliquidacionRouter);
 app.use('/api/taller', auth, tallerRouter);
 app.use('/api/reportes-inventario', auth, reportesInventarioRouter);
+app.use('/api/radar-maquinaria', auth, radarMaquinariaRouter);
 app.use('/api/ganado_herramientas', auth, ganadoHerramientasRouter);
 app.use('/api/acuicola_herramientas', auth, acuicolaHerramientasRouter);
 app.use('/api/sistemas', auth, sistemasRouter);
@@ -185,8 +229,15 @@ app.use('/api/acuicola-cosechas-mobile', auth, acuicolaCosechasMobileRouter);
 app.use('/api/acuicola', auth, acuicolaRouter);
 app.use('/api/basculas', auth, basculasRouter);
 app.use('/api/comercializacion', auth, comercializacionRouter);
+app.use('/api/produccion', auth, produccionRouter);
 app.use('/api/cultivos', auth, cultivosRouter);
 app.use('/api/sync', auth, syncRouter);
+app.use('/api/suelos', auth, suelosRouter);
+app.use('/api/sensores', auth, sensoresRouter);
+app.use('/api/riego-precision', auth, riegoPrecisionRouter);
+app.use('/api/vra', auth, vraPrescripcionRouter);
+app.use('/api/rendimiento', auth, rendimientoRouter);
+app.use('/api/drones', auth, dronesRouter);
 
 app.use('/api/water', auth, waterRouter);
 app.get('/api/dashboard/stats', auth, async (req, res) => {
@@ -333,11 +384,38 @@ app.get('/api/dashboard/harvest-trend', auth, async (req, res) => {
   }
 });
 
-app.listen(PORT, '127.0.0.1', () => {
-  console.log(`✅ SAS Agrícolas API Server running at http://localhost:${PORT}`);
+// ============================================================================
+// MIDDLEWARE GLOBAL DE MANEJO DE ERRORES (CATCH-ALL)
+// ============================================================================
+app.use((err, req, res, next) => {
+  // Registrar el error estructuralmente usando Pino
+  const traceId = req.traceId || 'N/A';
   
-  // Iniciar servicio de WhatsApp en segundo plano
-  connectToWhatsApp().catch(err => console.error("Error iniciando WhatsApp:", err));
+  if (req.log) {
+    req.log.error({ 
+      err: { message: err.message, stack: err.stack, name: err.name },
+      body: req.body, 
+      query: req.query 
+    }, 'Unhandled Exception Caught');
+  } else {
+    logger.error({ err, traceId, url: req.url }, 'Fatal Unhandled Exception');
+  }
+
+  // Notificar al usuario genéricamente sin exponer queries SQL
+  res.status(500).json({
+    success: false,
+    error: 'Ocurrió un error interno en el servidor.',
+    traceId: traceId // El usuario puede reportar este ID a soporte
+  });
 });
 
-// touch for nodemon
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, '127.0.0.1', () => {
+    logger.info(`✅ SAS Agrícolas API Server running at http://localhost:${PORT}`);
+    
+    // Iniciar servicio de WhatsApp en segundo plano
+    connectToWhatsApp().catch(err => console.error("Error iniciando WhatsApp:", err));
+  });
+}
+
+export default app;

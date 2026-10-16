@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrency } from '../../utils/format';
 import { authFetch } from '../../utils/api';
+import Pagination from '../Pagination';
 
 export default function TransaccionesBodega({ tenantId, currentUserId }) {
   const [tiposDoc, setTiposDoc] = useState([]);
   const [bodegas, setBodegas] = useState([]);
   const [insumos, setInsumos] = useState([]);
   const [documentos, setDocumentos] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [formData, setFormData] = useState({
     id_tipo: '',
@@ -76,6 +78,7 @@ export default function TransaccionesBodega({ tenantId, currentUserId }) {
     try {
       const res = await authFetch(`/api/inventario/documentos?tenantId=${tenantId}`);
       setDocumentos(await res.json());
+      setCurrentPage(1);
     } catch (e) {}
   };
 
@@ -278,7 +281,7 @@ export default function TransaccionesBodega({ tenantId, currentUserId }) {
               </tr>
             </thead>
             <tbody>
-              {documentos.map(d => (
+              {documentos.slice((currentPage - 1) * 20, currentPage * 20).map(d => (
                 <tr key={d.id_documento}>
                   <td style={{ fontWeight: 600 }}>{d.consecutivo}</td>
                   <td><span className="badge" style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '2px 6px', borderRadius: '4px' }}>{d.naturaleza}</span></td>
@@ -289,6 +292,14 @@ export default function TransaccionesBodega({ tenantId, currentUserId }) {
               ))}
             </tbody>
           </table>
+          {documentos.length > 0 && (
+            <Pagination 
+              currentPage={currentPage}
+              totalItems={documentos.length}
+              pageSize={20}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </div>
       </div>
     </div>

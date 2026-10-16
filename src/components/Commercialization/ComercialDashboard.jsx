@@ -100,7 +100,7 @@ export default function ComercialDashboard({ tenantId }) {
                 <XAxis dataKey="mes" tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} tickFormatter={(val) => `$${val}`} />
                 <RechartsTooltip 
-                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
+                  contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid #e2e8f0', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
                   itemStyle={{ color: '#0f172a' }}
                 />
                 <Legend wrapperStyle={{ paddingTop: '15px' }} />
@@ -164,7 +164,7 @@ export default function ComercialDashboard({ tenantId }) {
                   ))}
                 </Pie>
                 <RechartsTooltip 
-                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px' }}
+                  contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid #e2e8f0', borderRadius: '12px' }}
                   formatter={(value) => `${Number(value).toLocaleString('es-CO')} Ton`}
                 />
               </PieChart>

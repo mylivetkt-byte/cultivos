@@ -24,13 +24,8 @@ const BalanceAcumuladoLapsos = ({ tenantId }) => {
   }, [tenantId]);
 
   useEffect(() => {
-    if (idFinca) {
-      fetchCentrosCosto(idFinca);
-      setIdCentroCosto('');
-    } else {
-      setCentrosCosto([]);
-      setIdCentroCosto('');
-    }
+    fetchCentrosCosto(idFinca);
+    setIdCentroCosto('');
   }, [idFinca, tenantId]);
 
   const fetchFincasAndLapsos = async () => {
@@ -76,7 +71,11 @@ const BalanceAcumuladoLapsos = ({ tenantId }) => {
       if (res.ok) {
         const d = await res.json();
         if (d.centros) {
-          setCentrosCosto(d.centros.filter(c => c.id_finca.toString() === fincaId.toString()));
+          if (fincaId) {
+            setCentrosCosto(d.centros.filter(c => c.id_finca?.toString() === fincaId.toString()));
+          } else {
+            setCentrosCosto(d.centros);
+          }
         }
       }
     } catch (err) {
@@ -109,31 +108,44 @@ const BalanceAcumuladoLapsos = ({ tenantId }) => {
 
   // Convert raw rows (multiple rows per account) to pivoted objects
   const processPivotData = (rawRows) => {
-    const periodosMap = {};
     const accountMap = {};
+    
+    // Determine valid periods based on selected lapsos
+    const idxStart = lapsos.findIndex(l => l.id_periodo.toString() === idLapsoInicio?.toString());
+    const idxEnd = lapsos.findIndex(l => l.id_periodo.toString() === idLapsoFin?.toString());
+    const validPeriodosMap = {};
+    
+    if (idxStart !== -1 && idxEnd !== -1) {
+      const minIdx = Math.min(idxStart, idxEnd);
+      const maxIdx = Math.max(idxStart, idxEnd);
+      for (let i = minIdx; i <= maxIdx; i++) {
+        const l = lapsos[i];
+        validPeriodosMap[`${l.ano}-${String(l.mes).padStart(2, '0')}`] = true;
+      }
+    }
 
     rawRows.forEach(row => {
-      if (row.mes_lapso) {
-        periodosMap[row.mes_lapso] = true;
-      }
-      
       if (!accountMap[row.codigo]) {
         accountMap[row.codigo] = {
           codigo: row.codigo,
           nombre: catalogoCuentas[row.codigo]?.nombre || row.nombre || 'SIN NOMBRE',
           nivel: row.nivel,
           naturaleza: row.naturaleza,
-          saldo_anterior_bruto: parseFloat(row.saldo_anterior_bruto || 0),
+          saldo_anterior_bruto: 0,
           movimientos: {}
         };
       }
       
-      if (row.mes_lapso) {
+      // Accumulate saldo anterior from all rows of this account
+      accountMap[row.codigo].saldo_anterior_bruto += parseFloat(row.saldo_anterior_bruto || 0);
+      
+      // Only record movimientos for months within the selected range
+      if (row.mes_lapso && validPeriodosMap[row.mes_lapso]) {
         accountMap[row.codigo].movimientos[row.mes_lapso] = parseFloat(row.movimiento_neto || 0);
       }
     });
 
-    const periodosSorted = Object.keys(periodosMap).sort();
+    const periodosSorted = Object.keys(validPeriodosMap).sort();
     setColumnasMeses(periodosSorted);
 
     const dataArray = Object.values(accountMap);
@@ -228,8 +240,8 @@ const BalanceAcumuladoLapsos = ({ tenantId }) => {
     return `${months[parseInt(month) - 1]} ${year}`;
   };
 
-  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '4px' };
-  const inputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', background: 'white', width: '100%' };
+  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '4px' };
+  const inputStyle = { padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', width: '100%' };
 
   let totalActivos = 0, totalPasivos = 0, totalPatrimonio = 0, totalIngresos = 0, totalGastos = 0, totalCostos = 0;
   
@@ -256,7 +268,7 @@ const BalanceAcumuladoLapsos = ({ tenantId }) => {
   const lapsoFinName = lapsoFinObj ? `${lapsoFinObj.ano}-${String(lapsoFinObj.mes).padStart(2,'0')}` : idLapsoFin;
 
   return (
-    <div style={{ margin: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+    <div style={{ margin: '20px', background: 'var(--card-bg)', color: 'var(--text)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
       {/* HEADER NO IMPRIMIBLE */}
       <div className="no-print">
         <div style={{ background: 'linear-gradient(90deg, #1e293b 0%, #334155 100%)', padding: '24px', color: 'white', borderTopLeftRadius: '8px', borderTopRightRadius: '8px' }}>
@@ -265,7 +277,7 @@ const BalanceAcumuladoLapsos = ({ tenantId }) => {
         </div>
         
         <div style={{ padding: '24px' }}>
-          <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+          <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '24px' }}>
             <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '16px' }}>
               
               <div style={{ flex: 1, minWidth: '200px' }}>
@@ -282,7 +294,7 @@ const BalanceAcumuladoLapsos = ({ tenantId }) => {
 
               <div style={{ flex: 1, minWidth: '200px' }}>
                 <label style={labelStyle}>Centro de Costo</label>
-                <select value={idCentroCosto} onChange={(e) => setIdCentroCosto(e.target.value)} style={inputStyle} disabled={!idFinca}>
+                <select value={idCentroCosto} onChange={(e) => setIdCentroCosto(e.target.value)} style={inputStyle}>
                   <option value="">-- Todos los Centros --</option>
                   {centrosCosto.map(c => (
                     <option key={c.id_centro_costo} value={c.id_centro_costo}>
@@ -290,7 +302,6 @@ const BalanceAcumuladoLapsos = ({ tenantId }) => {
                     </option>
                   ))}
                 </select>
-                {!idFinca && <span style={{ fontSize: '10px', color: '#94a3b8' }}>Seleccione una finca primero</span>}
               </div>
 
             </div>
@@ -336,14 +347,14 @@ const BalanceAcumuladoLapsos = ({ tenantId }) => {
 
       {/* REPORTE IMPRIMIBLE */}
       {data.length > 0 && (
-        <div className="printable-report" style={{ padding: '40px', background: 'white' }}>
+        <div className="printable-report" style={{ padding: '40px', background: 'var(--card-bg)', color: 'var(--text)' }}>
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>
             <h1 style={{ margin: '0 0 8px 0', fontSize: '24px' }}>BALANCE COMPARATIVO POR LAPSOS</h1>
-            <h3 style={{ margin: 0, fontWeight: 'normal', color: '#475569' }}>
+            <h3 style={{ margin: 0, fontWeight: 'normal', color: 'var(--text-muted)' }}>
               {idFinca ? `Finca: ${fincas.find(f => f.id_finca.toString() === idFinca)?.nombre}` : 'Empresa Consolidada'}
               {idCentroCosto ? ` | Centro Costo: ${centrosCosto.find(c => c.id_centro_costo.toString() === idCentroCosto)?.nombre}` : ''}
             </h3>
-            <p style={{ margin: '8px 0 0 0', color: '#64748b' }}>
+            <p style={{ margin: '8px 0 0 0', color: 'var(--text-muted)' }}>
               Lapso {lapsoInicioName} a {lapsoFinName}
             </p>
           </div>
@@ -351,7 +362,7 @@ const BalanceAcumuladoLapsos = ({ tenantId }) => {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', minWidth: '800px' }}>
               <thead>
-                <tr style={{ background: '#f8fafc', borderBottom: '2px solid #cbd5e1' }}>
+                <tr style={{ background: 'var(--bg-main)', borderBottom: '2px solid var(--border)' }}>
                   <th style={{ padding: '8px', textAlign: 'left', width: '80px' }}>CÓDIGO</th>
                   <th style={{ padding: '8px', textAlign: 'left' }}>NOMBRE DE LA CUENTA</th>
                   <th style={{ padding: '8px', textAlign: 'right', borderLeft: '1px solid #e2e8f0' }}>SALDO ANTERIOR</th>
@@ -362,18 +373,18 @@ const BalanceAcumuladoLapsos = ({ tenantId }) => {
                     </th>
                   ))}
                   
-                  <th style={{ padding: '8px', textAlign: 'right', borderLeft: '1px solid #e2e8f0', background: '#f1f5f9' }}>SALDO FINAL</th>
+                  <th style={{ padding: '8px', textAlign: 'right', borderLeft: '1px solid #e2e8f0', background: 'var(--bg-main)' }}>SALDO FINAL</th>
                 </tr>
               </thead>
               <tbody>
                 {data.map(item => {
                   let fontWeight = 'normal';
-                  let color = '#334155';
+                  let color = 'var(--text-primary)';
                   let paddingLeft = '8px';
                   let fontSize = '11px';
                   
-                  if (item.nivel === 1) { fontWeight = 'bold'; color = '#0f172a'; fontSize = '12px'; }
-                  else if (item.nivel === 2) { fontWeight = 'bold'; color = '#1e293b'; paddingLeft = '16px'; }
+                  if (item.nivel === 1) { fontWeight = 'bold'; color = '#38bdf8'; fontSize = '12px'; }
+                  else if (item.nivel === 2) { fontWeight = 'bold'; color = '#7dd3fc'; paddingLeft = '16px'; }
                   else if (item.nivel === 3) { paddingLeft = '24px'; fontWeight = '500'; }
                   else if (item.nivel === 4) { paddingLeft = '32px'; }
                   else if (item.nivel === 5) { paddingLeft = '40px'; }
@@ -381,10 +392,10 @@ const BalanceAcumuladoLapsos = ({ tenantId }) => {
                   let currentSaldo = item.saldo_anterior_bruto;
 
                   return (
-                    <tr key={item.codigo} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <tr key={item.codigo} style={{ borderBottom: '1px solid var(--border)' }}>
                       <td style={{ padding: '6px 8px', paddingLeft, fontWeight, color }}>{item.codigo}</td>
                       <td style={{ padding: '6px 8px', paddingLeft, fontWeight, color }}>{item.nombre}</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'right', borderLeft: '1px solid #e2e8f0', color: '#64748b' }}>
+                      <td style={{ padding: '6px 8px', textAlign: 'right', borderLeft: '1px solid #e2e8f0', color: 'var(--text-muted)' }}>
                         {formatCurrency(item.saldo_anterior_bruto)}
                       </td>
                       
@@ -398,7 +409,7 @@ const BalanceAcumuladoLapsos = ({ tenantId }) => {
                         );
                       })}
                       
-                      <td style={{ padding: '6px 8px', textAlign: 'right', borderLeft: '1px solid #e2e8f0', fontWeight: 'bold', background: '#f8fafc' }}>
+                      <td style={{ padding: '6px 8px', textAlign: 'right', borderLeft: '1px solid #e2e8f0', fontWeight: 'bold', background: 'var(--bg-main)' }}>
                         {formatCurrency(currentSaldo)}
                       </td>
                     </tr>
@@ -409,20 +420,20 @@ const BalanceAcumuladoLapsos = ({ tenantId }) => {
           </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '40px' }}>
-            <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-              <div style={{ color: '#64748b', fontSize: '12px', fontWeight: 'bold' }}>TOTAL ACTIVOS</div>
-              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#0f172a' }}>{formatCurrency(totalActivos)}</div>
+            <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: 'bold' }}>TOTAL ACTIVOS</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--text)' }}>{formatCurrency(totalActivos)}</div>
             </div>
-            <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-              <div style={{ color: '#64748b', fontSize: '12px', fontWeight: 'bold' }}>PASIVO + PATRIMONIO</div>
-              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#0f172a' }}>{formatCurrency(totalPasivos + totalPatrimonio)}</div>
+            <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: 'bold' }}>PASIVO + PATRIMONIO</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--text)' }}>{formatCurrency(totalPasivos + totalPatrimonio)}</div>
             </div>
-            <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-              <div style={{ color: '#64748b', fontSize: '12px', fontWeight: 'bold' }}>TOTAL INGRESOS</div>
+            <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: 'bold' }}>TOTAL INGRESOS</div>
               <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#16a34a' }}>{formatCurrency(totalIngresos)}</div>
             </div>
-            <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-              <div style={{ color: '#64748b', fontSize: '12px', fontWeight: 'bold' }}>TOTAL COSTOS Y GASTOS</div>
+            <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: 'bold' }}>TOTAL COSTOS Y GASTOS</div>
               <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#dc2626' }}>{formatCurrency(totalGastos + totalCostos)}</div>
             </div>
           </div>

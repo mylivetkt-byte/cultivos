@@ -1,12 +1,9 @@
 import express from 'express';
 import pool from '../db.js';
+import { getDb } from '../utils/db.js';
 import ContabilidadService from '../services/ContabilidadService.js';
 
 const router = express.Router();
-
-function getDb(req) {
-  return req.tenantPool || pool;
-}
 
 // 1. Consulta Cruzada de Existencias
 router.get('/existencias', async (req, res) => {
@@ -192,27 +189,24 @@ router.post('/documentos', async (req, res) => {
     }
 
     // === INTEGRACION CONTABLE ===
-    try {
-      let monto_total = 0;
-      detalles.forEach(d => { monto_total += (d.cantidad * (d.costo_unitario || 0)); });
-      
-      const [bodegas] = await connection.query('SELECT id_finca FROM bod_bodegas WHERE id_bodega = ?', [id_bodega_origen || id_bodega_destino]);
-      const id_finca = bodegas.length > 0 ? bodegas[0].id_finca : null;
+    let monto_total = 0;
+    detalles.forEach(d => { monto_total += (d.cantidad * (d.costo_unitario || 0)); });
+    
+    const [bodegas] = await connection.query('SELECT id_finca FROM bod_bodegas WHERE id_bodega = ?', [id_bodega_origen || id_bodega_destino]);
+    const id_finca = bodegas.length > 0 ? bodegas[0].id_finca : null;
 
-      if (id_finca && monto_total > 0) {
-        await ContabilidadService.generarComprobanteAutomatico({
-          id_tenant,
-          id_finca,
-          modulo: 'INVENTARIO',
-          id_tipo_documento: id_tipo,
-          monto_total,
-          concepto: observaciones || `Documento de Inventario ${consecutivo}`,
-          fecha: new Date(),
-          id_usuario: id_usuario || 1
-        });
-      }
-    } catch (contabErr) {
-      console.error('Error en Integracion Contable (no bloqueante):', contabErr);
+    if (id_finca && monto_total > 0) {
+      await ContabilidadService.generarComprobanteAutomatico({
+        id_tenant,
+        id_finca,
+        modulo: 'INVENTARIO',
+        id_tipo_documento: id_tipo,
+        monto_total,
+        concepto: observaciones || `Documento de Inventario ${consecutivo}`,
+        fecha: new Date(),
+        id_usuario: id_usuario || 1,
+        connection // Forzar atomicidad
+      });
     }
     // ============================
 

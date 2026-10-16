@@ -147,6 +147,7 @@ export async function fetchDashboardStats(filters = {}) {
   const params = new URLSearchParams();
   if (filters.fincaId) params.append('fincaId', filters.fincaId);
   if (filters.nucleoId) params.append('nucleoId', filters.nucleoId);
+  if (filters.tenantId) params.append('tenantId', filters.tenantId);
 
   const res = await authFetch(`${API_BASE}/dashboard/stats?${params}`);
   if (!res.ok) throw new Error('Error fetching dashboard stats');
@@ -154,7 +155,15 @@ export async function fetchDashboardStats(filters = {}) {
 }
 
 export function formatTableName(name) {
-  return name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  let formatted = name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const prefixesToRemove = ['Com ', 'Sys ', 'Amb ', 'Bod ', 'Atec ', 'Energia ', 'Seg ', 'Forest ', 'Sat ', 'Gps ', 'Lab ', 'Kpis ', 'Ia ', 'Rrhh ', 'Agroind ', 'App ', 'Inv '];
+  for (const prefix of prefixesToRemove) {
+    if (formatted.startsWith(prefix)) {
+      formatted = formatted.substring(prefix.length);
+      break;
+    }
+  }
+  return formatted;
 }
 
 export function formatColumnName(name) {

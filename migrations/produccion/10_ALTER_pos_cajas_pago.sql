@@ -1,0 +1,1 @@
+ALTER TABLE pos_cajas ADD COLUMN dispositivo_pago VARCHAR(100) NULL AFTER lector_codigo_barras;

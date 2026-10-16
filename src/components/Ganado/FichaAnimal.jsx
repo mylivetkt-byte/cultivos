@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AsyncSelect from 'react-select/async';
 import HistoriaClinicaModal from './HistoriaClinicaModal';
+import { customStyles } from '../PremiumSelect';
 
 function FichaAnimal({ fincaId }) {
   const [showHistory, setShowHistory] = useState(false);
@@ -95,7 +96,7 @@ function FichaAnimal({ fincaId }) {
           <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>
             🔍 Buscador Inteligente (Arete, Nombre o Localizador GPS)
           </label>
-          <AsyncSelect
+          <AsyncSelect styles={customStyles}
             cacheOptions
             defaultOptions
             loadOptions={loadOptions}

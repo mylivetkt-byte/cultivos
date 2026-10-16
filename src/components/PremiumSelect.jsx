@@ -2,57 +2,57 @@ import React from 'react';
 import Select from 'react-select';
 
 // Estilos premium oscuros para react-select
-const customStyles = {
+export const customStyles = {
   control: (provided, state) => ({
     ...provided,
-    background: 'rgba(255,255,255,0.1)',
-    border: '1px solid rgba(255,255,255,0.2)',
+    background: 'var(--card-bg, #fff)',
+    border: '1px solid var(--border, #ccc)',
     boxShadow: state.isFocused ? '0 0 0 2px rgba(59, 130, 246, 0.5)' : 'none',
-    color: '#fff',
+    color: 'var(--text, #333)',
     padding: '2px',
     borderRadius: '6px',
     cursor: 'pointer',
     minHeight: '42px',
     '&:hover': {
-      border: '1px solid rgba(255,255,255,0.3)',
+      border: '1px solid var(--primary, #3b82f6)',
     }
   }),
   singleValue: (provided) => ({
     ...provided,
-    color: '#fff',
+    color: 'var(--text, #333)',
     fontSize: '1rem'
   }),
   input: (provided) => ({
     ...provided,
-    color: '#fff',
+    color: 'var(--text, #333)',
   }),
   placeholder: (provided) => ({
     ...provided,
-    color: 'rgba(255,255,255,0.6)',
+    color: 'var(--text-secondary, #888)',
     fontSize: '0.95rem'
   }),
   menu: (provided) => ({
     ...provided,
-    background: '#1f2937', // dark background for options popup
-    border: '1px solid rgba(255,255,255,0.1)',
+    background: 'var(--card-bg, #fff)',
+    border: '1px solid var(--border, #ccc)',
     borderRadius: '8px',
-    boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+    boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
     overflow: 'hidden',
     zIndex: 9999
   }),
   option: (provided, state) => ({
     ...provided,
     background: state.isSelected 
-      ? '#3B82F6' 
+      ? 'var(--primary, #3B82F6)' 
       : state.isFocused 
-        ? 'rgba(255,255,255,0.1)' 
+        ? 'rgba(59, 130, 246, 0.1)' 
         : 'transparent',
-    color: '#fff',
+    color: state.isSelected ? '#fff' : 'var(--text, #333)',
     cursor: 'pointer',
     padding: '10px 15px',
     fontSize: '0.95rem',
     '&:active': {
-      background: '#2563EB'
+      background: 'var(--primary-dark, #2563EB)'
     }
   }),
   menuList: (provided) => ({

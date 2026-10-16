@@ -79,7 +79,7 @@
 
 .badge-pendiente {
   background: rgba(100, 116, 139, 0.1);
-  color: #64748b;
+  color: var(--text-secondary);
   border: 1px solid rgba(100, 116, 139, 0.2);
 }
 

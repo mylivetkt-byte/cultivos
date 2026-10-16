@@ -16,12 +16,12 @@
 }
 
 .accounting-header p {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 1rem;
 }
 
 .config-panel {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 25px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.05);
@@ -43,15 +43,17 @@
 .form-group label {
   font-weight: 600;
   margin-bottom: 8px;
-  color: #333;
+  color: var(--text-primary);
   font-size: 0.9rem;
 }
 
 .form-group select, .form-group input {
   padding: 10px 15px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 0.95rem;
+  background: var(--bg-card);
+  color: var(--text-primary);
   transition: all 0.3s ease;
 }
 
@@ -62,7 +64,7 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  background: var(--bg-main);
   color: white;
   border: none;
   padding: 12px 25px;
@@ -95,7 +97,7 @@
 }
 
 .table-container {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.05);
   overflow: hidden;

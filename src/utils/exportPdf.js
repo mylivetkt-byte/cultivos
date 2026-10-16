@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { API_BASE, getAuthHeaders } from './api';
 
-export async function exportToPdf(tableName, columns, data, metadata = {}) {
+export async function exportToPdf(tableName, columns, data, metadata = {}, fkOptions = {}) {
   try {
     const doc = new jsPDF({ orientation: 'landscape' });
 
@@ -12,7 +12,8 @@ export async function exportToPdf(tableName, columns, data, metadata = {}) {
       if (resPath.ok) {
         const { logo_path } = await resPath.json();
         if (logo_path) {
-          const imgUrl = logo_path.startsWith('http') ? logo_path : `${API_BASE.replace('/api', '')}${logo_path.startsWith('/') ? '' : '/'}${logo_path}`;
+          const baseUrl = API_BASE || '/api';
+          const imgUrl = logo_path.startsWith('http') ? logo_path : `${baseUrl.replace('/api', '')}${logo_path.startsWith('/') ? '' : '/'}${logo_path}`;
           const imgRes = await fetch(imgUrl);
           if (imgRes.ok) {
              const blob = await imgRes.blob();
@@ -45,7 +46,7 @@ export async function exportToPdf(tableName, columns, data, metadata = {}) {
     // Title
     doc.setFontSize(16);
     doc.setTextColor(26, 35, 50);
-    doc.text(`${metadata.empresa || 'SAS Agrícolas'}`, startX, 20);
+    doc.text(`${metadata.empresa || 'AgroPaccioli'}`, startX, 20);
     
     // Report Name
     doc.setFontSize(14);
@@ -55,24 +56,47 @@ export async function exportToPdf(tableName, columns, data, metadata = {}) {
     // Metadata
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Finca Operativa: ${metadata.finca || 'Todas las Fincas'}`, startX, 32);
+    let currentY = 32;
+    doc.text(`Finca Operativa: ${metadata.finca || 'Todas las Fincas'}`, startX, currentY);
+    currentY += 5;
     
-    const rolStr = metadata.rol ? ` (Rol: ${metadata.rol})` : '';
-    doc.text(`Generado por: ${metadata.usuario || 'Usuario del Sistema'}${rolStr}`, startX, 37);
-    doc.text(`Fecha y Hora: ${new Date().toLocaleString('es-ES')}`, startX, 42);
-    doc.text(`Total de Registros: ${data.length}`, startX, 47);
+    if (metadata.cultivo) {
+      doc.text(`Cultivo: ${metadata.cultivo}`, startX, currentY);
+      currentY += 5;
+    }
+    
+    if (metadata.fechaDesde || metadata.fechaHasta) {
+      const fd = metadata.fechaDesde || 'Histórico';
+      const fh = metadata.fechaHasta || 'Histórico';
+      doc.text(`Periodo: ${fd} a ${fh}`, startX, currentY);
+      currentY += 5;
+    }
+    
+    if (metadata.extraFiltros && metadata.extraFiltros.length > 0) {
+      metadata.extraFiltros.forEach(f => {
+        doc.text(`${f.label}: ${f.value}`, startX, currentY);
+        currentY += 5;
+      });
+    }
+    
+    doc.text(`Total de Registros: ${data.length}`, startX, currentY);
 
     // Filter out huge/unprintable columns
     const excludedTypes = ['json', 'polygon', 'point', 'longtext', 'mediumtext', 'blob'];
-    const excludedNames = ['fotografia', 'imagen_url', 'poligono_gps', 'centro_gps', 'ficha_tecnica', 'contrasena', 'password'];
+    const excludedNames = ['fotografia', 'imagen_url', 'poligono_gps', 'centro_gps', 'ficha_tecnica', 'contrasena', 'password', 'id_tenant', 'tenant_id', 'created_at', 'updated_at'];
     
-    const printableColumns = columns.filter(col => {
+    let printableColumns = columns.filter(col => {
       const typeStr = (col.type || '').toLowerCase();
       const displayStr = (col.displayType || '').toLowerCase();
       if (excludedTypes.includes(typeStr) || excludedTypes.includes(displayStr)) return false;
       if (excludedNames.includes(col.name)) return false;
       return true;
     });
+
+    // GUARANTEE: Never exceed 9 columns to prevent horizontal squishing in PDF
+    if (printableColumns.length > 9) {
+      printableColumns = printableColumns.slice(0, 9);
+    }
 
     // Column headers and data rows
     const headers = printableColumns.map((col) =>
@@ -107,6 +131,11 @@ export async function exportToPdf(tableName, columns, data, metadata = {}) {
            return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 }).format(num);
         }
 
+        if (fkOptions && fkOptions[col.name]) {
+          const option = fkOptions[col.name].find(opt => String(opt.id) === String(val) || String(opt.value) === String(val));
+          if (option) return String(option.display || option.label || val);
+        }
+
         if (typeof val === 'object') return JSON.stringify(val).slice(0, 50) + '...';
         return String(val);
       })
@@ -115,7 +144,7 @@ export async function exportToPdf(tableName, columns, data, metadata = {}) {
     doc.autoTable({
       head: [headers],
       body: rows,
-      startY: 52,
+      startY: currentY + 5,
       styles: {
         fontSize: 7,
         cellPadding: 3,
@@ -142,8 +171,18 @@ export async function exportToPdf(tableName, columns, data, metadata = {}) {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(150);
+      const rolStr = metadata.rol ? ` (Rol: ${metadata.rol})` : '';
+      const footerText1 = `Generado por: ${metadata.usuario || 'Usuario del Sistema'}${rolStr} | Fecha y Hora: ${new Date().toLocaleString('es-ES')}`;
+      const footerText2 = `Página ${i} de ${pageCount} — AgroPaccioli © ${new Date().getFullYear()}`;
+      
       doc.text(
-        `Página ${i} de ${pageCount} — SAS Agrícolas © ${new Date().getFullYear()}`,
+        footerText1,
+        doc.internal.pageSize.getWidth() / 2,
+        doc.internal.pageSize.getHeight() - 14,
+        { align: 'center' }
+      );
+      doc.text(
+        footerText2,
         doc.internal.pageSize.getWidth() / 2,
         doc.internal.pageSize.getHeight() - 10,
         { align: 'center' }
