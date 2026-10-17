@@ -5,6 +5,8 @@ import {
   ChevronDown, BookOpen, Layers, Check, RefreshCw
 } from 'lucide-react';
 import { authFetch } from '../../utils/api';
+import ManualitoCampesinoModal from '../Common/ManualitoCampesinoModal';
+import { hablarEnVozCampesina, pararVozCampesina } from '../../utils/glosarioCampesino';
 
 // Presets agronómicos estándar internacionales (FAO / AgroPaccioli)
 const PRESETS_CULTIVOS = {
@@ -75,6 +77,35 @@ export default function CalculadoraFertirriegoAgroPaccioli({ fincas = [], sector
   const [resultado, setResultado] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [toastMsg, setToastMsg] = useState(null);
+  const [hablandoInstrucciones, setHablandoInstrucciones] = useState(false);
+
+  const handleEscucharInstrucciones = () => {
+    if (!resultado) return;
+    if (hablandoInstrucciones) {
+      pararVozCampesina();
+      setHablandoInstrucciones(false);
+    } else {
+      setHablandoInstrucciones(true);
+      const texto = `Atención operario. Instrucciones para preparar el fertilizante. ` +
+        `Para el Tanque A: ${resultado.instrucciones_campesino.tanque_a}. ` +
+        `Para el Tanque B: ${resultado.instrucciones_campesino.tanque_b}. ` +
+        `Y de Ácido: ${resultado.instrucciones_campesino.acido}. ` +
+        `Recuerde nunca revolver el Tanque A con el Tanque B en el mismo balde.`;
+
+      hablarEnVozCampesina(texto);
+
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        const check = setInterval(() => {
+          if (!window.speechSynthesis.speaking) {
+            setHablandoInstrucciones(false);
+            clearInterval(check);
+          }
+        }, 500);
+      } else {
+        setTimeout(() => setHablandoInstrucciones(false), 8000);
+      }
+    }
+  };
 
   // Historial de soluciones guardadas
   const [historialSoluciones, setHistorialSoluciones] = useState([]);
@@ -243,7 +274,28 @@ export default function CalculadoraFertirriegoAgroPaccioli({ fincas = [], sector
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <ManualitoCampesinoModal 
+              modulo="Preparación de Fertirriego en Tanques A y B"
+              tituloBoton="🌾 Guía de Tanques A / B (3 Pasos)"
+              pasos={[
+                {
+                  titulo: "Paso 1: Escoger el cultivo y cargar la receta",
+                  detalle: "Seleccione arriba el cultivo (Tomate, Café, Aguacate, etc.). La calculadora le dirá exactamente cuántos kilos de abono necesita.",
+                  audio: "Paso uno. Seleccione arriba el cultivo. La calculadora le dirá exactamente cuántos kilos de abono necesita para ese lote."
+                },
+                {
+                  titulo: "Paso 2: Disolver por separado en Tanque A y Tanque B",
+                  detalle: "En el Tanque A disuelva el Calcio y los Nitratos. En el Tanque B disuelva los Sulfatos y Fosfatos. ¡Nunca los revuelva en el mismo balde porque se corta el abono!",
+                  audio: "Paso dos. En el Tanque A disuelva el Calcio. En el Tanque B disuelva los Sulfatos y Fosfatos. Nunca los revuelva en el mismo balde porque se corta el fertilizante."
+                },
+                {
+                  titulo: "Paso 3: Prender la inyección hacia el cultivo",
+                  detalle: "Verifique que el agua esté corriendo en las cintas de goteo y abra las válvulas de inyección para que el abono llegue parejo a la raíz.",
+                  audio: "Paso tres. Verifique que el agua esté corriendo en las mangueras de goteo y abra la inyección para alimentar el cultivo."
+                }
+              ]}
+            />
             <span style={{ fontSize: '13px', fontWeight: '700', color: '#475569' }}>Cargar Preset:</span>
             <select 
               onChange={handleSelectPreset}
@@ -646,7 +698,29 @@ export default function CalculadoraFertirriegoAgroPaccioli({ fincas = [], sector
                 </h4>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button 
+                  type="button"
+                  style={{ 
+                    minHeight: '44px', 
+                    padding: '8px 16px', 
+                    background: hablandoInstrucciones ? '#dc2626' : '#059669', 
+                    color: '#ffffff', 
+                    border: '1px solid #10b981', 
+                    borderRadius: '10px', 
+                    fontWeight: '700', 
+                    cursor: 'pointer', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+                  }}
+                  onClick={handleEscucharInstrucciones}
+                  title="El teléfono le lee en voz alta qué abonos echar en cada tanque"
+                >
+                  <span>{hablandoInstrucciones ? '⏹️ Detener Voz' : '🔊 Escuchar Instrucciones de Mezcla'}</span>
+                </button>
+
                 <button 
                   className="btn-whatsapp-orden"
                   style={{ minHeight: '44px', padding: '8px 16px' }}

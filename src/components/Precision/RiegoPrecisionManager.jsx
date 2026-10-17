@@ -10,6 +10,8 @@ import { authFetch } from '../../utils/api';
 import ExportButtons from '../ExportButtons';
 import Pagination from '../Pagination';
 import CalculadoraFertirriegoAgroPaccioli from './CalculadoraFertirriegoAgroPaccioli';
+import AyudaCampesina from '../Common/AyudaCampesina';
+import ManualitoCampesinoModal from '../Common/ManualitoCampesinoModal';
 import './RiegoPrecisionManager.css';
 
 export default function RiegoPrecisionManager() {
@@ -739,10 +741,33 @@ export default function RiegoPrecisionManager() {
       {viewMode === 'campesino' && (
         <div className="modo-campesino-container">
           {/* BANNER AMIGABLE PARA EL OPERARIO */}
-          <div className="banner-campesino-ayuda">
-            <div className="campesino-text">
-              <h3>🌾 Tablero Rápido de Riego para el Operario</h3>
-              <p>Mire el color de cada sector: Verde indica regar hoy; Azul indica que está regando ahora; y Gris/Rojo indica suelo húmedo.</p>
+          <div className="banner-campesino-ayuda" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div className="campesino-text" style={{ flex: 1, minWidth: '280px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap', marginBottom: '0.3rem' }}>
+                <h3 style={{ margin: 0 }}>🌾 Tablero Rápido de Riego para el Operario</h3>
+                <ManualitoCampesinoModal 
+                  modulo="Tablero de Riego del Operario"
+                  tituloBoton="🌾 ¿Cómo funciona este tablero? (Guía en 3 Pasos)"
+                  pasos={[
+                    {
+                      titulo: "Paso 1: Mire el color de su sector",
+                      detalle: "Si está verde, le toca regar hoy. Si está azul con olas, ya tiene agua corriendo. Si está gris, el suelo todavía tiene humedad y no necesita riego.",
+                      audio: "Paso uno. Mire el color del sector. Verde significa regar hoy. Azul significa que ya está regando. Y gris significa que el suelo está húmedo."
+                    },
+                    {
+                      titulo: "Paso 2: Registrar arranque y apagado del motor",
+                      detalle: "Al prender la bomba o abrir la llave, toque 'Iniciar Riego' para que el sistema empiece a contar los minutos.",
+                      audio: "Paso dos. Al prender la bomba o abrir la llave, toque Iniciar Riego para que el sistema cuente el tiempo."
+                    },
+                    {
+                      titulo: "Paso 3: Notificar y finalizar",
+                      detalle: "Al terminar el turno, toque 'Finalizar' y envíe el reporte de metros cúbicos por WhatsApp con un solo toque.",
+                      audio: "Paso tres. Al terminar el turno toque Finalizar y puede enviar el reporte por WhatsApp con un solo toque."
+                    }
+                  ]}
+                />
+              </div>
+              <p style={{ margin: 0 }}>Mire el color de cada sector: Verde indica regar hoy; Azul indica que está regando ahora; y Gris/Rojo indica suelo húmedo.</p>
             </div>
             <div className="finca-quick-filter">
               <select 
@@ -1539,9 +1564,35 @@ export default function RiegoPrecisionManager() {
       {showModalTurno && (
         <div className="modal-overlay">
           <div className="modal-card">
-            <div className="modal-header">
-              <h3>Programar Turno de Riego para el Operario</h3>
-              <button className="btn-close" onClick={() => setShowModalTurno(false)}><X size={20} /></button>
+            <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <div>
+                <h3 style={{ margin: 0 }}>Programar Turno de Riego para el Operario</h3>
+                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Toque <b>🔊 Escuchar</b> en cualquier campo para oír la explicación.</span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <ManualitoCampesinoModal 
+                  modulo="Turnos de Riego"
+                  tituloBoton="🌾 Guía (3 Pasos)"
+                  pasos={[
+                    {
+                      titulo: "Paso 1: Finca, Lote y Sector",
+                      detalle: "Escoja la finca y la llave o sector donde va a mandar el agua hoy.",
+                      audio: "Paso uno. Escoja la finca, el lote y el sector donde se van a abrir las llaves."
+                    },
+                    {
+                      titulo: "Paso 2: Quién riega y a qué hora",
+                      detalle: "Escriba el nombre de quien prende la bomba, la hora de arranque y la hora de apagado.",
+                      audio: "Paso dos. Ponga el nombre del regador, la hora de inicio y la hora en que debe terminar."
+                    },
+                    {
+                      titulo: "Paso 3: Guardar el Turno",
+                      detalle: "Hunda el botón azul de guardar para que quede grabado y listo para avisar por WhatsApp.",
+                      audio: "Paso tres. Oprima el botón de guardar para registrar el turno de riego."
+                    }
+                  ]}
+                />
+                <button className="btn-close" onClick={() => setShowModalTurno(false)}><X size={20} /></button>
+              </div>
             </div>
 
             <form onSubmit={handleGuardarTurno} className="modal-form">
@@ -1558,6 +1609,7 @@ export default function RiegoPrecisionManager() {
                       <option key={f.id_finca} value={f.id_finca}>{f.nombre}</option>
                     ))}
                   </select>
+                  <AyudaCampesina campo="id_finca" />
                 </div>
 
                 <div className="form-group">
@@ -1572,6 +1624,7 @@ export default function RiegoPrecisionManager() {
                       <option key={l.id_lote} value={l.id_lote}>{l.nombre}</option>
                     ))}
                   </select>
+                  <AyudaCampesina campo="id_lote" />
                 </div>
               </div>
 
@@ -1588,6 +1641,7 @@ export default function RiegoPrecisionManager() {
                       <option key={s.id_sector} value={s.id_sector}>{s.codigo_sector} - {s.nombre}</option>
                     ))}
                   </select>
+                  <AyudaCampesina campo="id_sector" />
                 </div>
 
                 <div className="form-group">
@@ -1599,6 +1653,7 @@ export default function RiegoPrecisionManager() {
                     value={turnoForm.codigo_turno}
                     onChange={(e) => setTurnoForm({ ...turnoForm, codigo_turno: e.target.value })}
                   />
+                  <AyudaCampesina campo="codigo_turno" />
                 </div>
               </div>
 
@@ -1612,6 +1667,7 @@ export default function RiegoPrecisionManager() {
                     value={turnoForm.responsable_nombre}
                     onChange={(e) => setTurnoForm({ ...turnoForm, responsable_nombre: e.target.value })}
                   />
+                  <AyudaCampesina campo="responsable_nombre" />
                 </div>
 
                 <div className="form-group">
@@ -1634,6 +1690,7 @@ export default function RiegoPrecisionManager() {
                     value={turnoForm.fecha_riego}
                     onChange={(e) => setTurnoForm({ ...turnoForm, fecha_riego: e.target.value })}
                   />
+                  <AyudaCampesina campo="fecha_inicio" textoCustom="Día en que se prende el riego" />
                 </div>
 
                 <div className="form-group">
@@ -1644,6 +1701,7 @@ export default function RiegoPrecisionManager() {
                     value={turnoForm.hora_inicio_programada}
                     onChange={(e) => setTurnoForm({ ...turnoForm, hora_inicio_programada: e.target.value })}
                   />
+                  <AyudaCampesina campo="hora_inicio_programada" />
                 </div>
 
                 <div className="form-group">
@@ -1654,6 +1712,7 @@ export default function RiegoPrecisionManager() {
                     value={turnoForm.hora_fin_programada}
                     onChange={(e) => setTurnoForm({ ...turnoForm, hora_fin_programada: e.target.value })}
                   />
+                  <AyudaCampesina campo="hora_fin_programada" />
                 </div>
               </div>
 
@@ -1666,6 +1725,7 @@ export default function RiegoPrecisionManager() {
                     value={turnoForm.duracion_minutos_estimada}
                     onChange={(e) => setTurnoForm({ ...turnoForm, duracion_minutos_estimada: e.target.value })}
                   />
+                  <AyudaCampesina campo="duracion_minutos_estimada" />
                 </div>
 
                 <div className="form-group">
@@ -1677,6 +1737,7 @@ export default function RiegoPrecisionManager() {
                     value={turnoForm.volumen_objetivo_m3}
                     onChange={(e) => setTurnoForm({ ...turnoForm, volumen_objetivo_m3: e.target.value })}
                   />
+                  <AyudaCampesina campo="volumen_objetivo_m3" />
                 </div>
               </div>
 
@@ -1693,14 +1754,34 @@ export default function RiegoPrecisionManager() {
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL: NUEVO SECTOR HÍDRICO                                               */}
-      {/* ========================================================================= */}
-      {showModalSector && (
+      {/* ==========================================      {showModalSector && (
         <div className="modal-overlay">
           <div className="modal-card">
             <div className="modal-header">
-              <h3>Registrar Nuevo Sector Hídrico</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h3>Registrar Nuevo Sector Hídrico</h3>
+                <ManualitoCampesinoModal 
+                  modulo="Sectores Hídricos y Cuadros de Riego"
+                  descripcion="Pasos para inscribir un nuevo sector de riego o cuadro de siembra"
+                  pasos={[
+                    {
+                      titulo: "1. Escoja la Finca y el Lote",
+                      icono: "🏡",
+                      texto: "Seleccione en qué finca está ubicado y qué lote o cuadro de tierra comprende este sector de mangueras."
+                    },
+                    {
+                      titulo: "2. Nombre y Método de Riego",
+                      icono: "🌱",
+                      texto: "Ponga un nombre claro (ej. Vivero Goteo) y seleccione si es goteo con cinta, microaspersores o aspersión."
+                    },
+                    {
+                      titulo: "3. Tamaño y Goteros",
+                      icono: "📏",
+                      texto: "Anote el tamaño en hectáreas y la distancia entre goteros. Con eso el sistema calcula cuánta agua echarle a las matas."
+                    }
+                  ]}
+                />
+              </div>
               <button className="btn-close" onClick={() => setShowModalSector(false)}><X size={20} /></button>
             </div>
 
@@ -1718,6 +1799,7 @@ export default function RiegoPrecisionManager() {
                       <option key={f.id_finca} value={f.id_finca}>{f.nombre}</option>
                     ))}
                   </select>
+                  <AyudaCampesina campo="id_finca" />
                 </div>
 
                 <div className="form-group">
@@ -1732,6 +1814,7 @@ export default function RiegoPrecisionManager() {
                       <option key={l.id_lote} value={l.id_lote}>{l.nombre}</option>
                     ))}
                   </select>
+                  <AyudaCampesina campo="id_lote" />
                 </div>
               </div>
 
@@ -1745,6 +1828,7 @@ export default function RiegoPrecisionManager() {
                     value={sectorForm.codigo_sector}
                     onChange={(e) => setSectorForm({ ...sectorForm, codigo_sector: e.target.value })}
                   />
+                  <AyudaCampesina campo="codigo_sector" />
                 </div>
 
                 <div className="form-group">
@@ -1756,6 +1840,7 @@ export default function RiegoPrecisionManager() {
                     value={sectorForm.nombre}
                     onChange={(e) => setSectorForm({ ...sectorForm, nombre: e.target.value })}
                   />
+                  <AyudaCampesina campo="nombre" />
                 </div>
               </div>
 
@@ -1772,6 +1857,7 @@ export default function RiegoPrecisionManager() {
                     <option value="Pivote_Central">Pivote Central</option>
                     <option value="Gravedad_Tecnificada">Gravedad Tecnificada</option>
                   </select>
+                  <AyudaCampesina campo="metodo_riego" />
                 </div>
 
                 <div className="form-group">
@@ -1783,6 +1869,7 @@ export default function RiegoPrecisionManager() {
                     value={sectorForm.area_sector_ha}
                     onChange={(e) => setSectorForm({ ...sectorForm, area_sector_ha: e.target.value })}
                   />
+                  <AyudaCampesina campo="area_sector_ha" />
                 </div>
               </div>
 
@@ -1791,33 +1878,36 @@ export default function RiegoPrecisionManager() {
                   <label>Espacio Emisores (m)</label>
                   <input 
                     type="number" 
-                    step="0.05"
+                    step="0.05" 
                     placeholder="0.50"
                     value={sectorForm.espaciamiento_emisores_m}
                     onChange={(e) => setSectorForm({ ...sectorForm, espaciamiento_emisores_m: e.target.value })}
                   />
+                  <AyudaCampesina campo="espaciamiento_emisores_m" />
                 </div>
 
                 <div className="form-group">
                   <label>Espacio Líneas (m)</label>
                   <input 
                     type="number" 
-                    step="0.05"
+                    step="0.05" 
                     placeholder="1.50"
                     value={sectorForm.espaciamiento_lineas_m}
                     onChange={(e) => setSectorForm({ ...sectorForm, espaciamiento_lineas_m: e.target.value })}
                   />
+                  <AyudaCampesina campo="espaciamiento_lineas_m" />
                 </div>
 
                 <div className="form-group">
                   <label>Caudal Emisor (L/h)</label>
                   <input 
                     type="number" 
-                    step="0.1"
+                    step="0.1" 
                     placeholder="2.00"
                     value={sectorForm.caudal_emisor_lph}
                     onChange={(e) => setSectorForm({ ...sectorForm, caudal_emisor_lph: e.target.value })}
                   />
+                  <AyudaCampesina campo="caudal_emisor_lph" />
                 </div>
               </div>
 
@@ -1841,7 +1931,30 @@ export default function RiegoPrecisionManager() {
         <div className="modal-overlay">
           <div className="modal-card">
             <div className="modal-header">
-              <h3>Registrar Nueva Estación de Bombeo</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h3>Registrar Nueva Estación de Bombeo</h3>
+                <ManualitoCampesinoModal 
+                  modulo="Estaciones de Bombeo y Motores"
+                  descripcion="Pasos para registrar una motobomba o electrobomba"
+                  pasos={[
+                    {
+                      titulo: "1. Finca y Código de Bomba",
+                      icono: "🏡",
+                      texto: "Seleccione en qué finca está la bomba y póngale una identificación (ej. BOMBA-01 o Bomba Pozo 1)."
+                    },
+                    {
+                      titulo: "2. Tipo y Fuerza del Motor",
+                      icono: "⚙️",
+                      texto: "Indique si es sumergible en el fondo del pozo o en superficie, y los caballos de fuerza (HP) que dice la placa del motor."
+                    },
+                    {
+                      titulo: "3. Chorro y Presión de Trabajo",
+                      icono: "🌊",
+                      texto: "Anote los litros por segundo de agua que bota y la presión en bares para que el sistema vigile que no haya sobrepresión."
+                    }
+                  ]}
+                />
+              </div>
               <button className="btn-close" onClick={() => setShowModalBomba(false)}><X size={20} /></button>
             </div>
 
@@ -1859,6 +1972,7 @@ export default function RiegoPrecisionManager() {
                       <option key={f.id_finca} value={f.id_finca}>{f.nombre}</option>
                     ))}
                   </select>
+                  <AyudaCampesina campo="id_finca" />
                 </div>
 
                 <div className="form-group">
@@ -1870,6 +1984,7 @@ export default function RiegoPrecisionManager() {
                     value={bombaForm.codigo_bomba}
                     onChange={(e) => setBombaForm({ ...bombaForm, codigo_bomba: e.target.value })}
                   />
+                  <AyudaCampesina campo="codigo_bomba" />
                 </div>
               </div>
 
@@ -1883,6 +1998,7 @@ export default function RiegoPrecisionManager() {
                     value={bombaForm.nombre}
                     onChange={(e) => setBombaForm({ ...bombaForm, nombre: e.target.value })}
                   />
+                  <AyudaCampesina campo="nombre" />
                 </div>
 
                 <div className="form-group">
@@ -1897,6 +2013,7 @@ export default function RiegoPrecisionManager() {
                     <option value="Solar_Sumergible">Solar Sumergible</option>
                     <option value="Motobomba_Diesel">Motobomba Diésel</option>
                   </select>
+                  <AyudaCampesina campo="tipo_bomba" />
                 </div>
               </div>
 
@@ -1911,6 +2028,7 @@ export default function RiegoPrecisionManager() {
                     value={bombaForm.potencia_hp}
                     onChange={(e) => setBombaForm({ ...bombaForm, potencia_hp: e.target.value })}
                   />
+                  <AyudaCampesina campo="potencia_hp" />
                 </div>
 
                 <div className="form-group">
@@ -1922,6 +2040,7 @@ export default function RiegoPrecisionManager() {
                     value={bombaForm.caudal_nominal_lps}
                     onChange={(e) => setBombaForm({ ...bombaForm, caudal_nominal_lps: e.target.value })}
                   />
+                  <AyudaCampesina campo="caudal_nominal_lps" />
                 </div>
 
                 <div className="form-group">
@@ -1933,6 +2052,7 @@ export default function RiegoPrecisionManager() {
                     value={bombaForm.presion_nominal_bar}
                     onChange={(e) => setBombaForm({ ...bombaForm, presion_nominal_bar: e.target.value })}
                   />
+                  <AyudaCampesina campo="presion_nominal_bar" />
                 </div>
               </div>
 
@@ -1956,7 +2076,30 @@ export default function RiegoPrecisionManager() {
         <div className="modal-overlay">
           <div className="modal-card">
             <div className="modal-header">
-              <h3>Registrar Válvula Solenoide</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h3>Registrar Válvula Solenoide</h3>
+                <ManualitoCampesinoModal 
+                  modulo="Válvulas y Llaves de Paso"
+                  descripcion="Pasos para registrar una llave o electroválvula del sector"
+                  pasos={[
+                    {
+                      titulo: "1. Sector Asociado",
+                      icono: "🚰",
+                      texto: "Seleccione a cuál cuadro o sector de siembra le abre el agua esta llave."
+                    },
+                    {
+                      titulo: "2. Código y Nombre de la Llave",
+                      icono: "🏷️",
+                      texto: "Asígnele un número o nombre claro (ej. VALV-01 o Llave Cabezal Sector 1) para que el operario la ubique rápido en campo."
+                    },
+                    {
+                      titulo: "3. Tipo de Apertura",
+                      icono: "🔌",
+                      texto: "Indique si abre manual a mano (esfera) o eléctrica con solenoide 24V conectada al programador automático."
+                    }
+                  ]}
+                />
+              </div>
               <button className="btn-close" onClick={() => setShowModalValvula(false)}><X size={20} /></button>
             </div>
 
@@ -1974,6 +2117,7 @@ export default function RiegoPrecisionManager() {
                       <option key={s.id_sector} value={s.id_sector}>{s.codigo_sector} - {s.nombre}</option>
                     ))}
                   </select>
+                  <AyudaCampesina campo="id_sector" />
                 </div>
 
                 <div className="form-group">
@@ -1985,6 +2129,7 @@ export default function RiegoPrecisionManager() {
                     value={valvulaForm.codigo_valvula}
                     onChange={(e) => setValvulaForm({ ...valvulaForm, codigo_valvula: e.target.value })}
                   />
+                  <AyudaCampesina campo="codigo_valvula" />
                 </div>
               </div>
 
@@ -1998,6 +2143,7 @@ export default function RiegoPrecisionManager() {
                     value={valvulaForm.nombre}
                     onChange={(e) => setValvulaForm({ ...valvulaForm, nombre: e.target.value })}
                   />
+                  <AyudaCampesina campo="nombre" />
                 </div>
 
                 <div className="form-group">
@@ -2011,6 +2157,7 @@ export default function RiegoPrecisionManager() {
                     <option value="Hidraulica_Piloto">Hidráulica con Piloto</option>
                     <option value="Manual_Esfera">Manual de Esfera</option>
                   </select>
+                  <AyudaCampesina campo="tipo_actuador" />
                 </div>
               </div>
 
@@ -2034,7 +2181,30 @@ export default function RiegoPrecisionManager() {
         <div className="modal-overlay">
           <div className="modal-card">
             <div className="modal-header">
-              <h3>Nueva Receta de Fertirriego</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h3>Nueva Receta de Fertirriego</h3>
+                <ManualitoCampesinoModal 
+                  modulo="Preparación y Receta de Abonos"
+                  descripcion="Reglas de oro para disolver fertilizantes en los tanques"
+                  pasos={[
+                    {
+                      titulo: "1. Regla del Tanque A (Calcio)",
+                      icono: "🅰️",
+                      texto: "En el Tanque A disuelva Nitrato de Calcio y Nitrato de Potasio. NUNCA mezcle sulfatos aquí porque se corta la mezcla."
+                    },
+                    {
+                      titulo: "2. Regla del Tanque B (Sulfatos y Menores)",
+                      icono: "🅱️",
+                      texto: "En el Tanque B disuelva Sulfato de Magnesio, MAP (fósforo) y los minerales menores (hierro quelatado, zinc)."
+                    },
+                    {
+                      titulo: "3. Medición de Sales y Ácido",
+                      icono: "⚡",
+                      texto: "La conductividad (CE) le indica qué tan cargado va el caldo. El pH debe quedar entre 5.5 y 6.2 para no tapar los goteros."
+                    }
+                  ]}
+                />
+              </div>
               <button className="btn-close" onClick={() => setShowModalFertirriego(false)}><X size={20} /></button>
             </div>
 
@@ -2052,6 +2222,7 @@ export default function RiegoPrecisionManager() {
                       <option key={s.id_sector} value={s.id_sector}>{s.codigo_sector} - {s.nombre}</option>
                     ))}
                   </select>
+                  <AyudaCampesina campo="id_sector" />
                 </div>
 
                 <div className="form-group">
@@ -2063,6 +2234,7 @@ export default function RiegoPrecisionManager() {
                     value={fertirriegoForm.nombre_receta}
                     onChange={(e) => setFertirriegoForm({ ...fertirriegoForm, nombre_receta: e.target.value })}
                   />
+                  <AyudaCampesina campo="nombre_receta" />
                 </div>
               </div>
 
@@ -2076,6 +2248,7 @@ export default function RiegoPrecisionManager() {
                     value={fertirriegoForm.ce_objetivo_ms_cm}
                     onChange={(e) => setFertirriegoForm({ ...fertirriegoForm, ce_objetivo_ms_cm: e.target.value })}
                   />
+                  <AyudaCampesina campo="ce_objetivo_ms_cm" />
                 </div>
 
                 <div className="form-group">
@@ -2087,6 +2260,7 @@ export default function RiegoPrecisionManager() {
                     value={fertirriegoForm.ph_objetivo}
                     onChange={(e) => setFertirriegoForm({ ...fertirriegoForm, ph_objetivo: e.target.value })}
                   />
+                  <AyudaCampesina campo="ph_objetivo" />
                 </div>
               </div>
 
@@ -2098,6 +2272,7 @@ export default function RiegoPrecisionManager() {
                   value={fertirriegoForm.tanque_a_formula}
                   onChange={(e) => setFertirriegoForm({ ...fertirriegoForm, tanque_a_formula: e.target.value })}
                 />
+                <AyudaCampesina campo="tanque_a_formula" />
               </div>
 
               <div className="form-group">
@@ -2108,6 +2283,7 @@ export default function RiegoPrecisionManager() {
                   value={fertirriegoForm.tanque_b_formula}
                   onChange={(e) => setFertirriegoForm({ ...fertirriegoForm, tanque_b_formula: e.target.value })}
                 />
+                <AyudaCampesina campo="tanque_b_formula" />
               </div>
 
               <div className="modal-actions">
@@ -2130,7 +2306,30 @@ export default function RiegoPrecisionManager() {
         <div className="modal-overlay">
           <div className="modal-card">
             <div className="modal-header">
-              <h3>Ensayo de Uniformidad (Christiansen CU)</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h3>Ensayo de Uniformidad (Christiansen CU)</h3>
+                <ManualitoCampesinoModal 
+                  modulo="Prueba de Vasitos (Uniformidad)"
+                  descripcion="Pasos para verificar en campo si todas las matas reciben la misma agua"
+                  pasos={[
+                    {
+                      titulo: "1. Coloque los Vasitos en el Campo",
+                      icono: "🥤",
+                      texto: "Ponga 8 a 16 vasitos medidores o latas plásticas debajo de los goteros a lo largo del surco y al final de la manguera."
+                    },
+                    {
+                      titulo: "2. Prenda el Riego 15 a 30 Minutos",
+                      icono: "⏱️",
+                      texto: "Deje regar a presión normal. Luego recoja los vasitos y anote los mililitros (ml) que llenó cada uno."
+                    },
+                    {
+                      titulo: "3. Copie los Resultados",
+                      icono: "📝",
+                      texto: "Copie los números separados por coma. Si el resultado da más de 85%, el riego es excelente. Si da menos de 75%, hay goteros tapados."
+                    }
+                  ]}
+                />
+              </div>
               <button className="btn-close" onClick={() => setShowModalUniformidad(false)}><X size={20} /></button>
             </div>
 
@@ -2148,6 +2347,7 @@ export default function RiegoPrecisionManager() {
                       <option key={s.id_sector} value={s.id_sector}>{s.codigo_sector} - {s.nombre}</option>
                     ))}
                   </select>
+                  <AyudaCampesina campo="id_sector" />
                 </div>
 
                 <div className="form-group">
@@ -2158,6 +2358,7 @@ export default function RiegoPrecisionManager() {
                     value={uniformidadForm.fecha_ensayo}
                     onChange={(e) => setUniformidadForm({ ...uniformidadForm, fecha_ensayo: e.target.value })}
                   />
+                  <AyudaCampesina campo="fecha_ensayo" />
                 </div>
               </div>
 
@@ -2170,6 +2371,7 @@ export default function RiegoPrecisionManager() {
                   value={uniformidadForm.lecturas_texto}
                   onChange={(e) => setUniformidadForm({ ...uniformidadForm, lecturas_texto: e.target.value })}
                 />
+                <AyudaCampesina campo="lecturas_texto" />
               </div>
 
               <div className="form-group">
@@ -2181,6 +2383,7 @@ export default function RiegoPrecisionManager() {
                   value={uniformidadForm.evaluador}
                   onChange={(e) => setUniformidadForm({ ...uniformidadForm, evaluador: e.target.value })}
                 />
+                <AyudaCampesina campo="evaluador" />
               </div>
 
               <div className="modal-actions">
