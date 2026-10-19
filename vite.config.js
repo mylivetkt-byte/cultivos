@@ -45,8 +45,13 @@ export default defineConfig({
       },
     },
   },
+  esbuild: {
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+  },
   build: {
-    chunkSizeWarningLimit: 1000, // sube el límite de 500 kB a 1000 kB
+    sourcemap: false, // Blindaje: Nunca emitir mapas de código fuente en producción
+    minify: 'esbuild',
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {
