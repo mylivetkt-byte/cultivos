@@ -17,12 +17,14 @@ export function AuthProvider({ children }) {
 
     try {
       const res = await fetchApi('/auth/me');
-      if (res.user) {
+      if (res && res.user) {
         setUser(res.user);
       } else {
+        localStorage.removeItem('token');
         setUser(null);
       }
     } catch (err) {
+      localStorage.removeItem('token');
       setUser(null);
     } finally {
       setLoading(false);

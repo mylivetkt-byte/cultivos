@@ -1,13 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, Database, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function LoginPage({ onRegister }) {
   const { login } = useAuth();
-  const [form, setForm] = useState({ username: '', password: '' });
+  const [form, setForm] = useState({ username: 'admin', password: 'Admin123*' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [serverStatus, setServerStatus] = useState('checking'); // 'checking', 'connected', 'error'
+
+  useEffect(() => {
+    // Verificar si el servidor y la base de datos responden
+    fetch('/api/auth/me')
+      .then(() => setServerStatus('connected'))
+      .catch(() => setServerStatus('error'));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,8 +24,13 @@ export default function LoginPage({ onRegister }) {
     const res = await login(form.username, form.password);
     setLoading(false);
     if (!res.success) {
-      setError(res.error || 'Credenciales inválidas');
+      setError(res.error || 'Credenciales inválidas. Verifique usuario o contraseña.');
     }
+  };
+
+  const handleSetAdmin = () => {
+    setForm({ username: 'admin', password: 'Admin123*' });
+    setError('');
   };
 
   return (
@@ -25,8 +38,57 @@ export default function LoginPage({ onRegister }) {
       <div className="login-background-overlay"></div>
       <div className="login-card">
         <div className="login-logo">
-          <img src="/logo-agropaccioli.png" alt="AgroPaccioli" style={{ width: '180px', display: 'block', margin: '0 auto 15px', mixBlendMode: 'darken', filter: 'contrast(1.2) brightness(1.05)' }} />
+          <img 
+            src="/logo-agropaccioli.png" 
+            alt="AgroPaccioli" 
+            style={{ width: '180px', display: 'block', margin: '0 auto 12px', mixBlendMode: 'darken', filter: 'contrast(1.2) brightness(1.05)' }} 
+          />
+          <h3 style={{ textAlign: 'center', margin: '0 0 4px 0', color: '#166534', fontWeight: 800 }}>
+            AgroPaccioli ERP
+          </h3>
+          <p style={{ textAlign: 'center', margin: '0 0 16px 0', fontSize: '13px', color: '#64748b' }}>
+            Sistema Integral Agrícola, Ganadero y Acuícola
+          </p>
         </div>
+
+        {/* TARJETA DE CREDENCIALES OFICIALES DEL SISTEMA */}
+        <div style={{
+          background: '#f0fdf4',
+          border: '1px solid #86efac',
+          borderRadius: '8px',
+          padding: '12px 14px',
+          marginBottom: '16px',
+          fontSize: '13px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <span style={{ fontWeight: 'bold', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <ShieldCheck size={16} color="#16a34a" /> Credenciales Oficiales:
+            </span>
+            <button
+              type="button"
+              onClick={handleSetAdmin}
+              style={{
+                background: '#16a34a',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '2px 8px',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              Autocompletar
+            </button>
+          </div>
+          <div style={{ color: '#1e293b' }}>
+            👤 <b>Usuario:</b> <code style={{ background: '#dcfce7', padding: '1px 5px', borderRadius: '3px' }}>admin</code>
+          </div>
+          <div style={{ color: '#1e293b', marginTop: '2px' }}>
+            🔑 <b>Contraseña:</b> <code style={{ background: '#dcfce7', padding: '1px 5px', borderRadius: '3px' }}>Admin123*</code>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Usuario o Email</label>
@@ -58,15 +120,52 @@ export default function LoginPage({ onRegister }) {
               </button>
             </div>
           </div>
+
           {error && <div className="login-error">{error}</div>}
-          <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-            {loading ? 'Ingresando...' : 'Iniciar Sesión'}
+
+          <button 
+            type="submit" 
+            className="btn btn-primary btn-block" 
+            disabled={loading}
+            style={{
+              height: '46px',
+              fontSize: '15px',
+              fontWeight: 'bold',
+              borderRadius: '8px',
+              background: '#16a34a',
+              borderColor: '#15803d',
+              marginTop: '10px'
+            }}
+          >
+            {loading ? 'Ingresando al Sistema...' : 'Entrar a AgroPaccioli 🚀'}
           </button>
-          <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+
+          {/* INDICADOR DE CONEXIÓN CON LA BASE DE DATOS */}
+          <div style={{ 
+            marginTop: '16px', 
+            paddingTop: '12px', 
+            borderTop: '1px solid #e2e8f0', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            gap: '6px',
+            fontSize: '12px',
+            color: serverStatus === 'error' ? '#ef4444' : '#16a34a'
+          }}>
+            <Database size={14} />
+            {serverStatus === 'error' ? (
+              <span>⚠️ No hay conexión con el servidor (Revise puerto 3002)</span>
+            ) : (
+              <span>🟢 Servidor y Base de Datos (MySQL) Conectados</span>
+            )}
+          </div>
+
+          <p style={{ textAlign: 'center', marginTop: '12px', fontSize: '13px', color: 'var(--text-secondary)' }}>
             ¿No tienes empresa? <button type="button" onClick={onRegister} style={{ border: 'none', background: 'none', color: '#1976d2', cursor: 'pointer', textDecoration: 'underline' }}>Crear mi empresa</button>
           </p>
         </form>
       </div>
+
       <style>{`
         .login-container {
           display: flex;
@@ -93,45 +192,37 @@ export default function LoginPage({ onRegister }) {
         }
         .login-card {
           background: #fff;
-          padding: 40px;
-          border-radius: 12px;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+          padding: 36px;
+          border-radius: 16px;
+          box-shadow: 0 12px 40px rgba(0,0,0,0.25);
           width: 100%;
-          max-width: 400px;
-        }
-        .login-logo {
-          text-align: center;
-          margin-bottom: 30px;
-        }
-        .login-logo .logo-icon {
-          font-size: 48px;
-        }
-        .login-logo h1 {
-          margin: 10px 0 0;
-          color: #1a5f2a;
-          font-size: 24px;
+          max-width: 420px;
+          position: relative;
+          z-index: 10;
         }
         .form-group {
-          margin-bottom: 20px;
+          margin-bottom: 16px;
         }
         .form-group label {
           display: block;
-          margin-bottom: 6px;
+          font-size: 13px;
           font-weight: 600;
-          color: #333;
+          color: #334155;
+          margin-bottom: 6px;
         }
         .form-group input {
           width: 100%;
-          padding: 12px;
-          border: 1px solid #ddd;
-          border-radius: 6px;
-          font-size: 15px;
-          transition: border-color 0.3s;
+          padding: 10px 12px;
+          border: 1px solid #cbd5e1;
+          border-radius: 8px;
+          font-size: 14px;
+          box-sizing: border-box;
+          outline: none;
+          transition: border-color 0.2s;
         }
         .form-group input:focus {
-          outline: none;
-          border-color: #2d8a3e;
-          box-shadow: 0 0 0 2px rgba(45,138,62,0.1);
+          border-color: #16a34a;
+          box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
         }
         .password-input-wrapper {
           position: relative;
@@ -139,35 +230,42 @@ export default function LoginPage({ onRegister }) {
           align-items: center;
         }
         .password-input-wrapper input {
-          padding-right: 45px;
+          padding-right: 40px;
         }
         .password-toggle-btn {
           position: absolute;
           right: 10px;
           background: none;
           border: none;
-          color: #777;
           cursor: pointer;
+          color: #64748b;
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 4px;
         }
-        .password-toggle-btn:hover {
-          color: #333;
-        }
         .login-error {
-          color: #d32f2f;
-          background: #ffebee;
+          background: #fef2f2;
+          color: #dc2626;
+          border: 1px solid #fca5a5;
           padding: 10px;
           border-radius: 6px;
-          margin-bottom: 15px;
-          font-size: 14px;
+          font-size: 13px;
+          margin-bottom: 14px;
+          text-align: center;
+        }
+        .btn-primary {
+          background: #16a34a;
+          color: #fff;
+          border: none;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .btn-primary:hover {
+          background: #15803d;
         }
         .btn-block {
           width: 100%;
-          padding: 12px;
-          font-size: 16px;
         }
       `}</style>
     </div>
