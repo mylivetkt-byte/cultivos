@@ -32,27 +32,29 @@ export default function LoginPage({ onRegister }) {
     <div className="login-page-wrapper">
       <div className="login-background-overlay"></div>
 
-      {/* CABECERA SUPERIOR CENTRADA: MARCA Y ESLOGAN */}
+      {/* CABECERA SUPERIOR CENTRADA: MARCA LLAMATIVA Y ESLOGAN */}
       <header className="login-top-header">
-        <h1 className="brand-title">AgroPaccioli</h1>
+        <h1 className="brand-title">
+          <span className="brand-agro">Agro</span><span className="brand-paccioli">Paccioli</span>
+        </h1>
         <p className="brand-slogan">
           Cosechando números claros, cultivando un futuro rentable
         </p>
       </header>
 
-      {/* CUERPO CENTRAL CON TARJETA DE ACCESO */}
+      {/* CUERPO CENTRAL RESPONSIVO CON TARJETA DE ACCESO */}
       <main className="login-main-content">
         <div className="login-card">
           <div className="login-logo">
             <img 
               src="/logo-agropaccioli.png" 
               alt="AgroPaccioli" 
-              style={{ width: '160px', display: 'block', margin: '0 auto 10px', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.08))' }} 
+              className="logo-img"
             />
-            <h2 style={{ textAlign: 'center', margin: '0 0 4px 0', color: '#14532d', fontWeight: 900, letterSpacing: '-0.5px', fontSize: '22px' }}>
+            <h2 className="card-access-title">
               Acceso al Sistema
             </h2>
-            <p style={{ textAlign: 'center', margin: '0 0 16px 0', fontSize: '13px', color: '#64748b', fontWeight: 500 }}>
+            <p className="card-access-subtitle">
               Ingrese sus credenciales de usuario
             </p>
           </div>
@@ -66,8 +68,10 @@ export default function LoginPage({ onRegister }) {
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
                 placeholder="Ingrese su usuario"
                 required
+                autoComplete="username"
               />
             </div>
+
             <div className="form-group">
               <label>Contraseña del Sistema</label>
               <div className="password-input-wrapper">
@@ -77,14 +81,16 @@ export default function LoginPage({ onRegister }) {
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   placeholder="Ingrese su contraseña"
                   required
+                  autoComplete="current-password"
                 />
                 <button 
                   type="button" 
                   className="password-toggle-btn" 
                   onClick={() => setShowPassword(!showPassword)}
                   title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  aria-label="Alternar visibilidad de contraseña"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
                 </button>
               </div>
             </div>
@@ -95,43 +101,22 @@ export default function LoginPage({ onRegister }) {
               type="submit" 
               className="btn btn-primary btn-block" 
               disabled={loading}
-              style={{
-                height: '46px',
-                fontSize: '15px',
-                fontWeight: 'bold',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
-                borderColor: '#15803d',
-                marginTop: '10px',
-                boxShadow: '0 4px 14px rgba(22, 163, 74, 0.4)'
-              }}
             >
               {loading ? 'Ingresando a la Plataforma...' : 'Entrar a AgroPaccioli 🚀'}
             </button>
 
             {/* INDICADOR DE CONEXIÓN */}
-            <div style={{ 
-              marginTop: '16px', 
-              paddingTop: '12px', 
-              borderTop: '1px solid #e2e8f0', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              gap: '6px',
-              fontSize: '12px',
-              color: serverStatus === 'error' ? '#ef4444' : '#15803d',
-              fontWeight: 600
-            }}>
+            <div className="db-status-bar">
               <Database size={14} />
               {serverStatus === 'error' ? (
-                <span>⚠️ No hay conexión con el servidor (Puerto 3002)</span>
+                <span style={{ color: '#ef4444' }}>⚠️ Sin conexión con el servidor (Puerto 3002)</span>
               ) : (
-                <span>🟢 Servidor y Base de Datos (MySQL) Conectados</span>
+                <span style={{ color: '#15803d' }}>🟢 Servidor y Base de Datos Conectados</span>
               )}
             </div>
 
-            <p style={{ textAlign: 'center', marginTop: '12px', fontSize: '13px', color: '#64748b' }}>
-              ¿No tienes empresa? <button type="button" onClick={onRegister} style={{ border: 'none', background: 'none', color: '#16a34a', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'underline' }}>Crear mi empresa</button>
+            <p className="register-footer-text">
+              ¿No tienes empresa? <button type="button" onClick={onRegister} className="register-link-btn">Crear mi empresa</button>
             </p>
           </form>
         </div>
@@ -148,66 +133,82 @@ export default function LoginPage({ onRegister }) {
       </footer>
 
       <style>{`
+        /* CONTENEDOR PRINCIPAL FLUIDO Y MULTIDISPOSITIVO */
         .login-page-wrapper {
           display: flex;
           flex-direction: column;
           justify-content: space-between;
           align-items: center;
           min-height: 100vh;
+          min-height: 100dvh; /* Altura dinámica para celulares Android e iOS */
+          width: 100%;
           background-image: url('/bg-agropaccioli-2.jpg');
           background-size: cover;
           background-position: center center;
           background-repeat: no-repeat;
           position: relative;
-          padding: 24px 20px 20px;
+          padding: clamp(14px, 2.5vh, 28px) clamp(14px, 2.5vw, 32px);
           box-sizing: border-box;
+          overflow-x: hidden;
         }
 
+        /* OVERLAY OSCURO CINEMATOGRÁFICO PARA MÁXIMO CONTRASTE */
         .login-background-overlay {
           position: absolute;
           top: 0; left: 0; right: 0; bottom: 0;
-          background: linear-gradient(180deg, rgba(5, 30, 15, 0.72) 0%, rgba(15, 23, 42, 0.55) 50%, rgba(5, 25, 12, 0.85) 100%);
+          background: linear-gradient(
+            180deg, 
+            rgba(4, 25, 12, 0.76) 0%, 
+            rgba(15, 23, 42, 0.52) 45%, 
+            rgba(4, 20, 10, 0.88) 100%
+          );
           backdrop-filter: blur(1.5px);
+          -webkit-backdrop-filter: blur(1.5px);
           pointer-events: none;
         }
 
-        /* CABECERA SUPERIOR */
+        /* CABECERA SUPERIOR: TITULAR GRANDE Y PROPORCIONAL */
         .login-top-header {
           position: relative;
           z-index: 10;
           text-align: center;
-          padding-top: 8px;
+          width: 100%;
+          max-width: 900px;
+          padding-top: 4px;
         }
 
         .brand-title {
-          font-size: 42px;
+          font-size: clamp(36px, 5.8vw, 68px);
           font-weight: 900;
+          line-height: 1.08;
           letter-spacing: -0.5px;
-          color: #ffffff;
-          margin: 0 0 6px 0;
-          text-shadow: 0 4px 18px rgba(0, 0, 0, 0.7), 0 2px 4px rgba(0, 0, 0, 0.5);
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          margin: 0;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+          filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.85));
+        }
+
+        .brand-agro {
+          color: #22c55e; /* Verde brillante característico de AgroPaccioli */
+          text-shadow: 0 0 25px rgba(34, 197, 94, 0.55), 0 2px 6px rgba(0, 0, 0, 0.9);
+        }
+
+        .brand-paccioli {
+          color: #ffffff; /* Blanco puro corporativo */
+          text-shadow: 0 4px 16px rgba(0, 0, 0, 0.9), 0 2px 4px rgba(0, 0, 0, 0.7);
         }
 
         .brand-slogan {
-          font-size: 18px;
+          font-size: clamp(14px, 1.8vw, 21px);
           font-weight: 500;
-          color: #bbf7d0;
-          margin: 0;
-          text-shadow: 0 2px 10px rgba(0, 0, 0, 0.75);
+          color: #dcfce7;
+          margin: clamp(6px, 1vh, 10px) auto 0;
+          max-width: 92%;
+          line-height: 1.35;
+          text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
           letter-spacing: 0.2px;
         }
 
-        @media (max-width: 640px) {
-          .brand-title {
-            font-size: 32px;
-          }
-          .brand-slogan {
-            font-size: 15px;
-          }
-        }
-
-        /* CUERPO CENTRAL */
+        /* CUERPO CENTRAL FLUIDO (CENTRA VERTICALMENTE EN CUALQUIER PANTALLA) */
         .login-main-content {
           position: relative;
           z-index: 10;
@@ -215,23 +216,58 @@ export default function LoginPage({ onRegister }) {
           justify-content: center;
           align-items: center;
           width: 100%;
-          padding: 20px 0;
+          margin: auto 0; /* Auto margin para centrado perfecto entre header y footer */
+          padding: clamp(12px, 2vh, 24px) 0;
         }
 
+        /* TARJETA DE LOGIN GLASSMORPHISM ADAPTABLE */
         .login-card {
           background: rgba(255, 255, 255, 0.96);
-          backdrop-filter: blur(16px);
-          padding: 30px 34px;
-          border-radius: 20px;
-          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.4);
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+          padding: clamp(22px, 3.5vw, 34px) clamp(20px, 3.5vw, 36px);
+          border-radius: clamp(16px, 2.5vw, 24px);
+          box-shadow: 
+            0 24px 60px rgba(0, 0, 0, 0.55), 
+            0 0 0 1px rgba(255, 255, 255, 0.5);
           width: 100%;
-          max-width: 420px;
+          max-width: 430px;
           box-sizing: border-box;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .form-group {
-          margin-bottom: 14px;
+        .login-logo {
+          text-align: center;
         }
+
+        .logo-img {
+          width: clamp(130px, 25vw, 160px);
+          height: auto;
+          display: block;
+          margin: 0 auto clamp(6px, 1vh, 10px);
+          filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.08));
+        }
+
+        .card-access-title {
+          margin: 0 0 4px 0;
+          color: #14532d;
+          font-weight: 900;
+          letter-spacing: -0.4px;
+          font-size: clamp(19px, 2.2vw, 22px);
+        }
+
+        .card-access-subtitle {
+          margin: 0 0 clamp(12px, 1.8vh, 18px) 0;
+          font-size: 13px;
+          color: #64748b;
+          font-weight: 500;
+        }
+
+        /* CAMPOS DEL FORMULARIO TOUCH-FRIENDLY */
+        .form-group {
+          margin-bottom: clamp(12px, 1.6vh, 16px);
+        }
+
         .form-group label {
           display: block;
           font-size: 13px;
@@ -239,21 +275,32 @@ export default function LoginPage({ onRegister }) {
           color: #1e293b;
           margin-bottom: 5px;
         }
+
         .form-group input {
           width: 100%;
-          padding: 10px 12px;
+          min-height: 44px; /* Estándar mínimo recomendado por Apple y Google para táctil */
+          padding: 10px 14px;
           border: 1.5px solid #cbd5e1;
-          border-radius: 8px;
-          font-size: 14px;
+          border-radius: 10px;
+          font-size: 15px;
           box-sizing: border-box;
           outline: none;
           background: #f8fafc;
-          transition: all 0.2s;
+          transition: all 0.2s ease;
+          -webkit-appearance: none;
         }
+
+        /* Prevenir zoom no deseado en iOS Safari cuando font-size es menor a 16px */
+        @media (max-width: 640px) {
+          .form-group input {
+            font-size: 16px;
+          }
+        }
+
         .form-group input:focus {
           border-color: #16a34a;
-          background: #fff;
-          box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+          background: #ffffff;
+          box-shadow: 0 0 0 3.5px rgba(22, 163, 74, 0.18);
         }
 
         .password-input-wrapper {
@@ -261,12 +308,16 @@ export default function LoginPage({ onRegister }) {
           display: flex;
           align-items: center;
         }
+
         .password-input-wrapper input {
-          padding-right: 42px;
+          padding-right: 44px;
         }
+
         .password-toggle-btn {
           position: absolute;
-          right: 10px;
+          right: 6px;
+          min-width: 40px;
+          min-height: 40px;
           background: none;
           border: none;
           cursor: pointer;
@@ -274,65 +325,144 @@ export default function LoginPage({ onRegister }) {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 4px;
+          padding: 8px;
+          border-radius: 8px;
+          transition: color 0.15s;
+        }
+
+        .password-toggle-btn:hover {
+          color: #1e293b;
         }
 
         .login-error {
           background: #fef2f2;
           color: #dc2626;
           border: 1px solid #fca5a5;
-          padding: 9px;
+          padding: 10px;
           border-radius: 8px;
           font-size: 13px;
           margin-bottom: 12px;
           text-align: center;
-          font-weight: 500;
+          font-weight: 600;
         }
 
+        /* BOTÓN PRINCIPAL */
         .btn-primary {
-          color: #fff;
-          border: none;
+          min-height: 48px;
+          width: 100%;
+          font-size: 15px;
+          font-weight: 800;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+          border: 1px solid #15803d;
+          color: #ffffff;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.2s ease;
+          box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4);
+          margin-top: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
-        .btn-primary:hover {
+
+        .btn-primary:hover:not(:disabled) {
           filter: brightness(1.08);
           transform: translateY(-1px);
-        }
-        .btn-block {
-          width: 100%;
+          box-shadow: 0 6px 18px rgba(22, 163, 74, 0.5);
         }
 
-        /* PIE DE PÁGINA */
+        .btn-primary:active:not(:disabled) {
+          transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+
+        /* ESTADO DE LA BASE DE DATOS */
+        .db-status-bar {
+          margin-top: clamp(12px, 1.8vh, 16px);
+          padding-top: 10px;
+          border-top: 1px solid #e2e8f0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          font-size: 12px;
+          font-weight: 600;
+        }
+
+        .register-footer-text {
+          text-align: center;
+          margin: 10px 0 0 0;
+          font-size: 13px;
+          color: #64748b;
+        }
+
+        .register-link-btn {
+          border: none;
+          background: none;
+          color: #16a34a;
+          cursor: pointer;
+          font-weight: 700;
+          text-decoration: underline;
+          padding: 0;
+          font-size: 13px;
+        }
+
+        /* PIE DE PÁGINA RESPONSIVO */
         .login-bottom-footer {
           position: relative;
           z-index: 10;
           text-align: center;
-          padding-bottom: 4px;
+          width: 100%;
+          max-width: 900px;
+          padding-bottom: 2px;
         }
 
         .copyright-text {
-          font-size: 13px;
+          font-size: clamp(11.5px, 1.3vw, 13.5px);
           color: #f1f5f9;
           margin: 0 0 3px 0;
           font-weight: 600;
-          text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+          text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
           letter-spacing: 0.2px;
         }
 
         .copyright-subtext {
-          font-size: 12px;
+          font-size: clamp(10.5px, 1.1vw, 12px);
           color: #94a3b8;
           margin: 0;
-          text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+          text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+          line-height: 1.3;
         }
 
-        @media (max-width: 640px) {
-          .copyright-text {
-            font-size: 12px;
+        /* AJUSTES PARA PANTALLAS MUY PEQUEÑAS (MÓVILES ANTIGUOS O PANTALLAS COMPACTAS) */
+        @media (max-height: 700px) {
+          .login-page-wrapper {
+            padding-top: 10px;
+            padding-bottom: 10px;
+          }
+          .brand-title {
+            font-size: clamp(28px, 5vw, 44px);
+          }
+          .brand-slogan {
+            font-size: 13px;
+            margin-top: 4px;
+          }
+          .card-access-subtitle {
+            margin-bottom: 10px;
+          }
+          .form-group {
+            margin-bottom: 10px;
+          }
+          .logo-img {
+            width: 120px;
+            margin-bottom: 6px;
           }
           .copyright-subtext {
-            font-size: 11px;
+            display: none; /* Ocultar línea secundaria en pantallas de poca altura para evitar scroll */
           }
         }
       `}</style>
