@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import PremiumSelect from '../PremiumSelect';
 import { authFetch } from '../../utils/api.js';
-import { Tooltip } from 'antd';
-import { InfoCircleOutlined } from '@ant-design/icons';
+import AyudaCampesina from '../Common/AyudaCampesina.jsx';
+import ManualitoCampesinoModal from '../Common/ManualitoCampesinoModal.jsx';
 import '../dashboard.css';
-
-const HelpTooltip = ({ text }) => (
-  <Tooltip title={text} color="#333" overlayInnerStyle={{ fontSize: '14px', borderRadius: '8px', border: '1px solid #60A5FA' }}>
-    <InfoCircleOutlined style={{ marginLeft: '8px', color: '#60A5FA', cursor: 'help' }} />
-  </Tooltip>
-);
 
 const ApplicationExecution = () => {
   const [schedules, setSchedules] = useState([]);
@@ -162,9 +156,32 @@ const ApplicationExecution = () => {
 
   return (
     <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h1>Ejecución en Campo (Check-in de Aplicación)</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Auditoría de Insumos: Bodega → Mezcla → Aplicación</p>
+      <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+        <div>
+          <h1>Ejecución en Campo (Check-in de Aplicación)</h1>
+          <p style={{ color: 'var(--text-muted)' }}>Auditoría de Insumos: Bodega → Mezcla → Aplicación</p>
+        </div>
+        <ManualitoCampesinoModal
+          modulo="Fumigación y Aplicación en Campo"
+          descripcion="Guía de 3 pasos para recibir insumos, revisar el clima y entregar tarros vacíos"
+          pasos={[
+            {
+              titulo: "1. Recibir Insumos en Bodega",
+              icono: "📦",
+              texto: "Verifique con el bodeguero los tarros o bultos de veneno o abono puro que le entregan y anote el nombre de quién se los despachó."
+            },
+            {
+              titulo: "2. Mezcla, Clima y Fumigación",
+              icono: "🌿",
+              texto: "Revise que no haga mucho sol ni viento fuerte para que no se vuele la gota. Mida cuánta agua preparó en la caneca y cuánta gastó en las matas."
+            },
+            {
+              titulo: "3. Triple Lavado de Tarros BPA",
+              icono: "🚰",
+              texto: "Obligatorio por ley y salud: enjuague 3 veces con agua limpia cada tarro vacío, eche esa agua a la bomba, perfore el fondo y entréguelos en la caseta de reciclaje."
+            }
+          ]}
+        />
       </div>
 
       {!selectedProg ? (
@@ -263,12 +280,14 @@ const ApplicationExecution = () => {
             <h4 style={{ color: '#F59E0B', borderBottom: '1px solid var(--border)', paddingBottom: '5px' }}>Etapa A: Salida de Bodega y Preparación de Mezcla</h4>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
               <div>
-                <label>Responsable de Entrega (Bodeguero) <HelpTooltip text="¿Quién le entregó los tarros o pimpinas en la bodega?" /></label>
+                <label>Responsable de Entrega (Bodeguero)</label>
                 <input type="text" className="form-control" required placeholder="Quién entregó el puro" value={responsableBodega} onChange={e => setResponsableBodega(e.target.value)} />
+                <AyudaCampesina campo="responsableBodega" />
               </div>
               <div>
-                <label>Responsable de Mezcla <HelpTooltip text="¿Quién hizo la mezcla o echó el agua a la bomba?" /></label>
+                <label>Responsable de Mezcla</label>
                 <input type="text" className="form-control" required placeholder="Quién preparó" value={responsableMezcla} onChange={e => setResponsableMezcla(e.target.value)} />
+                <AyudaCampesina campo="responsableMezcla" />
               </div>
             </div>
 
@@ -304,32 +323,38 @@ const ApplicationExecution = () => {
                 <div>
                   <label>Temperatura (°C)</label>
                   <input type="number" step="0.1" required className="form-control" placeholder="Ej. 24.5" value={clima.temperatura} onChange={e => setClima({...clima, temperatura: e.target.value})} />
+                  <AyudaCampesina campo="temperatura" />
                 </div>
                 <div>
                   <label>Viento (km/h)</label>
                   <input type="number" step="0.1" required className="form-control" placeholder="Ej. 12" value={clima.viento} onChange={e => setClima({...clima, viento: e.target.value})} />
+                  <AyudaCampesina campo="viento" />
                 </div>
                 <div>
                   <label>Humedad (%)</label>
                   <input type="number" step="0.1" required className="form-control" placeholder="Ej. 85" value={clima.humedad} onChange={e => setClima({...clima, humedad: e.target.value})} />
+                  <AyudaCampesina campo="humedad" />
                 </div>
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '15px', background: 'rgba(16,185,129,0.05)', padding: '15px', borderRadius: '8px' }}>
               <div>
-                <label>Volumen Total de Mezcla Preparada (Lts) <HelpTooltip text="¿Cuántos litros de agua con veneno o abono prepararon en total?" /></label>
+                <label>Volumen Total de Mezcla Preparada (Lts)</label>
                 <input type="number" step="0.1" required className="form-control" value={mezclaTotalRecibida} onChange={e => setMezclaTotalRecibida(parseFloat(e.target.value) || 0)} />
+                <AyudaCampesina campo="mezclaTotalRecibida" />
               </div>
               <div>
-                <label>Volumen Total Aplicado en Lote (Lts) <HelpTooltip text="De todo lo que prepararon, ¿cuánto le echaron realmente al cultivo?" /></label>
+                <label>Volumen Total Aplicado en Lote (Lts)</label>
                 <input type="number" step="0.1" required className="form-control" value={mezclaTotalAplicada} onChange={e => setMezclaTotalAplicada(parseFloat(e.target.value) || 0)} />
+                <AyudaCampesina campo="mezclaTotalAplicada" />
               </div>
               <div>
-                <label>Sobrante de Mezcla (Inventario) <HelpTooltip text="Esto fue lo que sobró en la bomba o tanque y se guardará." /></label>
+                <label>Sobrante de Mezcla (Inventario)</label>
                 <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: (mezclaTotalRecibida - mezclaTotalAplicada) > 0 ? '#F59E0B' : '#10B981' }}>
                   {(mezclaTotalRecibida - mezclaTotalAplicada).toFixed(1)} Lts
                 </div>
+                <AyudaCampesina campo="sobranteMezcla" />
               </div>
             </div>
 
@@ -339,31 +364,38 @@ const ApplicationExecution = () => {
                 <h4 style={{ color: '#EF4444', borderBottom: '1px solid var(--border)', paddingBottom: '5px', marginTop: '30px' }}>Control BPA (Envases Peligrosos)</h4>
                 <div style={{ background: 'rgba(239, 68, 68, 0.05)', padding: '15px', borderRadius: '8px' }}>
                   {envases.map((e, idx) => (
-                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', alignItems: 'center', marginBottom: '10px' }}>
+                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', alignItems: 'center', marginBottom: '15px', background: 'rgba(0,0,0,0.1)', padding: '10px', borderRadius: '6px' }}>
                       <strong>{e.insumo_nombre}</strong>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.85em' }}>Envases Vacíos Generados <HelpTooltip text="¿Cuántos tarros vacíos de este veneno le quedaron?" /></label>
+                        <label style={{ display: 'block', fontSize: '0.85em' }}>Envases Vacíos Generados</label>
                         <input 
                           type="number" style={{ width: '80px', padding: '4px' }}
-                          value={e.cantidad_envases_vacios}
+                          value={e.cantidad_envases_vacios} 
                           onChange={ev => {
                             const newE = [...envases];
                             newE[idx].cantidad_envases_vacios = parseInt(ev.target.value);
                             setEnvases(newE);
                           }}
                         />
+                        <AyudaCampesina campo="cantidad_envases_vacios" />
                       </div>
-                      <div style={{ display: 'flex', gap: '15px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.85em' }}>
-                          <input type="checkbox" checked={e.lavado_triple_realizado} onChange={ev => {
-                            const newE = [...envases]; newE[idx].lavado_triple_realizado = ev.target.checked; setEnvases(newE);
-                          }}/> Triple Lavado + Perforado <HelpTooltip text="¿Lavó el tarro 3 veces con agua y lo chuzó para que no lo vuelvan a usar?" />
-                        </label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.85em' }}>
-                          <input type="checkbox" checked={e.entregado_centro_acopio} onChange={ev => {
-                            const newE = [...envases]; newE[idx].entregado_centro_acopio = ev.target.checked; setEnvases(newE);
-                          }}/> Entregado a Acopio <HelpTooltip text="¿Entregó los tarros vacíos en la bodega de reciclaje?" />
-                        </label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.85em', fontWeight: '600' }}>
+                            <input type="checkbox" checked={e.lavado_triple_realizado} onChange={ev => {
+                              const newE = [...envases]; newE[idx].lavado_triple_realizado = ev.target.checked; setEnvases(newE);
+                            }}/> Triple Lavado + Perforado
+                          </label>
+                          <AyudaCampesina campo="lavado_triple_realizado" />
+                        </div>
+                        <div>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.85em', fontWeight: '600' }}>
+                            <input type="checkbox" checked={e.entregado_centro_acopio} onChange={ev => {
+                              const newE = [...envases]; newE[idx].entregado_centro_acopio = ev.target.checked; setEnvases(newE);
+                            }}/> Entregado a Acopio
+                          </label>
+                          <AyudaCampesina campo="entregado_centro_acopio" />
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -373,13 +405,14 @@ const ApplicationExecution = () => {
 
             <h4 style={{ color: '#3B82F6', borderBottom: '1px solid var(--border)', paddingBottom: '5px', marginTop: '30px' }}>Bitácora de Equipos (Mantenimiento)</h4>
             <div className="form-group full-width">
-              <label>Novedades de la Máquina / Tractor / Dron durante la labor: <HelpTooltip text="¿Se le dañó alguna boquilla, manguera o notó algo raro en la máquina?" /></label>
+              <label>Novedades de la Máquina / Tractor / Dron durante la labor:</label>
               <textarea 
                 rows="3" 
                 placeholder="Ej. La bomba presentó fugas, limpieza de boquillas realizada..."
                 value={mantenimientoNotas}
                 onChange={e => setMantenimientoNotas(e.target.value)}
               />
+              <AyudaCampesina campo="mantenimientoNotas" />
             </div>
 
             <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>

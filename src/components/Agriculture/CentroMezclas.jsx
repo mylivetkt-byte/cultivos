@@ -4,11 +4,36 @@ import ExportButtons from '../ExportButtons';
 import { authFetch } from '../../utils/api.js';
 import { Modal, Form, InputNumber, Button, Select, message, ConfigProvider, theme, Popconfirm } from 'antd';
 import { PlusOutlined, CaretUpOutlined, CaretDownOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import AyudaCampesina from '../Common/AyudaCampesina';
+import ManualitoCampesinoModal from '../Common/ManualitoCampesinoModal';
 import '../dashboard.css';
 
 const { Option } = Select;
 
+const guiaCentroMezclas = {
+  titulo: '🌾 ¿Cómo preparar la mezcla fitosanitaria de forma segura?',
+  subtitulo: 'Reglas de oro de seguridad y Buenas Prácticas Agrícolas (BPA) en la estación de mezcla.',
+  pasos: [
+    {
+      paso: '1. Salida de Bodega y Receta',
+      icono: '📦',
+      descripcion: 'Escoja la bodega de donde retira los insumos y seleccione la fórmula o receta autorizada por el agrónomo. Nunca improvise dosis sin orden técnica.'
+    },
+    {
+      paso: '2. Orden Seguro de Dilución (¡Agua Primero!)',
+      icono: '💧',
+      descripcion: 'Llene el tanque con agua limpia hasta la mitad. Disuelva primero polvos y gránulos mojables en un balde aparte. Luego agregue los líquidos y por último los coadyuvantes o correctores de pH. ¡Nunca eche veneno puro en un tanque seco!'
+    },
+    {
+      paso: '3. Seguridad, EPP y Medición Total',
+      icono: '🥽',
+      descripcion: 'Obligatorio el uso de careta con filtro, gafas, guantes de nitrilo y delantal impermeable. Al terminar, verifique los litros totales preparados con la regla medidora del tanque.'
+    }
+  ]
+};
+
 const CentroMezclas = ({ tenantId = 1 }) => {
+  const [manualitoVisible, setManualitoVisible] = useState(false);
   const [mezclas, setMezclas] = useState([]);
   const [filteredMezclas, setFilteredMezclas] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: 'id_preparacion', direction: 'desc' });
@@ -304,7 +329,27 @@ const CentroMezclas = ({ tenantId = 1 }) => {
           <h1>Auditoría: Centro de Mezclas</h1>
           <p style={{ color: 'var(--text-muted)' }}>Registro de preparaciones de recetas fitosanitarias</p>
         </div>
-        <div style={{ display: 'flex', gap: '15px' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button 
+            type="button" 
+            onClick={() => setManualitoVisible(true)}
+            style={{
+              background: '#047857',
+              color: '#ecfdf5',
+              border: '1px solid #10b981',
+              borderRadius: '8px',
+              padding: '9px 16px',
+              fontWeight: 'bold',
+              fontSize: '0.95em',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+            }}
+          >
+            🌾 ¿Cómo preparar la mezcla?
+          </button>
           <ExportButtons 
             data={sortedMezclas} 
             columns={exportColumns} 
@@ -443,8 +488,18 @@ const CentroMezclas = ({ tenantId = 1 }) => {
           onCancel={() => { setIsModalVisible(false); setEditingId(null); }}
           footer={null}
           destroyOnClose
-          width={600}
+          width={650}
         >
+          {/* Banner de Seguridad BPA */}
+          <div style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid #10b981', borderRadius: '8px', padding: '12px 14px', marginBottom: '18px' }}>
+            <div style={{ fontWeight: 'bold', color: '#34d399', fontSize: '0.95em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              🛡️ Regla de Oro BPA — Orden Seguro de Mezcla:
+            </div>
+            <div style={{ fontSize: '0.86em', color: '#cbd5e1', marginTop: '4px', lineHeight: '1.4' }}>
+              <strong>1.</strong> Agua limpia hasta la mitad ➔ <strong>2.</strong> Disolver polvos mojables ➔ <strong>3.</strong> Agregar líquidos y adherentes ➔ <strong>4.</strong> Aforar al volumen total. ¡EPP obligatorio!
+            </div>
+          </div>
+
           <Form form={form} layout="vertical" onFinish={handleCreateMezcla}>
             <Form.Item name="id_receta" label="Receta Fitosanitaria a Preparar" rules={[{ required: true, message: 'Seleccione una receta' }]}>
               <Select showSearch placeholder="Seleccione la receta/fórmula" filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>
@@ -453,43 +508,60 @@ const CentroMezclas = ({ tenantId = 1 }) => {
                 ))}
               </Select>
             </Form.Item>
+            <AyudaCampesina campo="id_receta" />
 
-            <Form.Item name="finca_id" label="Finca Destino" rules={[{ required: true, message: 'Seleccione la finca' }]}>
-              <Select 
-                showSearch 
-                placeholder="Seleccione la finca" 
-                filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}
-                onChange={(val) => {
-                  form.setFieldsValue({ lote_id: undefined });
-                  const b = bodegas.find(bd => String(bd.id_finca) === String(val));
-                  if (b) form.setFieldsValue({ id_bodega: b.id_bodega });
-                }}
-              >
-                {fincas.map((f) => (
-                  <Option key={f.id_finca} value={f.id_finca}>{f.nombre}</Option>
-                ))}
-              </Select>
-            </Form.Item>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div>
+                <Form.Item name="finca_id" label="Finca Destino" rules={[{ required: true, message: 'Seleccione la finca' }]}>
+                  <Select 
+                    showSearch 
+                    placeholder="Seleccione la finca" 
+                    filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}
+                    onChange={(val) => {
+                      form.setFieldsValue({ lote_id: undefined });
+                      const b = bodegas.find(bd => String(bd.id_finca) === String(val));
+                      if (b) form.setFieldsValue({ id_bodega: b.id_bodega });
+                    }}
+                  >
+                    {fincas.map((f) => (
+                      <Option key={f.id_finca} value={f.id_finca}>{f.nombre}</Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <AyudaCampesina campo="id_finca" />
+              </div>
 
-            <Form.Item name="lote_id" label="Lote o Potrero Destino" rules={[{ required: true, message: 'Seleccione el lote destino' }]}>
-              <Select showSearch placeholder="Seleccione el lote" disabled={!formFincaValue} filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>
-                {modalLotes.map((l) => (
-                  <Option key={l.id_lote} value={l.id_lote}>{l.nombre}</Option>
-                ))}
-              </Select>
-            </Form.Item>
+              <div>
+                <Form.Item name="lote_id" label="Lote o Potrero Destino" rules={[{ required: true, message: 'Seleccione el lote destino' }]}>
+                  <Select showSearch placeholder="Seleccione el lote" disabled={!formFincaValue} filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>
+                    {modalLotes.map((l) => (
+                      <Option key={l.id_lote} value={l.id_lote}>{l.nombre}</Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <AyudaCampesina campo="id_lote" />
+              </div>
+            </div>
 
-            <Form.Item name="id_bodega" label="Bodega de Origen (Insumos)" rules={[{ required: true, message: 'Seleccione la bodega' }]}>
-              <Select showSearch placeholder="Seleccione la bodega de la finca" filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>
-                {bodegas.map((b) => (
-                  <Option key={b.id_bodega} value={b.id_bodega}>{b.nombre_bodega || b.nombre}</Option>
-                ))}
-              </Select>
-            </Form.Item>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div>
+                <Form.Item name="id_bodega" label="Bodega de Origen (Insumos)" rules={[{ required: true, message: 'Seleccione la bodega' }]}>
+                  <Select showSearch placeholder="Seleccione la bodega de la finca" filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>
+                    {bodegas.map((b) => (
+                      <Option key={b.id_bodega} value={b.id_bodega}>{b.nombre_bodega || b.nombre}</Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <AyudaCampesina campo="id_bodega" />
+              </div>
 
-            <Form.Item name="cantidad_litros" label="Volumen a Preparar (Litros Totales de Mezcla)" rules={[{ required: true, message: 'Ingrese la cantidad' }]}>
-              <InputNumber style={{ width: '100%' }} min={1} placeholder="Ej: 200 Lts" />
-            </Form.Item>
+              <div>
+                <Form.Item name="cantidad_litros" label="Volumen a Preparar (Litros Totales de Mezcla)" rules={[{ required: true, message: 'Ingrese la cantidad' }]}>
+                  <InputNumber style={{ width: '100%' }} min={1} placeholder="Ej: 200 Lts" />
+                </Form.Item>
+                <AyudaCampesina campo="cantidad_litros" />
+              </div>
+            </div>
 
             <Form.Item name="responsable_mezcla" label="Responsable de la Mezcla (Interno o Contratista)" rules={[{ required: true, message: 'Seleccione un responsable' }]}>
               <Select showSearch placeholder="Seleccione el responsable" filterOption={(input, option) => String(option.children).toLowerCase().includes(input.toLowerCase())}>
@@ -500,6 +572,7 @@ const CentroMezclas = ({ tenantId = 1 }) => {
                 ))}
               </Select>
             </Form.Item>
+            <AyudaCampesina campo="responsable_mezcla" />
 
             <Form.Item style={{ marginTop: '20px', textAlign: 'right' }}>
               <Button onClick={() => { setIsModalVisible(false); setEditingId(null); }} style={{ marginRight: '10px' }}>Cancelar</Button>
@@ -511,6 +584,12 @@ const CentroMezclas = ({ tenantId = 1 }) => {
         </Modal>
       </ConfigProvider>
 
+      {/* Manualito Campesino Guía en 3 Pasos */}
+      <ManualitoCampesinoModal
+        isOpen={manualitoVisible}
+        onClose={() => setManualitoVisible(false)}
+        guia={guiaCentroMezclas}
+      />
     </div>
   );
 };

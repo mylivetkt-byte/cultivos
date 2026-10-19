@@ -5,8 +5,32 @@ import { FileExcelOutlined, FilePdfOutlined, WhatsAppOutlined, SearchOutlined, D
 import { exportToExcel } from '../../../utils/exportExcel';
 import { exportToPdf } from '../../../utils/exportPdf';
 import ModalNuevoMovimiento from './ModalNuevoMovimiento';
+import ManualitoCampesinoModal from '../../Common/ManualitoCampesinoModal';
+
+const guiaHerramientas = {
+  titulo: '🌾 ¿Cómo entregar y devolver herramientas en el almacén?',
+  subtitulo: 'Reglas para el control de inventario, cuidado de herramientas y custodia responsable.',
+  pasos: [
+    {
+      paso: '1. Escoger la Herramienta',
+      icono: '🪓',
+      descripcion: 'Busque la herramienta por código o nombre (machete, lima, bomba de espalda, pala o tijera). El sistema le mostrará cuánto stock disponible queda en la bodega.'
+    },
+    {
+      paso: '2. Tipo de Movimiento (Préstamo o Devolución)',
+      icono: '🔄',
+      descripcion: 'Si el jornalero se la lleva al campo, marque "Préstamo". Cuando la regrese a la bodega limpia y en buen estado, márquela como "Devolución" o "Entrada". Si se rompió o quebró, regístrela como "Baja / Daño".'
+    },
+    {
+      paso: '3. Operario Responsable y Lote',
+      icono: '✍️',
+      descripcion: 'Anote el nombre del trabajador que recibe el equipo y el lote o lago donde va a laborar. En observaciones describa si la herramienta va afilada o con accesorios.'
+    }
+  ]
+};
 
 function TabMovimientos({ fincaId, fincas }) {
+  const [manualitoVisible, setManualitoVisible] = useState(false);
   const [data, setData] = useState([]);
   const [searchTool, setSearchTool] = useState('');
   const [searchResp, setSearchResp] = useState('');
@@ -203,6 +227,26 @@ function TabMovimientos({ fincaId, fincas }) {
         </Space>
         
         <Space>
+          <button 
+            type="button" 
+            onClick={() => setManualitoVisible(true)}
+            style={{
+              padding: '8px 14px',
+              background: '#047857',
+              color: '#ecfdf5',
+              border: '1px solid #10b981',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
+            }}
+          >
+            🌾 ¿Cómo custodiar herramientas?
+          </button>
+
           <Dropdown menu={{
             items: [
               { key: 'excel', icon: <FileExcelOutlined style={{color: '#16a34a'}}/>, label: 'Exportar a Excel', onClick: handleExportExcel },
@@ -227,6 +271,13 @@ function TabMovimientos({ fincaId, fincas }) {
         onRefresh={fetchMovimientos} 
         fincaId={fincaId} 
         fincas={fincas} 
+      />
+
+      {/* Manualito Campesino Guía en 3 Pasos */}
+      <ManualitoCampesinoModal
+        isOpen={manualitoVisible}
+        onClose={() => setManualitoVisible(false)}
+        guia={guiaHerramientas}
       />
 
       <Table 

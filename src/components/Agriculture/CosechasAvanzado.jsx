@@ -1,14 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import PremiumSelect from '../PremiumSelect';
 import { PlusOutlined, FilePdfOutlined, FileExcelOutlined, WhatsAppOutlined } from '@ant-design/icons';
+import { Modal, Form, Input, InputNumber, Select as AntSelect, message, ConfigProvider, theme } from 'antd';
 import { API_BASE, fetchApi, authFetch } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import { exportToPdf } from '../../utils/exportPdf';
 import { exportToExcel } from '../../utils/exportExcel';
 import { jsPDF } from 'jspdf';
+import AyudaCampesina from '../Common/AyudaCampesina';
+import ManualitoCampesinoModal from '../Common/ManualitoCampesinoModal';
+
+const { Option } = AntSelect;
+
+const guiaCosechas = {
+  titulo: '🌾 ¿Cómo registrar la cosecha y pesaje en campo?',
+  subtitulo: 'Anotar correctamente el fruto recogido, el lote y los kilos netos para pago a cosecheros y liquidación.',
+  pasos: [
+    {
+      paso: '1. Escoger Lote y Cultivo',
+      icono: '📍',
+      descripcion: 'Seleccione la finca, el potrero o cuadro donde se recolectó y la variedad o cultivo cosechado.'
+    },
+    {
+      paso: '2. Kilos Netos Pesados en Báscula',
+      icono: '⚖️',
+      descripcion: 'Pese las canastillas o bultos en la báscula de la finca. Recuerde descontar el peso de las canastillas vacías (tara) para registrar el peso neto real en kilos.'
+    },
+    {
+      paso: '3. Cuadrilla, Jornaleros y Calidad',
+      icono: '👥',
+      descripcion: 'Anote la cuadrilla o el número de recolectores para calcular el rendimiento por persona y marque si el fruto es de primera (exportación/nacional) o descarte.'
+    }
+  ]
+};
 
 export default function CosechasAvanzado({ tenantId, permisos = {} }) {
   const { user } = useAuth();
+  const [manualitoVisible, setManualitoVisible] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [savingCosecha, setSavingCosecha] = useState(false);
+  const [form] = Form.useForm();
+  const formFinca = Form.useWatch('id_finca', form);
+  const [siembras, setSiembras] = useState([]);
   const [cosechas, setCosechas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -35,17 +68,19 @@ export default function CosechasAvanzado({ tenantId, permisos = {} }) {
   useEffect(() => {
     const initCatalogs = async () => {
       try {
-        const [fRes, nRes, lRes, cRes] = await Promise.all([
+        const [fRes, nRes, lRes, cRes, sRes] = await Promise.all([
           authFetch(`${API_BASE}/table/fincas/data?tenantId=${tenantId}&limit=1000`),
           authFetch(`${API_BASE}/table/nucleos/data?tenantId=${tenantId}&limit=5000`),
           authFetch(`${API_BASE}/table/lotes/data?tenantId=${tenantId}&limit=10000`),
-          authFetch(`${API_BASE}/table/cultivos/data?tenantId=${tenantId}&limit=1000`)
+          authFetch(`${API_BASE}/table/cultivos/data?tenantId=${tenantId}&limit=1000`),
+          authFetch(`${API_BASE}/table/siembras/data?tenantId=${tenantId}&limit=5000`)
         ]);
         
         if (fRes.ok) { const fData = await fRes.json(); setFincas(fData.data || []); }
         if (nRes.ok) { const nData = await nRes.json(); setNucleos(nData.data || []); }
         if (lRes.ok) { const lData = await lRes.json(); setLotes(lData.data || []); }
         if (cRes.ok) { const cData = await cRes.json(); setCultivos(cData.data || []); }
+        if (sRes.ok) { const sData = await sRes.json(); setSiembras(sData.data || []); }
 
         // Fetch initial table data
         handleProcesar(true);
@@ -251,6 +286,54 @@ export default function CosechasAvanzado({ tenantId, permisos = {} }) {
     }
   };
 
+  const handleGuardarCosecha = async (values) => {
+    setSavingCosecha(true);
+    try {
+      // Find or match siembra
+      let targetSiembra = siembras.find(s => String(s.id_lote) === String(values.id_lote) && String(s.id_cultivo) === String(values.id_cultivo));
+      if (!targetSiembra) {
+        targetSiembra = siembras.find(s => String(s.id_lote) === String(values.id_lote));
+      }
+      const siembraId = targetSiembra ? targetSiembra.id_siembra : 1;
+
+      const ha = Number(values.hectareas_cosechadas) || 1;
+      const kg = Number(values.produccion_total_kg) || 0;
+      const rend = ha > 0 ? (kg / ha) : 0;
+
+      const payload = {
+        id_siembra: siembraId,
+        fecha_cosecha: values.fecha_cosecha,
+        hectareas_cosechadas: ha,
+        rendimiento_estimado_ha: rend,
+        rendimiento_real_ha: rend,
+        produccion_total_kg: kg,
+        calidad_cosecha: values.calidad_cosecha || 'Primera',
+        observaciones: values.observaciones || ''
+      };
+
+      const res = await authFetch(`${API_BASE}/table/cosechas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        message.success('Cosecha registrada exitosamente');
+        setIsModalOpen(false);
+        form.resetFields();
+        handleProcesar();
+      } else {
+        const err = await res.json();
+        message.error('Error al guardar cosecha: ' + (err.error || 'Verifique los datos'));
+      }
+    } catch (err) {
+      console.error(err);
+      message.error('Error de red al guardar la cosecha');
+    } finally {
+      setSavingCosecha(false);
+    }
+  };
+
   return (
     <div style={{ padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
@@ -260,9 +343,41 @@ export default function CosechasAvanzado({ tenantId, permisos = {} }) {
         </h2>
 
         {/* Acciones Rápidas (CRUD y Exportación) */}
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="btn btn-success" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <PlusOutlined /> Nuevo
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button 
+            type="button" 
+            onClick={() => setManualitoVisible(true)}
+            style={{
+              background: '#047857',
+              color: '#ecfdf5',
+              border: '1px solid #10b981',
+              borderRadius: '6px',
+              padding: '8px 14px',
+              fontWeight: 'bold',
+              fontSize: '13px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+            }}
+          >
+            🌾 ¿Cómo registrar cosecha?
+          </button>
+          <button 
+            className="btn btn-success" 
+            onClick={() => {
+              form.resetFields();
+              form.setFieldsValue({
+                fecha_cosecha: new Date().toISOString().split('T')[0],
+                calidad_cosecha: 'Primera (Tipo Exportación)',
+                hectareas_cosechadas: 1
+              });
+              setIsModalOpen(true);
+            }} 
+            style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+          >
+            <PlusOutlined /> Nueva Cosecha
           </button>
           <button className="btn btn-danger" onClick={handleExportPdf} disabled={cosechas.length === 0 || loading} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#ef4444', color: '#fff', border: 'none', opacity: (cosechas.length === 0 || loading) ? 0.5 : 1 }}>
             <FilePdfOutlined /> PDF
@@ -461,6 +576,125 @@ export default function CosechasAvanzado({ tenantId, permisos = {} }) {
           </div>
         )}
       </div>
+
+      {/* Modal Registrar Nueva Cosecha con AyudaCampesina */}
+      <ConfigProvider theme={{ algorithm: theme.darkAlgorithm, token: { colorBgElevated: '#1e293b', colorPrimary: '#10B981', colorText: '#f8fafc' } }}>
+        <Modal
+          title={<span style={{ color: '#10B981', fontSize: '1.2em' }}>🌾 Registrar Nueva Cosecha en Campo</span>}
+          open={isModalOpen}
+          onCancel={() => setIsModalOpen(false)}
+          footer={null}
+          destroyOnClose
+          width={650}
+        >
+          {/* Banner Instructivo */}
+          <div style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid #10b981', borderRadius: '8px', padding: '12px 14px', marginBottom: '18px' }}>
+            <div style={{ fontWeight: 'bold', color: '#34d399', fontSize: '0.95em' }}>
+              ⚖️ Control de Báscula y Rendimiento Rural:
+            </div>
+            <div style={{ fontSize: '0.86em', color: '#cbd5e1', marginTop: '4px', lineHeight: '1.4' }}>
+              Registre los kilos netos pesados al final de la jornada. Si tiene dudas sobre algún campo, presione el botón de audio 🔊 para escuchar la explicación campesina.
+            </div>
+          </div>
+
+          <Form form={form} layout="vertical" onFinish={handleGuardarCosecha}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div>
+                <Form.Item name="id_finca" label="Finca" rules={[{ required: true, message: 'Seleccione la finca' }]}>
+                  <AntSelect 
+                    showSearch 
+                    placeholder="Seleccione la finca" 
+                    filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}
+                    onChange={() => form.setFieldsValue({ id_lote: undefined })}
+                  >
+                    {fincas.map(f => <Option key={f.id_finca} value={f.id_finca}>{f.nombre}</Option>)}
+                  </AntSelect>
+                </Form.Item>
+                <AyudaCampesina campo="id_finca" />
+              </div>
+
+              <div>
+                <Form.Item name="id_lote" label="Lote o Potrero Cosechado" rules={[{ required: true, message: 'Seleccione el lote' }]}>
+                  <AntSelect 
+                    showSearch 
+                    placeholder="Seleccione el lote" 
+                    disabled={!formFinca}
+                    filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}
+                  >
+                    {lotes.filter(l => {
+                      if (!formFinca) return true;
+                      const n = nucleos.find(nc => nc.id_nucleo === l.id_nucleo);
+                      return n && String(n.id_finca) === String(formFinca);
+                    }).map(l => <Option key={l.id_lote} value={l.id_lote}>{l.nombre}</Option>)}
+                  </AntSelect>
+                </Form.Item>
+                <AyudaCampesina campo="id_lote" />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div>
+                <Form.Item name="id_cultivo" label="Cultivo o Variedad" rules={[{ required: true, message: 'Seleccione el cultivo' }]}>
+                  <AntSelect showSearch placeholder="Cultivo recolectado" filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>
+                    {cultivos.map(c => <Option key={c.id_cultivo} value={c.id_cultivo}>{c.nombre}</Option>)}
+                  </AntSelect>
+                </Form.Item>
+                <AyudaCampesina campo="id_cultivo" />
+              </div>
+
+              <div>
+                <Form.Item name="fecha_cosecha" label="Fecha de la Cosecha" rules={[{ required: true, message: 'Indique la fecha' }]}>
+                  <input type="date" className="form-control" style={{ width: '100%', padding: '8px', background: '#334155', color: '#fff', border: '1px solid #475569', borderRadius: '6px' }} />
+                </Form.Item>
+                <AyudaCampesina campo="fecha_cosecha" />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div>
+                <Form.Item name="produccion_total_kg" label="Producción Total (Kilos Netos)" rules={[{ required: true, message: 'Ingrese los kilos' }]}>
+                  <InputNumber style={{ width: '100%' }} min={0.1} placeholder="Ej: 850 Kg" />
+                </Form.Item>
+                <AyudaCampesina campo="produccion_total_kg" />
+              </div>
+
+              <div>
+                <Form.Item name="hectareas_cosechadas" label="Hectáreas o Cuadras Recogidas" rules={[{ required: true, message: 'Ingrese el área' }]}>
+                  <InputNumber style={{ width: '100%' }} min={0.01} step={0.1} placeholder="Ej: 1.5 Ha" />
+                </Form.Item>
+                <AyudaCampesina campo="hectareas_cosechadas" />
+              </div>
+            </div>
+
+            <Form.Item name="calidad_cosecha" label="Calidad del Fruto">
+              <AntSelect placeholder="Seleccione calidad">
+                <Option value="Primera (Tipo Exportación)">Primera (Tipo Exportación)</Option>
+                <Option value="Segunda (Mercado Nacional)">Segunda (Mercado Nacional)</Option>
+                <Option value="Pasilla / Descarte / Industrial">Pasilla / Descarte / Industrial</Option>
+              </AntSelect>
+            </Form.Item>
+            <AyudaCampesina campo="calidad_cosecha" />
+
+            <Form.Item name="observaciones" label="Novedades o Notas de Cosecha">
+              <Input.TextArea rows={2} placeholder="Ej: Cosecha en lote con lluvia leve, buen tamaño de fruto..." />
+            </Form.Item>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+              <button type="button" className="btn btn-outline" onClick={() => setIsModalOpen(false)}>Cancelar</button>
+              <button type="submit" className="btn btn-success" disabled={savingCosecha}>
+                {savingCosecha ? 'Guardando...' : '🌾 Guardar Cosecha'}
+              </button>
+            </div>
+          </Form>
+        </Modal>
+      </ConfigProvider>
+
+      {/* Manualito Campesino Guía en 3 Pasos */}
+      <ManualitoCampesinoModal
+        isOpen={manualitoVisible}
+        onClose={() => setManualitoVisible(false)}
+        guia={guiaCosechas}
+      />
     </div>
   );
 }

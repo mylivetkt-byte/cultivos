@@ -307,6 +307,269 @@ export const GLOSARIO_CAMPESINO = {
     ayuda: 'Nombre del operario o técnico que midió el agua de los vasitos.',
     ejemplo: 'Ejemplo: Don Carlos o Ing. Rodríguez.',
     audio: 'Escriba el nombre de la persona que puso los vasitos y midió el agua.'
+  },
+  // Términos para Fumigación y Aplicaciones en Campo (Fase 3)
+  responsableBodega: {
+    titulo: '¿Quién entregó en bodega?',
+    icono: '📦',
+    ayuda: 'Nombre del bodeguero o despachador que le entregó los tarros o bultos de insumo.',
+    ejemplo: 'Ejemplo: Don Mario o Bodega Principal.',
+    audio: 'Escriba el nombre de la persona que le despachó los venenos o abonos en la bodega.'
+  },
+  responsableMezcla: {
+    titulo: '¿Quién preparó la mezcla?',
+    icono: '🧪',
+    ayuda: 'Nombre de quien echó el agua y los productos a la caneca o tanque de fumigación.',
+    ejemplo: 'Ejemplo: Pedro Gómez o Cuadrilla 1.',
+    audio: 'Ponga el nombre de quien preparó el caldo de fumigación en la caneca o estación de mezcla.'
+  },
+  temperatura: {
+    titulo: 'Calor en el Lote (Temperatura °C)',
+    icono: '☀️',
+    ayuda: 'Temperatura en el momento de fumigar. Si hace más de 30 grados el veneno se evapora y no trabaja bien.',
+    ejemplo: 'Ejemplo: 24.5 °C (lo ideal es temprano en la mañana o tarde fresca).',
+    audio: 'Anote la temperatura del aire. Recuerde que con mucho calor el producto se evapora antes de hacer efecto.'
+  },
+  viento: {
+    titulo: 'Fuerza de la Brisa (Viento km/h)',
+    icono: '💨',
+    ayuda: 'Qué tan fuerte sopla la brisa. Si hay mucho viento la gota se vuela y puede quemar cultivos vecinos.',
+    ejemplo: 'Ejemplo: Menos de 10 km/h (las ramas apenas se mueven).',
+    audio: 'Mire el viento. Si la brisa está muy fuerte, es mejor parar la fumigación para que el veneno no se vuele.'
+  },
+  humedad: {
+    titulo: 'Humedad del Ambiente (%)',
+    icono: '💧',
+    ayuda: 'Humedad del aire. Con buena humedad la hoja de la mata absorbe mejor el abono o el remedio.',
+    ejemplo: 'Ejemplo: 75% o más.',
+    audio: 'Indique el porcentaje de humedad del aire en el momento de la labor.'
+  },
+  mezclaTotalRecibida: {
+    titulo: 'Caldo Total Preparado (Litros)',
+    icono: '🛢️',
+    ayuda: '¿Cuántos litros de agua con veneno o abono prepararon en total en la caneca?',
+    ejemplo: 'Ejemplo: 200 litros (una caneca) o 400 litros.',
+    audio: 'Ponga cuántos litros de mezcla o caldo prepararon en total en el tanque o caneca.'
+  },
+  mezclaTotalAplicada: {
+    titulo: 'Caldo Fumigado en el Lote (Litros)',
+    icono: '🌿',
+    ayuda: 'De todo lo que prepararon, ¿cuántos litros le echaron realmente a las matas de ese cuadro?',
+    ejemplo: 'Ejemplo: 180 litros aplicados.',
+    audio: 'Escriba cuántos litros de caldo le alcanzó a gastar a las matas en este lote.'
+  },
+  sobranteMezcla: {
+    titulo: 'Caldo que Sobró en la Bomba (Litros)',
+    icono: '⚠️',
+    ayuda: 'Lo que quedó en el fondo del tanque. ¡Ojo! Nunca botar sobrantes a caños ni quebradas.',
+    ejemplo: 'Ejemplo: 20 litros sobrantes.',
+    audio: 'Este es el caldo que sobró en el tanque. Nunca lo bote a una quebrada o caño.'
+  },
+  cantidad_envases_vacios: {
+    titulo: 'Tarros o Pimpinas Vacías',
+    icono: '🍾',
+    ayuda: '¿Cuántos frascos o canecas vacías le quedaron de los venenos que gastó?',
+    ejemplo: 'Ejemplo: 2 tarros de litro o 1 caneca.',
+    audio: 'Cuente cuántos tarros o bolsas vacías le quedaron después de gastar el veneno.'
+  },
+  lavado_triple_realizado: {
+    titulo: 'Lavado 3 Veces y Perforado',
+    icono: '🚰',
+    ayuda: 'Obligatorio por ley y salud: enjuagar 3 veces el tarro vacío con agua, echar esa agua a la bomba y picar el fondo para que nadie lo use para beber.',
+    ejemplo: 'Ejemplo: Marque la casilla si le hizo el triple lavado y lo chuzó.',
+    audio: 'Recuerde enjuagar tres veces el tarro con agua limpia, echar esa agua a la bomba de fumigar y chuzar el fondo para que nadie tome agua de ahí.'
+  },
+  entregado_centro_acopio: {
+    titulo: 'Entregado a Bodega de Reciclaje',
+    icono: '♻️',
+    ayuda: 'Entregar todos los envases vacíos limpios en la caseta de reciclaje de CampoLimpio.',
+    ejemplo: 'Ejemplo: Marque la casilla si ya entregó los tarros en la bodega.',
+    audio: 'Marque aquí si ya llevó los tarros vacíos a la caseta o bodega de reciclaje para no contaminar la finca.'
+  },
+  mantenimientoNotas: {
+    titulo: 'Novedades de la Bomba o Máquina',
+    icono: '🔧',
+    ayuda: 'Cuente si se tapó alguna boquilla, si la bomba gotea, si faltó manguera o si el tractor molestó.',
+    ejemplo: 'Ejemplo: Boquilla 3 tapada o empaque de la lanza desgastado.',
+    audio: 'Aquí puede anotar si la máquina o bomba molestó, si botaba agua por la lanza o si se taparon boquillas.'
+  },
+  // Centro de Mezclas Fitosanitarias
+  receta_fitosanitaria: {
+    titulo: 'Receta o Fórmula del Agrónomo',
+    icono: '📋',
+    ayuda: 'La fórmula o mezcla de productos autorizada por el técnico o ingeniero agrónomo.',
+    ejemplo: 'Ejemplo: Mezcla Roya 200L o Desyerbe Potreros.',
+    audio: 'Seleccione la receta o fórmula autorizada por el agrónomo para preparar en el tanque.'
+  },
+  id_receta: {
+    titulo: 'Receta o Fórmula a Preparar',
+    icono: '📋',
+    ayuda: 'La receta con los productos y dosis recetadas por el agrónomo.',
+    ejemplo: 'Ejemplo: Fungicida Lote 2 o Abono Foliar.',
+    audio: 'Escoja cuál fórmula o receta va a preparar en este bache.'
+  },
+  bodega_insumos: {
+    titulo: 'Bodega de Origen (Insumos)',
+    icono: '🏢',
+    ayuda: 'De qué caseta o bodega sacó los frascos de veneno o bultos de abono.',
+    ejemplo: 'Ejemplo: Bodega Principal o Caseta Lote 4.',
+    audio: 'Indique de cuál bodega salieron los productos químicos para esta preparación.'
+  },
+  id_bodega: {
+    titulo: 'Bodega de Origen (Insumos)',
+    icono: '🏢',
+    ayuda: 'De qué caseta o bodega sacó los frascos de veneno o bultos de abono.',
+    ejemplo: 'Ejemplo: Bodega Principal o Caseta Lote 4.',
+    audio: 'Indique de cuál bodega salieron los productos químicos para esta preparación.'
+  },
+  volumen_preparar: {
+    titulo: 'Litros Totales de Mezcla',
+    icono: '🛢️',
+    ayuda: '¿Cuántos litros de caldo va a preparar en total en el tanque o caneca?',
+    ejemplo: 'Ejemplo: 200 L (una caneca) o 500 L.',
+    audio: 'Ponga la cantidad de litros de agua y producto que va a preparar en este bache.'
+  },
+  cantidad_litros: {
+    titulo: 'Volumen a Preparar (Litros Totales)',
+    icono: '🛢️',
+    ayuda: '¿Cuántos litros de caldo con agua y producto va a preparar en total?',
+    ejemplo: 'Ejemplo: 200 L (una caneca) o 400 L.',
+    audio: 'Anote la cantidad de litros que va a llenar en el tanque de mezcla.'
+  },
+  responsable_mezclador: {
+    titulo: 'Quién Prepara la Mezcla',
+    icono: '🧑‍🌾',
+    ayuda: 'Operario capacitado en BPA que está preparando los productos con su respectivo EPP.',
+    ejemplo: 'Ejemplo: Pedro Gómez o Don Mario.',
+    audio: 'Seleccione la persona que está mezclando los productos en el tanque con sus guantes y careta.'
+  },
+  responsable_mezcla: {
+    titulo: 'Responsable de la Mezcla',
+    icono: '🧑‍🌾',
+    ayuda: 'Persona que echó los productos y mezcló el caldo en la estación de mezcla.',
+    ejemplo: 'Ejemplo: Pedro Gómez o Cuadrilla 1.',
+    audio: 'Seleccione el operario responsable que preparó la mezcla con su equipo de protección.'
+  },
+  // Registro de Cosechas y Cuadrillas
+  id_cultivo: {
+    titulo: 'Cultivo que se Cosecha',
+    icono: '🌾',
+    ayuda: '¿Qué fruto, grano o producto recogieron en el lote?',
+    ejemplo: 'Ejemplo: Café Castillo, Aguacate Hass, Cacao o Maíz.',
+    audio: 'Seleccione qué producto o fruto cosecharon el día de hoy.'
+  },
+  cultivo_cosecha: {
+    titulo: 'Cultivo Cosechado',
+    icono: '🌾',
+    ayuda: 'Variedad o cultivo recolectado en esta labor.',
+    ejemplo: 'Ejemplo: Plátano Dominico Hartón o Palma de Aceite.',
+    audio: 'Seleccione el cultivo cosechado en este lote.'
+  },
+  fecha_cosecha: {
+    titulo: 'Día de la Cosecha',
+    icono: '📅',
+    ayuda: 'Fecha en la que los jornaleros recogieron el fruto de las matas.',
+    ejemplo: 'Ejemplo: Hoy o la fecha del pesaje.',
+    audio: 'Revise la fecha del día en que se realizó la recolección en campo.'
+  },
+  hectareas_cosechadas: {
+    titulo: 'Pedazo o Hectáreas Cosechadas',
+    icono: '📐',
+    ayuda: '¿Cuántas hectáreas o cuadras del lote alcanzaron a recolectar?',
+    ejemplo: 'Ejemplo: 1.5 Ha o todo el cuadro completo.',
+    audio: 'Indique qué tamaño de lote o cuántas hectáreas cosecharon en esta jornada.'
+  },
+  produccion_total_kg: {
+    titulo: 'Kilos Totales Pesados (KG)',
+    icono: '⚖️',
+    ayuda: 'Suma de todos los bultos o canastillas pesadas en la báscula de la finca (peso neto).',
+    ejemplo: 'Ejemplo: 1250 kilos recogidos.',
+    audio: 'Escriba el peso neto total en kilos cosechados hoy, sin contar las canastillas vacías.'
+  },
+  cuadrilla_cosecha: {
+    titulo: 'Cuadrilla o Grupo de Cosecheros',
+    icono: '👥',
+    ayuda: '¿Quiénes recolectaron el fruto? Cuadrilla propia de la finca o contratistas al destajo.',
+    ejemplo: 'Ejemplo: Cuadrilla Los Paisas o Familia Pérez.',
+    audio: 'Seleccione el grupo o cuadrilla que trabajó cogiendo la cosecha.'
+  },
+  calidad_cosecha: {
+    titulo: 'Calidad del Fruto (Primera / Segunda)',
+    icono: '⭐',
+    ayuda: 'Si el producto es para exportación, mercado nacional (primera) o descarte/pasilla.',
+    ejemplo: 'Ejemplo: Primera Calidad (Tipo Exportación).',
+    audio: 'Indique si el fruto cosechado salió de primera calidad, segunda o pasilla de descarte.'
+  },
+  // Almacén y Custodia de Herramientas
+  herramienta_item: {
+    titulo: 'Herramienta o Equipo de Trabajo',
+    icono: '🪓',
+    ayuda: '¿Qué herramienta se entrega o devuelve? Machete, lima, bomba de espalda, pala o tijera.',
+    ejemplo: 'Ejemplo: Bomba Royal Cóndor 20L o Machete Collins 22".',
+    audio: 'Busque y seleccione la herramienta por su nombre o código de inventario.'
+  },
+  id_herr_inv: {
+    titulo: 'Herramienta o Insumo',
+    icono: '🪓',
+    ayuda: 'Equipo o herramienta que el trabajador retira o devuelve a la bodega.',
+    ejemplo: 'Ejemplo: Machete, Bomba de Espalda o Tijera Podadora.',
+    audio: 'Seleccione la herramienta o equipo del inventario de la bodega.'
+  },
+  tipo_movimiento_herramienta: {
+    titulo: '¿Qué va a hacer con la herramienta?',
+    icono: '🔄',
+    ayuda: 'Préstamo (se la lleva el jornalero para laborar), Devolución (la regresa limpia) o Baja (se dañó).',
+    ejemplo: 'Ejemplo: Préstamo a Jornalero o Devolución a Bodega.',
+    audio: 'Indique si la herramienta sale prestada a un trabajador o si la están devolviendo.'
+  },
+  tipo_movimiento: {
+    titulo: 'Tipo de Movimiento',
+    icono: '🔄',
+    ayuda: 'Préstamo (entrega para trabajar), Devolución a almacén, o Baja si se rompió.',
+    ejemplo: 'Ejemplo: Préstamo o Devolución.',
+    audio: 'Diga si la herramienta sale para el campo, regresa a la bodega o si se rompió.'
+  },
+  cantidad_herramientas: {
+    titulo: '¿Cuántas herramientas son?',
+    icono: '🔢',
+    ayuda: 'Número de unidades que se están entregando o recibiendo en el almacén.',
+    ejemplo: 'Ejemplo: 1 bomba o 3 machetes.',
+    audio: 'Anote cuántas herramientas está despachando o recibiendo.'
+  },
+  cantidad_movimiento: {
+    titulo: 'Cantidad de Unidades',
+    icono: '🔢',
+    ayuda: 'Número de piezas o herramientas de este movimiento.',
+    ejemplo: 'Ejemplo: 1 o 2 unidades.',
+    audio: 'Ponga la cantidad exacta de herramientas.'
+  },
+  origen_destino_lote: {
+    titulo: '¿Para cuál lote o lago se la llevan?',
+    icono: '📍',
+    ayuda: 'Lote, potrero, lago o sector de la finca donde van a usar la herramienta hoy.',
+    ejemplo: 'Ejemplo: Lote 3 Café o Lago Piscícola 2.',
+    audio: 'Indique en qué lugar de la finca van a estar utilizando este equipo.'
+  },
+  origen_destino: {
+    titulo: 'Lugar de Destino u Origen',
+    icono: '📍',
+    ayuda: 'Sector, lote o estanque donde va a trabajar el operario con la herramienta.',
+    ejemplo: 'Ejemplo: Lote 1 Aguacates o Estanque D1.',
+    audio: 'Escriba o escoja en qué parte de la finca se va a usar la herramienta.'
+  },
+  responsable_herramienta: {
+    titulo: 'Jornalero que Responde por la Herramienta',
+    icono: '✍️',
+    ayuda: 'Nombre del trabajador que recibe la herramienta y se compromete a cuidarla y devolverla en buen estado.',
+    ejemplo: 'Ejemplo: Don José o Andrés López.',
+    audio: 'Ponga el nombre del operario o jornalero que recibe la herramienta bajo su responsabilidad.'
+  },
+  observaciones_herramienta: {
+    titulo: 'Estado en que se Entrega o Recibe',
+    icono: '📝',
+    ayuda: 'Anotar si va con lima, si la lanza gotea, si el machete está afilado o si tiene algún daño.',
+    ejemplo: 'Ejemplo: Se entrega afilado y con boquilla de cono llena.',
+    audio: 'Anote en qué estado entrega la herramienta para verificarla cuando la regresen al almacén.'
   }
 };
 
