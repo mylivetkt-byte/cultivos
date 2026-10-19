@@ -125,10 +125,10 @@ export default function LoginPage({ onRegister }) {
       {/* PIE DE PÁGINA: DERECHOS DE AUTOR */}
       <footer className="login-bottom-footer">
         <p className="copyright-text">
-          © 2023 - 2026 AgroPaccioli S.A.S. • Todos los derechos reservados
+          Agropaccioli © 2026. Todos los derechos reservados. Desarrollado en Colombia.
         </p>
         <p className="copyright-subtext">
-          Plataforma Empresarial de Gestión Integral Agrícola, Ganadera y Acuícola • Versión Enterprise
+          Este software y su código fuente se encuentran protegidos por la legislación colombiana de derechos de autor (Ley 23 de 1982) y la Decisión Andina 351. Prohibida su reproducción, distribución o uso no autorizado en el territorio de la República de Colombia o el exterior sin previa autorización expresa del titular.
         </p>
       </footer>
 
@@ -417,25 +417,28 @@ export default function LoginPage({ onRegister }) {
           z-index: 10;
           text-align: center;
           width: 100%;
-          max-width: 900px;
-          padding-bottom: 2px;
+          max-width: 960px;
+          margin: 0 auto;
+          padding: 6px 12px 2px;
+          box-sizing: border-box;
         }
 
         .copyright-text {
-          font-size: clamp(11.5px, 1.3vw, 13.5px);
-          color: #f1f5f9;
-          margin: 0 0 3px 0;
-          font-weight: 600;
-          text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+          font-size: clamp(12px, 1.25vw, 13.5px);
+          color: #f8fafc;
+          margin: 0 0 4px 0;
+          font-weight: 700;
+          text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
           letter-spacing: 0.2px;
         }
 
         .copyright-subtext {
-          font-size: clamp(10.5px, 1.1vw, 12px);
-          color: #94a3b8;
+          font-size: clamp(10px, 0.95vw, 11.5px);
+          color: #cbd5e1;
           margin: 0;
-          text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
-          line-height: 1.3;
+          text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+          line-height: 1.45;
+          opacity: 0.92;
         }
 
         /* AJUSTES PARA PANTALLAS MUY PEQUEÑAS (MÓVILES ANTIGUOS O PANTALLAS COMPACTAS) */
