@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Select, Button, Tabs, Row, Col, Typography, Divider, Spin } from 'antd';
+import { Card, Select, Button, Tabs, Row, Col, Typography, Divider, Spin, Modal } from 'antd';
+import { BookOutlined } from '@ant-design/icons';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area } from 'recharts';
 import { Fish, Droplets, ArrowUpRight, TrendingUp, DollarSign, Activity, ShieldCheck, Box, Target, Layers } from 'lucide-react';
 import { fetchApi } from '../../utils/api';
+import AsistenteAcuicolaCampesino from '../Acuicola/AsistenteAcuicolaCampesino';
 
 const { Option } = Select;
 const { TabPane } = Tabs;
 const { Title, Text } = Typography;
 
 export default function AcuicolaDashboard() {
+  const [showEscuelaAcuicola, setShowEscuelaAcuicola] = useState(false);
   const [fincas, setFincas] = useState([]);
   const [estanques, setEstanques] = useState([]);
   const [siembras, setSiembras] = useState([]);
@@ -112,13 +115,30 @@ export default function AcuicolaDashboard() {
       
       {/* Header Gerencial */}
       <Card bordered={false} style={{ marginBottom: 24, borderRadius: 16 }}>
-        <Row align="middle" gutter={16}>
-          <Col>
+        <Row align="middle" justify="space-between" gutter={[16, 16]}>
+          <Col style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <Target size={32} color="#2563eb" />
+            <div>
+              <Title level={2} style={{ margin: 0, color: '#1e293b' }}>Panel Gerencial Acuícola</Title>
+              <Text type="secondary">Visión global de operación, proyecciones y rentabilidad (Auditoría Criptográfica Activa)</Text>
+            </div>
           </Col>
           <Col>
-            <Title level={2} style={{ margin: 0, color: '#1e293b' }}>Panel Gerencial Acuícola</Title>
-            <Text type="secondary">Visión global de operación, proyecciones y rentabilidad (Auditoría Criptográfica Activa)</Text>
+            <Button
+              type="primary"
+              icon={<BookOutlined />}
+              onClick={() => setShowEscuelaAcuicola(true)}
+              style={{
+                background: '#0284c7',
+                borderColor: '#38bdf8',
+                fontWeight: 'bold',
+                height: '40px',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)'
+              }}
+            >
+              🐟 Escuela Piscícola (Secchi, Aclimatación, Ración)
+            </Button>
           </Col>
         </Row>
       </Card>
@@ -460,6 +480,20 @@ export default function AcuicolaDashboard() {
           </div>
         )}
       </Card>
+
+      {/* MODAL ESCUELA ACUÍCOLA */}
+      <Modal
+        open={showEscuelaAcuicola}
+        onCancel={() => setShowEscuelaAcuicola(false)}
+        footer={null}
+        width={1040}
+        destroyOnClose
+        styles={{ body: { padding: '8px', background: '#0b1120' } }}
+      >
+        <AsistenteAcuicolaCampesino 
+          onClose={() => setShowEscuelaAcuicola(false)} 
+        />
+      </Modal>
     </div>
   );
 }

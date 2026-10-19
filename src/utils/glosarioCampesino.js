@@ -606,6 +606,78 @@ export const GLOSARIO_CAMPESINO = {
     ayuda: 'Hoyo de 40x40x40 cm. Echar 200g de cal dolomita al fondo para quitar la acidez de la tierra y mezclar con compost y fósforo.',
     ejemplo: 'Ejemplo: 200 gramos de cal dolomita + 1 kilo de abono orgánico.',
     audio: 'Haga hoyos de cuarenta centímetros, aplique cal dolomita al fondo para quitar la acidez y siembre con abono orgánico.'
+  },
+  // Términos para Escuela de Campo Ganadera (Fase Ganadería)
+  aforo_pastos: {
+    titulo: 'Aforo de Pasto (Marco de 1 metro)',
+    icono: '🌾',
+    ayuda: 'Cortar y pesar el pasto de un marco de 1x1 metro en tres puntos del potrero para saber cuántos kilos de comida verde hay y cuánto ganado cabe.',
+    ejemplo: 'Ejemplo: 1.2 kilos de pasto verde por metro cuadrado.',
+    audio: 'Bote el marco de un metro en tres sitios del potrero, corte el pasto a diez centímetros y péselo. Así sabrá con exactitud cuántos animales le caben sin pelar el potrero.'
+  },
+  cinta_barzonera: {
+    titulo: 'Pesaje con Cinta Barzonera (Sin Báscula)',
+    icono: '📏',
+    ayuda: 'Medir el contorno del pecho detrás de las patas delanteras con cinta métrica para calcular los kilos del animal cuando no hay báscula ganadera.',
+    ejemplo: 'Ejemplo: 180 centímetros de tórax equivalen a unos 420 kilos.',
+    audio: 'Pase la cinta métrica bien ajustada por detrás de los brazuelos del animal. Con los centímetros del pecho calculamos los kilos exactos para dosificar medicinas o vender.'
+  },
+  condicion_corporal: {
+    titulo: 'Condición Corporal Campesina (1 a 5)',
+    icono: '🐄',
+    ayuda: 'Revisar con la vista y la mano las costillas y la cadera: 1 es esquelética, 2 es flaca, 3 es ideal, 4 es gorda y 5 obesa.',
+    ejemplo: 'Ejemplo: Grado 3 (Óptima para reproducción y producción de leche).',
+    audio: 'Mire el lomo y las costillas de la vaca. El grado tres es el punto perfecto: no se le notan los huesos en serrucho y tiene buena carne para preñarse y dar leche.'
+  },
+  tiempo_retiro: {
+    titulo: 'Tiempo de Retiro (Leche y Carne Segura)',
+    icono: '🛑',
+    ayuda: 'Días que hay que botar la leche o no mandar el animal al matadero después de inyectar antibióticos o desparasitantes para no envenenar al consumidor.',
+    ejemplo: 'Ejemplo: 3 días de retiro en leche para penicilina.',
+    audio: '¡Ojo con los medicamentos! Si inyectó la vaca, respete los días de retiro. La leche con antibiótico daña el queso y la carne con químico es peligrosa para la salud.'
+  },
+  despunte_ordeño: {
+    titulo: 'Despunte y Buenas Prácticas de Ordeño',
+    icono: '🥛',
+    ayuda: 'Tirar los 3 primeros chorros de cada teta en un fondo oscuro para ver si hay grumos de mastitis, lavar con agua limpia y sellar con yodo al final.',
+    ejemplo: 'Ejemplo: Ubre limpia, despunte sin grumos y sellado con yodo.',
+    audio: 'Antes de ordeñar, despunte los tres primeros chorros de cada pezón en una taza oscura para revisar si hay mastitis. Al terminar siempre selle con yodo.'
+  },
+  // Términos para Escuela de Campo Acuícola (Fase Acuicultura)
+  disco_secchi: {
+    titulo: 'Turbidez del Agua (Disco Secchi)',
+    icono: '🥏',
+    ayuda: 'Meter una tapa blanca o disco en el agua con una regla o cabuya. Si desaparece entre 25 y 35 centímetros, el agua está perfecta de plancton y oxígeno.',
+    ejemplo: 'Ejemplo: Desaparece a los 30 cm (Verde esmeralda ideal).',
+    audio: 'Sumerja el disco blanco en el estanque. Si lo deja de ver entre veinticinco y treinta y cinco centímetros el agua está en su punto. Si desaparece muy rápido el agua está muy cargada y falta oxígeno.'
+  },
+  boqueo_oxigeno: {
+    titulo: 'Peces Boqueando en la Madrugada',
+    icono: '⚠️',
+    ayuda: 'Si los peces suben a respirar a la superficie entre las 5 y 6 de la mañana, hay peligro de muerte por falta de oxígeno. Prenda aireadores o meta chorro de agua fría.',
+    ejemplo: 'Ejemplo: Peces en la superficie al amanecer pidiendo aire.',
+    audio: 'Si al clarear el día ve los peces boqueando en la orilla, hay una emergencia por falta de oxígeno. Prenda el aireador o meta chorro a presión de inmediato.'
+  },
+  aclimatacion_alevinos: {
+    titulo: 'Aclimatación y Siembra de Alevinos',
+    icono: '🐟',
+    ayuda: 'Poner a flotar las bolsas selladas durante 20 a 30 minutos en el estanque para igualar temperatura, luego mezclar agua despacio antes de soltarlos.',
+    ejemplo: 'Ejemplo: Flotar 25 min + mezclar 10 min = Cero muertes por choque térmico.',
+    audio: 'Nunca suelte los alevinos de un solo golpe. Flote la bolsa sellada media hora en el lago y luego mezcle agua del estanque poco a poco para que no sufran choque térmico.'
+  },
+  tasa_alimentacion: {
+    titulo: 'Calculadora de Ración (% Peso Vivo)',
+    icono: '🥣',
+    ayuda: 'Kilos diarios de concentrado según el peso y la edad de los peces. Aplicar la regla de oro: si a los 15 minutos sobra comida flotando, reduzca la ración.',
+    ejemplo: 'Ejemplo: Mojarras de 250 gramos comen el 3% de su peso vivo al día.',
+    audio: 'Alimente a sus peces según su peso. Recuerde la regla de los quince minutos: si queda concentrado flotando reduzca la cantidad, porque el alimento sobrante se pudre en el fondo.'
+  },
+  densidad_estanque: {
+    titulo: 'Capacidad de Siembra del Estanque',
+    icono: '🏞️',
+    ayuda: 'Cuántos peces caben por metro cuadrado: 2 a 4 en tierra natural, 6 a 10 con recambio de agua por canal, y hasta 30 con aireación mecánica.',
+    ejemplo: 'Ejemplo: Estanque de 200 m² en tierra = 600 a 800 alevinos.',
+    audio: 'Calcule cuántos alevinos sembrar según el tamaño del estanque y la entrada de agua. Si siembra más de la cuenta se le enferman y no ganan peso.'
   }
 };
 

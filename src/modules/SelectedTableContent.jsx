@@ -23,6 +23,7 @@ import AcuicolaMolino from '../components/Agriculture/AcuicolaMolino';
 import AcuicolaMolinoMantenimiento from '../components/Agriculture/AcuicolaMolinoMantenimiento';
 import AcuicolaHistoricoCosechas from '../components/Agriculture/AcuicolaHistoricoCosechas';
 import AcuicolaCosechasMobile from '../components/Agriculture/AcuicolaCosechasMobile';
+import AsistenteAcuicolaCampesino from '../components/Acuicola/AsistenteAcuicolaCampesino';
 import CosechasAvanzado from '../components/Agriculture/CosechasAvanzado';
 import ConfiguracionBasculas from '../components/Basculas/ConfiguracionBasculas';
 import PruebasBasculas from '../components/Basculas/PruebasBasculas';
@@ -98,6 +99,7 @@ import AuditoriaExogena from '../components/Contabilidad_y_Finanzas/AuditoriaExo
 import CertificadosRetencion from '../components/Contabilidad_y_Finanzas/CertificadosRetencion';
 import ConciliacionFiscal from '../components/Contabilidad_y_Finanzas/ConciliacionFiscal';
 import DashboardGanadero from '../components/Ganado/DashboardGanadero';
+import AsistenteGanaderoCampesino from '../components/Ganado/AsistenteGanaderoCampesino';
 import CalendarioZoosanitario from '../components/Ganado/CalendarioZoosanitario';
 import ComercioGanado from '../components/Ganado/ComercioGanado';
 import HerramientasDashboard from '../components/Ganado/Herramientas/HerramientasDashboard';
@@ -210,6 +212,8 @@ export default function SelectedTableContent({
       <AcuicolaHistoricoCosechas tenantId={tenantId} />
     ) : selectedTable === 'acuicola_cosechas' ? (
       <AcuicolaCosechasMobile tenantId={tenantId} />
+    ) : selectedTable === 'acuicola_asistencia' ? (
+      <AsistenteAcuicolaCampesino fincaId={selectedFinca} />
     ) : selectedTable === 'cosechas' ? (
       <CosechasAvanzado tenantId={tenantId} />
     ) : selectedTable === 'basculas-config' ? (
@@ -352,6 +356,8 @@ export default function SelectedTableContent({
       <ConciliacionFiscal />
     ) : selectedTable === 'ph_ganado_dashboard' ? (
       <DashboardGanadero fincaId={selectedFinca} />
+    ) : selectedTable === 'ph_ganado_asistencia' ? (
+      <AsistenteGanaderoCampesino fincaId={selectedFinca} />
     ) : selectedTable === 'acuicola_herramientas' ? (
       <HerramientasAcuicolaDashboard fincaId={selectedFinca} />
     ) : selectedTable === 'ph_ganado_satelital' ? (

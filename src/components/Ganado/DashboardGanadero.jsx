@@ -4,11 +4,15 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   AreaChart, Area, LineChart, Line, ResponsiveContainer, ComposedChart 
 } from 'recharts';
+import { Modal, Button } from 'antd';
+import { BookOutlined } from '@ant-design/icons';
 import { authFetch } from '../../utils/api';
+import AsistenteGanaderoCampesino from './AsistenteGanaderoCampesino';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#ec4899', '#f59e0b', '#10b981'];
 
 function DashboardGanadero({ fincaId: globalFincaId }) {
+  const [showEscuelaGanadera, setShowEscuelaGanadera] = useState(false);
   const [data, setData] = useState({
     censo: { machos_ceba: 0, hembras_cria: 0, terneros: 0, total: 0 },
     demografia: { fincas: [], razas: [] },
@@ -102,9 +106,26 @@ function DashboardGanadero({ fincaId: globalFincaId }) {
       
       {/* Header & Filters */}
       <div style={{ background: 'var(--card-bg)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
-        <h2 style={{ color: 'var(--primary)', margin: '0 0 15px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          📈 Inteligencia de Negocios Ganadera
-        </h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
+          <h2 style={{ color: 'var(--primary)', margin: 0, fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            📈 Inteligencia de Negocios Ganadera
+          </h2>
+          <Button
+            type="primary"
+            icon={<BookOutlined />}
+            onClick={() => setShowEscuelaGanadera(true)}
+            style={{
+              background: '#059669',
+              borderColor: '#10b981',
+              fontWeight: 'bold',
+              height: '38px',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(5, 150, 105, 0.3)'
+            }}
+          >
+            🌾 Escuela Ganadera (Aforo, Cinta, Retiro)
+          </Button>
+        </div>
         
         <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
           <div style={{ flex: '1', minWidth: '150px' }}>
@@ -300,6 +321,21 @@ function DashboardGanadero({ fincaId: globalFincaId }) {
           </div>
         </>
       )}
+
+      {/* MODAL ESCUELA GANADERA */}
+      <Modal
+        open={showEscuelaGanadera}
+        onCancel={() => setShowEscuelaGanadera(false)}
+        footer={null}
+        width={1040}
+        destroyOnClose
+        styles={{ body: { padding: '8px', background: '#0b1120' } }}
+      >
+        <AsistenteGanaderoCampesino 
+          fincaId={fincaId} 
+          onClose={() => setShowEscuelaGanadera(false)} 
+        />
+      </Modal>
     </div>
   );
 }
