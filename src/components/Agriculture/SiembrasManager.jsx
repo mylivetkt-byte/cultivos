@@ -4,9 +4,11 @@ import { authFetch } from '../../utils/api';
 import PremiumSelect from '../PremiumSelect';
 import ExportButtons from '../ExportButtons';
 import { useAuth } from '../../context/AuthContext';
+import AsistenteSiembraCampesina from './AsistenteSiembraCampesina';
 
 const SiembrasManager = () => {
   const { tenantId } = useAuth();
+  const [showAsistenteCampesino, setShowAsistenteCampesino] = useState(false);
   const [loading, setLoading] = useState(true);
   const [siembras, setSiembras] = useState([]);
   
@@ -376,17 +378,40 @@ const SiembrasManager = () => {
           <h1>Registro de Siembras</h1>
           <p style={{ color: 'var(--text-muted)' }}>Gestión e historial detallado de plantaciones y cultivos</p>
         </div>
-        <button className="btn btn-primary" onClick={() => {
-          setEditingId(null);
-          setNewRecord({
-            id_lote: '', id_cultivo: '', id_variedad: '', fecha_siembra: '',
-            hectareas_sembradas: '', densidad_siembra: '', cantidad_plantas: '',
-            sistema_riego_establecido: '', origen_plantulas: 'Interno', id_vivero_interno: '', remision_vivero: '', proveedor_externo: '', observaciones: '', estado: 'Activo'
-          });
-          setShowModal(true);
-        }} style={{ padding: '10px 20px', fontSize: '1.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          ➕ Nueva Siembra
-        </button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button 
+            type="button"
+            className="btn" 
+            onClick={() => setShowAsistenteCampesino(true)} 
+            style={{ 
+              padding: '10px 18px', 
+              fontSize: '0.98em', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+              color: '#fff',
+              border: '1px solid #10b981',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
+              cursor: 'pointer'
+            }}
+          >
+            🌾 Escuela de Campo: Iniciar Lote y Siembra (Altitud/Suelo)
+          </button>
+          <button className="btn btn-primary" onClick={() => {
+            setEditingId(null);
+            setNewRecord({
+              id_lote: '', id_cultivo: '', id_variedad: '', fecha_siembra: '',
+              hectareas_sembradas: '', densidad_siembra: '', cantidad_plantas: '',
+              sistema_riego_establecido: '', origen_plantulas: 'Interno', id_vivero_interno: '', remision_vivero: '', proveedor_externo: '', observaciones: '', estado: 'Activo'
+            });
+            setShowModal(true);
+          }} style={{ padding: '10px 20px', fontSize: '1.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            ➕ Nueva Siembra Rápida
+          </button>
+        </div>
       </div>
 
       <div className="card" style={{ marginBottom: '25px', padding: '0', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
@@ -831,6 +856,14 @@ const SiembrasManager = () => {
           </div>
         </div>
       )}
+
+      {/* Asistente Pedagógico Escuela de Campo */}
+      <AsistenteSiembraCampesina
+        isOpen={showAsistenteCampesino}
+        onClose={() => setShowAsistenteCampesino(false)}
+        onSiembraCreated={handleProcess}
+        tenantId={tenantId}
+      />
     </div>
   );
 };

@@ -570,6 +570,42 @@ export const GLOSARIO_CAMPESINO = {
     ayuda: 'Anotar si va con lima, si la lanza gotea, si el machete está afilado o si tiene algún daño.',
     ejemplo: 'Ejemplo: Se entrega afilado y con boquilla de cono llena.',
     audio: 'Anote en qué estado entrega la herramienta para verificarla cuando la regresen al almacén.'
+  },
+  // Términos para Escuela de Campo: Inicio de Lote y Siembra
+  altitud_msnm: {
+    titulo: 'Altura del Lote sobre el Mar (m.s.n.m.)',
+    icono: '🏔️',
+    ayuda: 'Metros de altura sobre el mar. Determina qué cultivos aguantan el frío o calor sin pasmarse.',
+    ejemplo: 'Ejemplo: 1.650 msnm (clima templado).',
+    audio: 'Revise la altura de su lote. Si siembra en la altura incorrecta el fruto no cuaja o la mata se muere por el clima.'
+  },
+  prueba_bola_suelo: {
+    titulo: 'Prueba de la Bola de Barro',
+    icono: '🪱',
+    ayuda: 'Prueba manual en la mano: apriete un puñado de tierra húmeda. Si se desbarata es arenosa; si queda dura es greda; si se parte suave es tierra franca ideal.',
+    ejemplo: 'Ejemplo: Tierra franca con buen olor a monte.',
+    audio: 'Haga la prueba de la bola de barro en su mano para saber qué suelo tiene sin pagar laboratorio de entrada.'
+  },
+  curvas_de_nivel: {
+    titulo: 'Curvas de Nivel y Trazo en Loma',
+    icono: '📐',
+    ayuda: 'Trazar los surcos atravesados a la loma usando el Nivel en A con plomada para evitar que la lluvia lave la tierra fértil.',
+    ejemplo: 'Ejemplo: Surcos en contorno con barreras vivas.',
+    audio: 'En loma nunca surque hacia abajo. Trace en curvas de nivel con el Nivel en A para proteger su suelo de la erosión.'
+  },
+  marco_tresbolillo: {
+    titulo: 'Siembra al Tresbolillo (Triángulo)',
+    icono: '🔺',
+    ayuda: 'Sembrar en forma de triángulo. Permite sembrar 15% más matas por cuadra y ataja el agua de escorrentía.',
+    ejemplo: 'Ejemplo: 3 metros entre surcos por 3 metros entre matas.',
+    audio: 'Al tresbolillo caben más plantas por cuadra y cada hilera frena el agua que baja de la loma.'
+  },
+  encalado_hoyado: {
+    titulo: 'Receta del Hoyo y Encalado',
+    icono: '🕳️',
+    ayuda: 'Hoyo de 40x40x40 cm. Echar 200g de cal dolomita al fondo para quitar la acidez de la tierra y mezclar con compost y fósforo.',
+    ejemplo: 'Ejemplo: 200 gramos de cal dolomita + 1 kilo de abono orgánico.',
+    audio: 'Haga hoyos de cuarenta centímetros, aplique cal dolomita al fondo para quitar la acidez y siembre con abono orgánico.'
   }
 };
 
