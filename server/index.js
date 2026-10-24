@@ -421,6 +421,23 @@ app.get('/api/dashboard/harvest-trend', auth, async (req, res) => {
 });
 
 // ============================================================================
+// SERVIR FRONTEND SPA (PRODUCCIÓN)
+// ============================================================================
+const publicPath = path.join(process.cwd(), 'public');
+app.use(express.static(publicPath));
+
+// Fallback para React Router / SPA en rutas que no correspondan a API ni uploads
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+    return next();
+  }
+  const indexPath = path.join(publicPath, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) next();
+  });
+});
+
+// ============================================================================
 // MIDDLEWARE GLOBAL DE MANEJO DE ERRORES (CATCH-ALL)
 // ============================================================================
 app.use((err, req, res, next) => {
@@ -445,9 +462,11 @@ app.use((err, req, res, next) => {
   });
 });
 
+const HOST = process.env.HOST || '0.0.0.0';
+
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, '127.0.0.1', () => {
-    logger.info(`✅ SAS Agrícolas API Server running at http://localhost:${PORT}`);
+  app.listen(PORT, HOST, () => {
+    logger.info(`✅ SAS Agrícolas API Server running at http://${HOST}:${PORT}`);
     
     // Iniciar servicio de WhatsApp en segundo plano
     connectToWhatsApp().catch(err => console.error("Error iniciando WhatsApp:", err));
@@ -455,3 +474,4 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 export default app;
+

@@ -1,63 +1,83 @@
 version: '3.8'
+
 services:
   db:
     image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:
-      # Credenciales desde .env (con defaults solo para dev local)
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-sas_agricolas}
       MYSQL_USER: ${MYSQL_USER:-sas_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-sas_pass}
     ports:
-      - "3307:3306"
+      - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - db_data:/var/lib/mysql
+      - ./server/templates/tenant-schema.sql:/docker-entrypoint-initdb.d/01-tenant-schema.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   api:
     build:
       context: .
       dockerfile: Dockerfile
     command: node server/index.js
-    env_file: .env
     environment:
-      # Dentro de la red de compose, el bot se alcanza por su nombre de servicio.
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3002
+      HOST: 0.0.0.0
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-sas_agricolas}
+      MYSQL_USER: ${MYSQL_USER:-sas_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-sas_pass}
+      JWT_SECRET: ${JWT_SECRET:-insecure_jwt_secret_please_change_in_production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
       WHATSAPP_BOT_URL: http://bot:3004
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     ports:
       - "3002:3002"
     depends_on:
       db:
         condition: service_healthy
     volumes:
-      - .:/app
+      - uploads_data:/app/uploads
     restart: unless-stopped
 
-  # Bot de WhatsApp aislado: se comunica con el API solo dentro de la red
-  # interna (no se expone a la máquina host: solo `expose`, sin `ports`).
+  # Bot de WhatsApp aislado (opcional): se comunica con el API dentro de la red interna
   bot:
     build:
       context: .
       dockerfile: Dockerfile
     command: node server/whatsapp-bot.js
-    env_file: .env
     environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      WHATSAPP_BOT_PORT: 3004
       WHATSAPP_BOT_HOST: 0.0.0.0
       WHATSAPP_BOT_URL: http://127.0.0.1:3004
+      WHATSAPP_BOT_SECRET: ${WHATSAPP_BOT_SECRET:-}
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-sas_agricolas}
+      MYSQL_USER: ${MYSQL_USER:-sas_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-sas_pass}
     expose:
       - "3004"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
-      - .:/app
       - auth_info_baileys:/app/auth_info_baileys
     restart: unless-stopped
 
+  # Contenedor opcional para desarrollo local con Vite HMR (ignorado en Coolify)
   client:
-    image: node:18-alpine
+    profiles: ["dev"]
+    image: node:20-alpine
     working_dir: /app
     command: sh -c "npm install && npm run dev"
     ports:
@@ -72,4 +92,6 @@ services:
 
 volumes:
   db_data:
+  uploads_data:
   auth_info_baileys:
+

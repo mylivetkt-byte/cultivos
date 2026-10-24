@@ -1,26 +1,27 @@
-# ---- Multi‑stage Dockerfile for the SAS Agrícolas app ----
+# ---- Multi‑stage Dockerfile for AgroPaccioli (SAS Agrícolas) ----
 # Stage 1: Build the Vite client
 FROM node:20-alpine AS builder
 WORKDIR /app
-# Install dependencies (both client and server share package.json)
+RUN apk add --no-cache python3 make g++ libc6-compat
 COPY package.json package-lock.json* ./
 RUN npm ci --silent
-# Copy source code
 COPY . ./
-# Build the client (vite)
 RUN npm run build
 
-# Stage 2: Runtime for the Express server
+# Stage 2: Runtime for the Express server & static SPA
 FROM node:20-alpine AS runtime
 WORKDIR /app
-# Install only production dependencies
+RUN apk add --no-cache python3 make g++ libc6-compat
 COPY package.json package-lock.json* ./
 RUN npm ci --only=production --silent
-# Copy server source (excluding src/client which will be served as static)
 COPY server ./server
-# Copy built client assets from builder stage
 COPY --from=builder /app/dist ./public
-# Expose API port (default 3002 as per user config)
+RUN mkdir -p /app/uploads
+
+ENV NODE_ENV=production
+ENV PORT=3002
+ENV HOST=0.0.0.0
+
 EXPOSE 3002
-# Start the server
 CMD ["node", "server/index.js"]
+
