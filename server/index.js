@@ -48,6 +48,7 @@ import rateLimit from 'express-rate-limit';
 import { startBackupCron } from './jobs/backup.js';
 
 const app = express();
+app.set('trust proxy', 1);
 
 initSentry(app);
 startBackupCron();
