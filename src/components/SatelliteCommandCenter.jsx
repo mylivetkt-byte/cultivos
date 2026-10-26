@@ -36,7 +36,7 @@ function MapController({ finca, selectedLote }) {
   return null;
 }
 
-function SatelliteCommandCenter() {
+function SatelliteCommandCenter({ tenantId = 1 } = {}) {
   const [lotes, setLotes] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [activeLayer, setActiveLayer] = useState('NDVI');
@@ -54,6 +54,8 @@ function SatelliteCommandCenter() {
   const [selectedFincaPolygon, setSelectedFincaPolygon] = useState(null);
   const [debugError, setDebugError] = useState(null);
   const [lotesRaw, setLotesRaw] = useState([]);  // GeoJSON features de lotes
+  const [isLoadingLotes, setIsLoadingLotes] = useState(false);
+  const [lotesError, setLotesError] = useState(null);
   const [selectedLoteId, setSelectedLoteId] = useState(null);
   const [selectedLote, setSelectedLote] = useState(null);
   

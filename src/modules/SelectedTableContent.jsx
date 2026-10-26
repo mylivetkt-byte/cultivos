@@ -231,7 +231,7 @@ export default function SelectedTableContent({
     ) : selectedTable === 'rendimiento-roi' ? (
       <RendimientoROIManager />
     ) : selectedTable === 'satellite-monitor' ? (
-      <SatelliteCommandCenter />
+      <SatelliteCommandCenter tenantId={tenantId} />
     ) : selectedTable === 'gps-tracker' ? (
       <GPSTracker tenantId={tenantId} fincaId={selectedFinca} nucleoId={selectedNucleo} />
     ) : selectedTable === 'salud_arboles' ? (
