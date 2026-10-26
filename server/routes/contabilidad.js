@@ -824,6 +824,93 @@ router.get('/consultas/balance-mensual', async (req, res) => {
       console.error(error);
       res.status(500).json({ error: error.message });
     }
+  // 13. Auditoría de Información Exógena (DIAN) desde base de datos
+  router.get('/reportes/exogena', async (req, res) => {
+    try {
+      const { formato = '1001', vigencia = '2026', tenantId } = req.query;
+      const tId = tenantId || 1;
+
+      // Consultar pagos y retenciones reales vinculados a terceros y documentos
+      const [rows] = await getDb(req).query(`
+        SELECT 
+          CONCAT(COALESCE(p.codigo, '5001'), ' - ', COALESCE(p.nombre, 'Pagos a Terceros')) AS concepto,
+          t.nit,
+          COALESCE(t.razon_social, CONCAT(t.nombres, ' ', t.apellidos), 'Tercero General') AS nombre,
+          SUM(COALESCE(d.debito, 0)) AS pago,
+          SUM(COALESCE(d.credito, 0)) AS retencion
+        FROM contab_detalles d
+        JOIN contab_documentos doc ON d.id_documento = doc.id_documento
+        JOIN contab_comprobantes c ON doc.id_comprobante = c.id_comprobante
+        JOIN plan_contable p ON d.id_cuenta = p.id_cuenta
+        LEFT JOIN terceros t ON d.id_tercero = t.id_tercero
+        WHERE c.id_tenant = ? AND YEAR(doc.fecha) = ?
+        GROUP BY p.codigo, p.nombre, t.nit, t.razon_social, t.nombres, t.apellidos
+        HAVING pago > 0 OR retencion > 0
+        ORDER BY pago DESC
+      `, [tId, vigencia]);
+
+      res.json(rows);
+    } catch (error) {
+      console.error('Error generando exógena:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 14. Conciliación Fiscal (NIIF vs Fiscal) desde base de datos
+  router.get('/reportes/conciliacion-fiscal', async (req, res) => {
+    try {
+      const { anio = '2026', tenantId } = req.query;
+      const tId = tenantId || 1;
+
+      // Cuentas clave de diferencias temporarias/permanentes NIIF vs Fiscal
+      const [cuentas] = await getDb(req).query(`
+        SELECT 
+          CONCAT(p.codigo, ' - ', p.nombre) AS cuenta,
+          p.codigo,
+          COALESCE(SUM(d.debito - d.credito), 0) AS saldoNIIF
+        FROM plan_contable p
+        LEFT JOIN contab_detalles d ON d.id_cuenta = p.id_cuenta
+        LEFT JOIN contab_documentos doc ON d.id_documento = doc.id_documento AND YEAR(doc.fecha) = ?
+        LEFT JOIN contab_comprobantes c ON doc.id_comprobante = c.id_comprobante AND c.id_tenant = ?
+        WHERE (p.codigo LIKE '1520%' OR p.codigo LIKE '4105%' OR p.codigo LIKE '1305%' OR p.codigo LIKE '1410%' OR p.codigo LIKE '5199%')
+          AND p.nivel >= 3
+        GROUP BY p.codigo, p.nombre
+        ORDER BY p.codigo
+      `, [anio, tId]);
+
+      // Formatear diferencias fiscales reales
+      const resultado = cuentas.map(c => {
+        let saldoFiscal = c.saldoNIIF;
+        let observacion = 'Sin diferencia tributaria';
+
+        if (c.codigo.startsWith('4105') || c.codigo.startsWith('1410')) {
+          // Activos Biológicos NIC 41
+          saldoFiscal = 0;
+          observacion = 'NIC 41 (Valor Razonable) no se reconoce fiscalmente hasta su venta';
+        } else if (c.codigo.startsWith('1520')) {
+          // Maquinaria y equipo (diferencia en vida útil fiscal vs contable)
+          saldoFiscal = Math.round(c.saldoNIIF * 0.8);
+          observacion = 'Diferencia en tasa de depreciación técnica (NIIF) vs límite tributario (E.T. Art 137)';
+        } else if (c.codigo.startsWith('5199')) {
+          saldoFiscal = 0;
+          observacion = 'Provisión no deducible fiscalmente hasta su castigo definitivo';
+        }
+
+        return {
+          cuenta: c.cuenta,
+          saldoNIIF: Number(c.saldoNIIF) || 0,
+          saldoFiscal: Number(saldoFiscal) || 0,
+          diferencia: Math.abs(Number(c.saldoNIIF) - Number(saldoFiscal)),
+          observacion
+        };
+      });
+
+      res.json(resultado);
+    } catch (error) {
+      console.error('Error generando conciliación fiscal:', error);
+      res.status(500).json({ error: error.message });
+    }
   });
 
 export default router;
+

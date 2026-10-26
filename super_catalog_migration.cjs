@@ -95,6 +95,33 @@ require('dotenv').config();
       )
     `);
 
+    // 6. Riegos
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS catalogo_riegos (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        id_catalogo INT NOT NULL,
+        etapa_fenologica VARCHAR(255),
+        requerimiento_hidrico_mm DECIMAL(10,2),
+        frecuencia_dias INT,
+        metodo_recomendado VARCHAR(255),
+        FOREIGN KEY (id_catalogo) REFERENCES cultivos_catalogo(id_catalogo) ON DELETE CASCADE
+      )
+    `);
+
+    // 7. Siembra Patrones
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS catalogo_siembra_patrones (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        id_catalogo INT NOT NULL,
+        sistema_siembra VARCHAR(255),
+        distancia_surcos_m DECIMAL(10,2),
+        distancia_plantas_m DECIMAL(10,2),
+        plantas_por_ha INT,
+        instrucciones_especiales TEXT,
+        FOREIGN KEY (id_catalogo) REFERENCES cultivos_catalogo(id_catalogo) ON DELETE CASCADE
+      )
+    `);
+
     console.log('Database schema successfully updated for Super Catalog.');
     process.exit(0);
   } catch (err) {

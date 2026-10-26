@@ -101,12 +101,12 @@ router.get('/avanzado', async (req, res) => {
     `);
 
     // 2. Proyección vs Real (Composed Chart)
-    // We will just group by crop and return some dummy "estimado" to compare against real "produccion"
+    // Calcula la producción real vs estimada usando el rendimiento planificado por hectárea
     const [produccionRows] = await db.query(`
       SELECT 
         cu.nombre as cultivo,
-        SUM(c.produccion_total_kg) as real_kg,
-        SUM(s.hectareas_sembradas) * 15000 as estimado_kg 
+        SUM(COALESCE(c.produccion_total_kg, 0)) as real_kg,
+        SUM(COALESCE(c.rendimiento_estimado_ha * COALESCE(c.hectareas_cosechadas, s.hectareas_sembradas), s.hectareas_sembradas * 12000, 0)) as estimado_kg 
       FROM cosechas c
       JOIN siembras s ON c.id_siembra = s.id_siembra
       JOIN cultivos cu ON s.id_cultivo = cu.id_cultivo

@@ -1,14 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function AuditoriaExogena() {
   const [filtros, setFiltros] = useState({ formato: '1001', vigencia: '2026' });
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const mockData = [
-    { concepto: '5002 - Honorarios', nit: '800123456', nombre: 'Agroservicios S.A.', pago: 5000000, retencion: 550000 },
-    { concepto: '5004 - Arrendamientos', nit: '900654321', nombre: 'Inmobiliaria Fincas', pago: 12000000, retencion: 480000 },
-    { concepto: '5007 - Compra Insumos', nit: '890900123', nombre: 'Fertilizantes Nacionales', pago: 45000000, retencion: 1125000 },
-    { concepto: '5016 - Servicios Técnicos', nit: '700345678', nombre: 'Ingeniería Agrícola SAS', pago: 8500000, retencion: 935000 }
-  ];
+  const fetchExogena = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/contabilidad/reportes/exogena?formato=${filtros.formato}&vigencia=${filtros.vigencia}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setData(json);
+      } else {
+        setData([]);
+      }
+    } catch (err) {
+      console.error('Error cargando exógena:', err);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExogena();
+  }, [filtros.vigencia, filtros.formato]);
 
   const formatCurrency = (val) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
 
@@ -37,15 +57,20 @@ function AuditoriaExogena() {
           <select value={filtros.vigencia} onChange={(e) => setFiltros({ ...filtros, vigencia: e.target.value })} style={{ padding: '6px', borderRadius: '4px', border: '1px solid var(--border)' }}>
             <option value="2026">2026</option>
             <option value="2025">2025</option>
+            <option value="2024">2024</option>
           </select>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          <button style={{ background: 'var(--primary)', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Procesar</button>
+          <button onClick={fetchExogena} disabled={loading} style={{ background: 'var(--primary)', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+            {loading ? 'Consultando BD...' : 'Procesar'}
+          </button>
         </div>
       </div>
 
       <div className="card" style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '8px' }}>
-        <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '15px' }}>Vista previa de la pre-validación del prevalidador de la DIAN.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '15px' }}>
+          Vista previa generada dinámicamente desde el motor contable y terceros registrados en la base de datos.
+        </p>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
           <thead>
             <tr style={{ background: 'var(--border)', color: 'var(--text)' }}>
@@ -57,15 +82,27 @@ function AuditoriaExogena() {
             </tr>
           </thead>
           <tbody>
-            {mockData.map((row, idx) => (
-              <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
-                <td style={{ padding: '10px', color: 'var(--text)' }}>{row.concepto}</td>
-                <td style={{ padding: '10px', color: 'var(--text)' }}>{row.nit}</td>
-                <td style={{ padding: '10px', color: 'var(--text)' }}>{row.nombre}</td>
-                <td style={{ padding: '10px', textAlign: 'right', color: 'var(--text)' }}>{formatCurrency(row.pago)}</td>
-                <td style={{ padding: '10px', textAlign: 'right', color: '#ef4444' }}>{formatCurrency(row.retencion)}</td>
+            {loading ? (
+              <tr>
+                <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando datos contables desde la base de datos...</td>
               </tr>
-            ))}
+            ) : data.length === 0 ? (
+              <tr>
+                <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  No se encontraron pagos ni retenciones contabilizados para la vigencia {filtros.vigencia}.
+                </td>
+              </tr>
+            ) : (
+              data.map((row, idx) => (
+                <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '10px', color: 'var(--text)' }}>{row.concepto}</td>
+                  <td style={{ padding: '10px', color: 'var(--text)' }}>{row.nit || 'N/A'}</td>
+                  <td style={{ padding: '10px', color: 'var(--text)' }}>{row.nombre}</td>
+                  <td style={{ padding: '10px', textAlign: 'right', color: 'var(--text)' }}>{formatCurrency(row.pago)}</td>
+                  <td style={{ padding: '10px', textAlign: 'right', color: '#ef4444' }}>{formatCurrency(row.retencion)}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

@@ -1,12 +1,12 @@
 const mysql = require('mysql2/promise');
-
+require('dotenv').config();
 
 const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '12345',
-  database: process.env.DB_NAME || 'sas_agricolas',
-  port: process.env.DB_PORT || 3307
+  host: process.env.MYSQL_HOST || '127.0.0.1',
+  user: process.env.MYSQL_USER || 'root',
+  password: process.env.MYSQL_PASSWORD || '',
+  database: process.env.MYSQL_DATABASE || 'sas_agricolas',
+  port: Number(process.env.MYSQL_PORT) || 3307
 };
 
 const pucData = [
