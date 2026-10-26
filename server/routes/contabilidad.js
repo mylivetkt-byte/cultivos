@@ -824,6 +824,8 @@ router.get('/consultas/balance-mensual', async (req, res) => {
       console.error(error);
       res.status(500).json({ error: error.message });
     }
+  });
+
   // 13. Auditoría de Información Exógena (DIAN) desde base de datos
   router.get('/reportes/exogena', async (req, res) => {
     try {

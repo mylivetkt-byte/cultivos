@@ -172,6 +172,14 @@ import riegoPrecisionRouter from './routes/riego_precision.js';
 import vraPrescripcionRouter from './routes/vra_prescripcion.js';
 import rendimientoRouter from './routes/rendimiento.js';
 import dronesRouter from './routes/drones.js';
+import posRouter from './routes/pos.js';
+import catalogoCultivosSuperRouter from './routes/catalogo_cultivos_super.js';
+import fincasRouter from './routes/fincas.js';
+import simuladorRouter from './routes/simulador.js';
+import agriculturaSimuladorRouter from './routes/agricultura_simulador.js';
+import notasCreditoRouter from './routes/notas_credito.js';
+import dianboxRouter from './routes/dianboxMock.js';
+import iaRouter from './routes/ia.js';
 import pool from './db.js';
 
 
@@ -277,6 +285,17 @@ app.use('/api/rendimiento', auth, rendimientoRouter);
 app.use('/api/drones', auth, dronesRouter);
 
 app.use('/api/water', auth, waterRouter);
+app.use('/api/pos', auth, posRouter);
+app.use('/api/catalogo_cultivos_super', auth, catalogoCultivosSuperRouter);
+app.use('/api/fincas', auth, fincasRouter);
+app.use('/api/simulador', auth, simuladorRouter);
+app.use('/api/agricultura_simulador', auth, agriculturaSimuladorRouter);
+app.use('/api/notas-credito', auth, notasCreditoRouter);
+app.use('/api/dianbox', auth, dianboxRouter);
+app.use('/api/ia', auth, iaRouter);
+app.use('/api/bodegas_avanzado', auth, bodegasAvanzadoRoutes);
+app.use('/api/terceros', auth, tercerosStatsRouter);
+app.use('/api/reports/inventario', auth, reportesInventarioRouter);
 app.get('/api/dashboard/stats', auth, async (req, res) => {
   const { fincaId, nucleoId } = req.query;
   const db = req.tenantPool;

@@ -8,7 +8,7 @@ const MotorContable = ({ tenantId }) => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const res = await authFetch(`http://localhost:3002/api/erp/log-integraciones?tenantId=${tenantId || 1}`);
+      const res = await authFetch(`/api/erp/log-integraciones?tenantId=${tenantId || 1}`);
       if (!res.ok) throw new Error('Error network');
       const data = await res.json();
       setLogs(data);
@@ -27,11 +27,11 @@ const MotorContable = ({ tenantId }) => {
   const simularSalidaBodega = async () => {
     try {
       setLoading(true);
-      const eventoRes = await authFetch(`http://localhost:3002/api/erp/evento-bodega-salida?tenantId=${tenantId || 1}`);
+      const eventoRes = await authFetch(`/api/erp/evento-bodega-salida?tenantId=${tenantId || 1}`);
       if (!eventoRes.ok) throw new Error('No hay salida de bodega disponible');
       const payload = await eventoRes.json();
       
-      const res = await authFetch('http://localhost:3002/api/erp/contabilizar', {
+      const res = await authFetch('/api/erp/contabilizar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

@@ -3,7 +3,7 @@ import { fetchTableData } from '../utils/api';
 import { CheckCircleOutlined, CloseCircleOutlined, WarningOutlined } from '@ant-design/icons';
 import PremiumSelect from './PremiumSelect';
 
-const API_BASE = 'http://localhost:3002/api';
+const API_BASE = '/api';
 
 function CentralVerificacion({ tenantId }) {
   const [labores, setLabores] = useState([]);

@@ -4,6 +4,20 @@ import { getDb } from '../utils/db.js';
 
 const router = express.Router();
 
+router.get('/', async (req, res) => {
+  const { id_tenant, tenantId } = req.query;
+  const tId = id_tenant || tenantId || req.user?.id_tenant || 1;
+  try {
+    const [terceros] = await getDb(req).query(`
+      SELECT * FROM terceros WHERE id_tenant = ? AND activo = 1 ORDER BY nombre_completo ASC
+    `, [tId]);
+    res.json(terceros);
+  } catch (error) {
+    console.error('Error fetching terceros:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get('/all', async (req, res) => {
   const { id_tenant } = req.query;
   try {

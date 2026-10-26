@@ -20,8 +20,8 @@ function LaborBoard({ tenantId }) {
     setLoading(true);
     try {
       const [resLabores, resEmp] = await Promise.all([
-        authFetch(`http://localhost:3002/api/labores?tenantId=${tenantId || 1}`),
-        authFetch(`http://localhost:3002/api/rrhh/empleados?tenantId=${tenantId || 1}`)
+        authFetch(`/api/labores?tenantId=${tenantId || 1}`),
+        authFetch(`/api/rrhh/empleados?tenantId=${tenantId || 1}`)
       ]);
       const dataLab = await resLabores.json();
       const dataEmp = await resEmp.json();
@@ -47,7 +47,7 @@ function LaborBoard({ tenantId }) {
     }
     showToast('⏳ Asignando empleado...');
     try {
-      const res = await authFetch(`http://localhost:3002/api/labores/${id_labor}/asignar`, {
+      const res = await authFetch(`/api/labores/${id_labor}/asignar`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_empleado })

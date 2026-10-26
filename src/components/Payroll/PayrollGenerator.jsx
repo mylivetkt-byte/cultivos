@@ -19,7 +19,7 @@ function PayrollGenerator({ tenantId }) {
   const fetchPlanillas = async () => {
     setLoading(true);
     try {
-      const res = await authFetch(`http://localhost:3002/api/nomina/planillas?tenantId=${tenantId || 1}`);
+      const res = await authFetch(`/api/nomina/planillas?tenantId=${tenantId || 1}`);
       const data = await res.json();
       setPlanillas(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -37,7 +37,7 @@ function PayrollGenerator({ tenantId }) {
   const handleGenerar = async () => {
     showToast('⏳ Generando planilla semanal...');
     try {
-      const res = await authFetch(`http://localhost:3002/api/nomina/planillas/generar-semana`, {
+      const res = await authFetch(`/api/nomina/planillas/generar-semana`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ anio: formAnio, semana: formSemana, tenantId: tenantId || 1 })
@@ -57,7 +57,7 @@ function PayrollGenerator({ tenantId }) {
   const handleAprobar = async (id_planilla) => {
     showToast('⏳ Aprobando planilla...');
     try {
-      const res = await authFetch(`http://localhost:3002/api/nomina/planillas/${id_planilla}/approve`, {
+      const res = await authFetch(`/api/nomina/planillas/${id_planilla}/approve`, {
         method: 'PUT'
       });
       if (res.ok) {
@@ -74,7 +74,7 @@ function PayrollGenerator({ tenantId }) {
   const handleContabilizar = async (id_planilla) => {
     showToast('⏳ Integrando a Contabilidad...');
     try {
-      const res = await authFetch(`http://localhost:3002/api/nomina/planillas/${id_planilla}/contabilizar`, {
+      const res = await authFetch(`/api/nomina/planillas/${id_planilla}/contabilizar`, {
         method: 'PUT'
       });
       const data = await res.json();
