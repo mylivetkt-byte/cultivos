@@ -175,7 +175,6 @@ import vraPrescripcionRouter from './routes/vra_prescripcion.js';
 import rendimientoRouter from './routes/rendimiento.js';
 import dronesRouter from './routes/drones.js';
 import posRouter from './routes/pos.js';
-import catalogoCultivosSuperRouter from './routes/catalogo_cultivos_super.js';
 import fincasRouter from './routes/fincas.js';
 import simuladorRouter from './routes/simulador.js';
 import agriculturaSimuladorRouter from './routes/agricultura_simulador.js';
