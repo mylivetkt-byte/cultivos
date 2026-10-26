@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { useAuth } from '../../context/AuthContext';
 import { fetchTableData, fetchApi, API_BASE, getAuthHeaders } from '../../utils/api';
 import { exportToPdf } from '../../utils/exportPdf';
@@ -11,7 +12,7 @@ import {
   PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
 import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from '../../utils/exportPdf';
 
 export default function TrazabilidadProducto({ tenantId, fincaId, nucleoId }) {
   const { user } = useAuth();
@@ -131,7 +132,7 @@ export default function TrazabilidadProducto({ tenantId, fincaId, nucleoId }) {
   const handleExportDashboardPdf = async () => {
     if (!dashboardRef.current) return;
     try {
-      const doc = new jsPDF('p', 'mm', 'a4');
+      const doc = new (getJsPDFConstructor())('p', 'mm', 'a4');
       let startX = 14;
       
       // 1. Cargar Logo de la empresa
@@ -222,7 +223,7 @@ export default function TrazabilidadProducto({ tenantId, fincaId, nucleoId }) {
         { align: 'center' }
       );
       
-      doc.save(`Dashboard_Trazabilidad_${new Date().getTime()}.pdf`);
+      downloadPdfDoc(doc, `Dashboard_Trazabilidad_${new Date().getTime()}.pdf`);
     } catch (error) {
       console.error('Error exportando dashboard a PDF:', error);
     }
@@ -305,24 +306,18 @@ export default function TrazabilidadProducto({ tenantId, fincaId, nucleoId }) {
 
           <div>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '12px', color: 'var(--text-muted)' }}>Desde</label>
-            <input 
-              type="date" 
-              className="form-control" 
+            <DatePickerClaro className="form-control" 
               style={{ background: 'var(--card-bg)', color: 'var(--text)', border: '1px solid var(--border)', padding: '8px', borderRadius: '4px', minHeight: '38px' }}
               value={fechaDesde}
-              onChange={(e) => setFechaDesde(e.target.value)}
-            />
+              onChange={(e) => setFechaDesde(e.target.value)} />
           </div>
 
           <div>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '12px', color: 'var(--text-muted)' }}>Hasta</label>
-            <input 
-              type="date" 
-              className="form-control" 
+            <DatePickerClaro className="form-control" 
               style={{ background: 'var(--card-bg)', color: 'var(--text)', border: '1px solid var(--border)', padding: '8px', borderRadius: '4px', minHeight: '38px' }}
               value={fechaHasta}
-              onChange={(e) => setFechaHasta(e.target.value)}
-            />
+              onChange={(e) => setFechaHasta(e.target.value)} />
           </div>
           
           <button className="btn-action-base btn-procesar" onClick={handleProcesar}>

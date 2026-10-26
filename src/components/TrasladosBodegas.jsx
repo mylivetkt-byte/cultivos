@@ -3,8 +3,9 @@ import { Table, Select, DatePicker, Button, Modal, notification, Row, Col, Typog
 import { DownloadOutlined, FilePdfOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { downloadExcelWorkbook } from '../utils/exportExcel';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from '../utils/exportPdf';
+
 import { fetchTableData, API_BASE, authFetch } from '../utils/api';
 import NuevoTrasladoModal from './NuevoTrasladoModal';
 
@@ -115,7 +116,7 @@ export default function TrasladosBodegas({ tenantId }) {
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Traslados');
-    XLSX.writeFile(workbook, `Traslados_Bodegas_${dayjs().format('YYYYMMDD')}.xlsx`);
+    downloadExcelWorkbook(workbook, `Traslados_Bodegas_${dayjs().format('YYYYMMDD')}.xlsx`);
   };
 
   const exportPDF = () => {
@@ -123,7 +124,7 @@ export default function TrasladosBodegas({ tenantId }) {
       notification.warning({ message: 'No hay datos para exportar' });
       return;
     }
-    const doc = new jsPDF();
+    const doc = new (getJsPDFConstructor())();
     
     doc.setFontSize(18);
     doc.text('Reporte de Traslados de Bodegas', 14, 20);
@@ -154,7 +155,7 @@ export default function TrasladosBodegas({ tenantId }) {
       ]);
     });
 
-    doc.autoTable({
+    runAutoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: filtersText.length > 0 ? 40 : 34,
@@ -162,7 +163,7 @@ export default function TrasladosBodegas({ tenantId }) {
       headStyles: { fillColor: [46, 125, 50] }
     });
 
-    doc.save(`Traslados_Bodegas_${dayjs().format('YYYYMMDD')}.pdf`);
+    downloadPdfDoc(doc, `Traslados_Bodegas_${dayjs().format('YYYYMMDD')}.pdf`);
   };
 
   const handleSuccessTraslado = () => {

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { authFetch } from '../../utils/api.js';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from '../../utils/exportPdf';
+
 import * as XLSX from 'xlsx';
+import { downloadExcelWorkbook } from '../../utils/exportExcel';
 import '../dashboard.css';
 
 const BioFabrica = ({ tenantId = 1 }) => {
@@ -43,11 +45,11 @@ const BioFabrica = ({ tenantId = 1 }) => {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Reporte BioFabrica");
-    XLSX.writeFile(wb, `Reporte_${activeTab}_${new Date().getTime()}.xlsx`);
+    downloadExcelWorkbook(wb, `Reporte_${activeTab}_${new Date().getTime()}.xlsx`);
   };
 
   const handleExportPDF = () => {
-    const doc = new jsPDF();
+    const doc = new (getJsPDFConstructor())();
     doc.text(`Reporte: ${activeTab.toUpperCase()}`, 14, 15);
     
     let head = [];
@@ -64,13 +66,13 @@ const BioFabrica = ({ tenantId = 1 }) => {
       body = data.map(r => [new Date(r.fecha_movimiento).toLocaleDateString(), r.insumo || r.producto, r.tipo_movimiento, r.cantidad, r.costo_unitario, r.costo_total, r.responsable || r.usuario_responsable]);
     }
 
-    doc.autoTable({
+    runAutoTable(doc, {
       head,
       body,
       startY: 20,
       styles: { fontSize: 8 }
     });
-    doc.save(`Reporte_${activeTab}_${new Date().getTime()}.pdf`);
+    downloadPdfDoc(doc, `Reporte_${activeTab}_${new Date().getTime()}.pdf`);
   };
 
   const handleSendWhatsApp = async () => {
@@ -108,11 +110,11 @@ const BioFabrica = ({ tenantId = 1 }) => {
             <>
               <div>
                 <label style={{ color: '#fff', fontSize: '0.9em' }}>Fecha Inicio</label>
-                <input type="date" className="form-control" value={filters.startDate} onChange={e => setFilters({...filters, startDate: e.target.value})} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid #4B5563' }} />
+                <DatePickerClaro className="form-control" value={filters.startDate} onChange={e => setFilters({...filters, startDate: e.target.value})} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid #4B5563' }} />
               </div>
               <div>
                 <label style={{ color: '#fff', fontSize: '0.9em' }}>Fecha Fin</label>
-                <input type="date" className="form-control" value={filters.endDate} onChange={e => setFilters({...filters, endDate: e.target.value})} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid #4B5563' }} />
+                <DatePickerClaro className="form-control" value={filters.endDate} onChange={e => setFilters({...filters, endDate: e.target.value})} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid #4B5563' }} />
               </div>
               <button className="btn btn-primary" onClick={fetchData} disabled={loading}>
                 {loading ? '⏳' : '🔍 Procesar'}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { fetchApi } from '../../utils/api';
 import { Plus, Edit2, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import moment from 'moment';
@@ -234,12 +235,12 @@ export default function ResolucionesDIANTab({ tenantId }) {
 
                 <div className="form-group">
                   <label>Fecha Inicial *</label>
-                  <input type="date" name="fecha_inicial" value={formData.fecha_inicial} onChange={handleChange} required />
+                  <DatePickerClaro name="fecha_inicial" value={formData.fecha_inicial} onChange={handleChange} required />
                 </div>
 
                 <div className="form-group">
                   <label>Fecha Vencimiento *</label>
-                  <input type="date" name="fecha_vence" value={formData.fecha_vence} onChange={handleChange} required />
+                  <DatePickerClaro name="fecha_vence" value={formData.fecha_vence} onChange={handleChange} required />
                 </div>
 
                 {editItem && (

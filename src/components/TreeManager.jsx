@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import DatePickerClaro from './Common/DatePickerClaro';
 import L from 'leaflet';
 import Select from 'react-select';
 import { QRCodeSVG } from 'qrcode.react';
@@ -789,12 +790,9 @@ function SaludArboles({ tenantId, fincaId, nucleoId }) {
 
                         <div className="form-group">
                           <label className="form-label">Fecha Límite Sugerida</label>
-                          <input
-                            type="date"
-                            className="form-control"
+                          <DatePickerClaro className="form-control"
                             value={recFechaSugerida}
-                            onChange={(e) => setRecFechaSugerida(e.target.value)}
-                          />
+                            onChange={(e) => setRecFechaSugerida(e.target.value)} />
                         </div>
 
                         <div className="form-group">

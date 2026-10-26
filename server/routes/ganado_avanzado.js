@@ -777,4 +777,33 @@ router.delete('/estudio/:id_foto', async (req, res) => {
   }
 });
 
+// 18. Catálogos campesinos de condición corporal y medicamentos guía desde la BD
+router.get('/guia-campesina', async (req, res) => {
+  try {
+    const [escala] = await pool.query('SELECT grado, titulo, icono, color, senales, problemas, receta FROM ganado_escala_condicion WHERE activo = 1 ORDER BY grado ASC');
+    const [medicamentos] = await pool.query('SELECT codigo_clave, nombre, dias_leche, dias_carne, alerta, icono FROM ganado_medicamentos_guia WHERE activo = 1 ORDER BY id_med ASC');
+    
+    const medicamentosDict = {};
+    for (const m of medicamentos) {
+      medicamentosDict[m.codigo_clave] = {
+        nombre: m.nombre,
+        diasLeche: m.dias_leche,
+        diasCarne: m.dias_carne,
+        alerta: m.alerta,
+        icono: m.icono
+      };
+    }
+
+    res.json({
+      success: true,
+      escalaCondicion: escala,
+      medicamentosGuia: medicamentosDict
+    });
+  } catch (err) {
+    console.error('Error fetching guia campesina:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;
+

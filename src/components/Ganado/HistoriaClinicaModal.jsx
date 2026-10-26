@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 
 function HistoriaClinicaModal({ animalId, onClose }) {
   const [animal, setAnimal] = useState(null);
@@ -108,7 +109,7 @@ function HistoriaClinicaModal({ animalId, onClose }) {
 
               <div>
                 <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Fecha</label><br/>
-                <input type="date" required value={fecha} onChange={e => setFecha(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
+                <DatePickerClaro required value={fecha} onChange={e => setFecha(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
               </div>
 
               {moduloSeleccionado === 'Sanidad' && (
@@ -156,7 +157,7 @@ function HistoriaClinicaModal({ animalId, onClose }) {
                     </div>
                     <div style={{ flex: '1' }}>
                       <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Próxima Dosis</label><br/>
-                      <input type="date" value={formData.proxima_fecha || ''} onChange={e => setFormData({...formData, proxima_fecha: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
+                      <DatePickerClaro value={formData.proxima_fecha || ''} onChange={e => setFormData({...formData, proxima_fecha: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
                     </div>
                   </div>
                   <div>

@@ -17,9 +17,10 @@ import {
 import './dashboard.css';
 import { authFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import jsPDF from 'jspdf';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from '../utils/exportPdf';
 import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
+import { downloadExcelWorkbook } from '../utils/exportExcel';
 
 ChartJS.register(
   CategoryScale,
@@ -110,7 +111,7 @@ function GerenciaDashboard({ tenantId, fincaId, startDate, endDate }) {
     try {
       const canvas = await html2canvas(dashboardRef.current, { scale: 2, useCORS: true, backgroundColor: '#0f172a' });
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdf = new (getJsPDFConstructor())('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       
       // Fetch Logo
@@ -159,7 +160,7 @@ function GerenciaDashboard({ tenantId, fincaId, startDate, endDate }) {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       // Draw dashboard image below the header
       pdf.addImage(imgData, 'PNG', 0, 50, pdfWidth, pdfHeight);
-      pdf.save('Dashboard_Gerencia.pdf');
+      downloadPdfDoc(pdf, 'Dashboard_Gerencia.pdf');
     } catch (error) {
       console.error('Error exporting PDF:', error);
       alert('Hubo un error al exportar el PDF');
@@ -194,7 +195,7 @@ function GerenciaDashboard({ tenantId, fincaId, startDate, endDate }) {
       if (data.acuicola && data.acuicola.length > 0) addSheet(data.acuicola, 'Acuícola');
       if (data.almacenes && data.almacenes.length > 0) addSheet(data.almacenes, 'Almacenes Valoración');
 
-      XLSX.writeFile(wb, 'Dashboard_Datos.xlsx');
+      downloadExcelWorkbook(wb, 'Dashboard_Datos.xlsx');
     } catch (error) {
       console.error('Error exporting Excel:', error);
       alert('Hubo un error al exportar Excel');

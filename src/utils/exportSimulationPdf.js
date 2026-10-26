@@ -1,10 +1,10 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from './exportPdf';
 import { API_BASE, getAuthHeaders } from './api';
 
 export async function exportSimulationPdf(projectData) {
   try {
-    const doc = new jsPDF({ orientation: 'portrait' });
+    const PDFConstructor = getJsPDFConstructor();
+    const doc = new PDFConstructor({ orientation: 'portrait' });
 
     // 1. Cargar Logo
     let logoBase64 = null;
@@ -92,7 +92,7 @@ export async function exportSimulationPdf(projectData) {
       financialData.push(["INTELIGENCIA DE MERCADO", altText]);
     }
 
-    doc.autoTable({
+    runAutoTable(doc, {
       head: [["Concepto Financiero", "Valor (COP)"]],
       body: financialData,
       startY: currentY,
@@ -141,7 +141,7 @@ export async function exportSimulationPdf(projectData) {
     // Cosecha (Última semana)
     timeline.push([`Semana ${semanasTotal}`, `${(semanasTotal-1)*7} a ${projectData.ciclo} días`, "Cosecha", "Recolección, empaque y logística de transporte de la cosecha."]);
 
-    doc.autoTable({
+    runAutoTable(doc, {
       head: [["Etapa / Semana", "Días", "Tipo de Labor", "Recomendación Operativa"]],
       body: timeline,
       startY: currentY,
@@ -183,7 +183,7 @@ export async function exportSimulationPdf(projectData) {
         ];
       });
 
-      doc.autoTable({
+      runAutoTable(doc, {
         head: [["Empresa", "Origen", "Vehículos", "Teléfono", "Tarifa", "Flete Est."]],
         body: transportData,
         startY: currentY,
@@ -203,9 +203,9 @@ export async function exportSimulationPdf(projectData) {
       doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.getWidth() - 25, doc.internal.pageSize.getHeight() - 10);
     }
 
-    doc.save(`Proyeccion_${projectData.cultivo}_${projectData.fincaNombre.replace(/\s+/g, '_')}.pdf`);
+    downloadPdfDoc(doc, `Proyeccion_${projectData.cultivo}_${(projectData.fincaNombre || '').replace(/\s+/g, '_')}.pdf`);
   } catch (error) {
     console.error("Error generando PDF de Simulación:", error);
-    alert("Hubo un problema al generar el PDF. Revisa la consola.");
+    throw new Error("Hubo un problema al generar el PDF: " + error.message);
   }
 }

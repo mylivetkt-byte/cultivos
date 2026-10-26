@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import Select from 'react-select';
 import { authFetch } from '../../utils/api';
 import { customStyles } from '../PremiumSelect';
@@ -215,14 +216,11 @@ function PrestamoCapturer({ tenantId, fincaId }) {
 
           <div className="form-group">
             <label>Fecha del Desembolso</label>
-            <input 
-              type="date" 
-              name="fecha" 
+            <DatePickerClaro name="fecha" 
               value={formData.fecha} 
               onChange={handleChange} 
               className="form-control" 
-              required 
-            />
+              required />
           </div>
 
           <div className="form-group">

@@ -432,7 +432,30 @@ function QuickAddModal({ isOpen, onClose, tableName, tenantId, fincaId, nucleoId
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`${mode === 'edit' ? 'Editar' : 'Creación Rápida'} — ${formatTableName(tableName || '')}`}
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <span style={{ 
+            background: mode === 'edit' ? 'rgba(56, 189, 248, 0.18)' : 'rgba(168, 85, 247, 0.18)', 
+            color: mode === 'edit' ? '#38bdf8' : '#c084fc', 
+            border: `1px solid ${mode === 'edit' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(168, 85, 247, 0.4)'}`,
+            fontSize: '11px', 
+            fontWeight: 700, 
+            padding: '3px 8px', 
+            borderRadius: '6px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}>
+            <span>{mode === 'edit' ? '✏️' : '⚡'}</span> {mode === 'edit' ? 'Edición Rápida' : 'Creación Rápida'}
+          </span>
+          <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '18px' }}>
+            {formatTableName(tableName || '')}
+          </span>
+        </div>
+      }
+      subtitle={`Formulario emergente para ${formatTableName(tableName || '')} — Ingresa los datos requeridos`}
       footer={
         <>
           <button className="btn btn-outline" onClick={onClose} disabled={submitting}>Cancelar</button>
@@ -442,6 +465,37 @@ function QuickAddModal({ isOpen, onClose, tableName, tenantId, fincaId, nucleoId
         </>
       }
     >
+      {/* Contextual Location Banner inside Quick Form */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '10px 14px',
+        background: 'rgba(255, 255, 255, 0.04)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        borderRadius: '8px',
+        marginBottom: '18px',
+        fontSize: '13px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8' }}>
+          <span style={{ color: '#64748b' }}>Ventana Rápida:</span>
+          <span style={{ color: '#f8fafc', fontWeight: 600 }}>{formatTableName(tableName || '')}</span>
+          <span style={{ color: '#64748b' }}>›</span>
+          <span style={{ color: mode === 'edit' ? '#38bdf8' : '#c084fc', fontWeight: 600 }}>
+            {mode === 'edit' ? 'Modificar Registro' : 'Nuevo Registro Directo'}
+          </span>
+        </div>
+        <span style={{
+          fontSize: '11px',
+          color: '#94a3b8',
+          background: 'rgba(255, 255, 255, 0.06)',
+          padding: '2px 8px',
+          borderRadius: '4px',
+          fontFamily: 'monospace'
+        }}>
+          {tableName}
+        </span>
+      </div>
       {loading ? (
         <div className="loading-container" style={{ padding: '40px' }}>
           <div className="spinner" />

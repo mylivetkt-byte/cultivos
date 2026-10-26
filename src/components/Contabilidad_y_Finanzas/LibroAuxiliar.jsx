@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { authFetch } from '../../utils/api';
 
 const LibroAuxiliar = ({ tenantId }) => {
@@ -217,11 +218,11 @@ const LibroAuxiliar = ({ tenantId }) => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '16px' }}>
               <div>
                 <label style={labelStyle}>Fecha Desde *</label>
-                <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={inputStyle} />
+                <DatePickerClaro value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Fecha Hasta *</label>
-                <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} style={inputStyle} />
+                <DatePickerClaro value={fechaFin} onChange={e => setFechaFin(e.target.value)} style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Cuenta Desde</label>

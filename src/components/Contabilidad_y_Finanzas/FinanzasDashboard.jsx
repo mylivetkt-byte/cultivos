@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { authFetch } from '../../utils/api';
 import { jsPDF } from 'jspdf';
@@ -342,11 +343,11 @@ function FinanzasDashboard({ tenantId = 1 }) {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Desde</label>
-          <input type="date" name="fechaDesde" value={filters.fechaDesde} onChange={handleFilterChange} style={{ padding: '6px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }} />
+          <DatePickerClaro name="fechaDesde" value={filters.fechaDesde} onChange={handleFilterChange} style={{ padding: '6px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Hasta</label>
-          <input type="date" name="fechaHasta" value={filters.fechaHasta} onChange={handleFilterChange} style={{ padding: '6px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }} />
+          <DatePickerClaro name="fechaHasta" value={filters.fechaHasta} onChange={handleFilterChange} style={{ padding: '6px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
           <button onClick={loadData} style={{ background: 'var(--primary)', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Procesar</button>

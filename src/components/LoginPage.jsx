@@ -284,9 +284,13 @@ export default function LoginPage({ onRegister }) {
           border: 1.5px solid #cbd5e1;
           border-radius: 10px;
           font-size: 15px;
+          font-weight: 600;
+          color: #0f172a !important; /* Letra oscura y nítida */
+          -webkit-text-fill-color: #0f172a !important;
+          color-scheme: light;
           box-sizing: border-box;
           outline: none;
-          background: #f8fafc;
+          background: #ffffff;
           color: #0f172a !important; /* Letras oscuras de alto contraste */
           color-scheme: light;
           transition: all 0.2s ease;
@@ -296,6 +300,7 @@ export default function LoginPage({ onRegister }) {
         .form-group input::placeholder {
           color: #64748b !important;
           opacity: 1;
+          font-weight: 400;
         }
 
         /* Prevenir zoom no deseado en iOS Safari cuando font-size es menor a 16px */
@@ -309,14 +314,18 @@ export default function LoginPage({ onRegister }) {
           border-color: #16a34a;
           background: #ffffff;
           color: #0f172a !important;
+          -webkit-text-fill-color: #0f172a !important;
           box-shadow: 0 0 0 3.5px rgba(22, 163, 74, 0.18);
         }
 
+        /* Soporte para autocompletado en navegadores Chromium/Safari */
         .form-group input:-webkit-autofill,
         .form-group input:-webkit-autofill:hover, 
         .form-group input:-webkit-autofill:focus {
           -webkit-text-fill-color: #0f172a !important;
-          -webkit-box-shadow: 0 0 0px 1000px #f8fafc inset !important;
+          -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+          box-shadow: 0 0 0px 1000px #ffffff inset !important;
+          font-weight: 600 !important;
           transition: background-color 5000s ease-in-out 0s;
         }
 

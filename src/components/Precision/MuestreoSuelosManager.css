@@ -268,7 +268,7 @@
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
 }
 
-.modal-header {
+.muestreo-suelos-manager .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -277,7 +277,7 @@
   margin-bottom: 20px;
 }
 
-.modal-header h3 {
+.muestreo-suelos-manager .modal-header h3 {
   margin: 0;
   font-size: 20px;
   color: #0f172a;

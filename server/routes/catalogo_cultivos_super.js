@@ -7,9 +7,11 @@ const router = express.Router();
 // GET all crops
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM cultivos_catalogo');
+    const db = req.tenantPool || pool;
+    const [rows] = await db.query('SELECT * FROM cultivos_catalogo ORDER BY nombre_oficial ASC');
     res.json(rows);
   } catch (error) {
+    console.error('Error fetching catalogo cultivos super:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -17,9 +19,11 @@ router.get('/', async (req, res) => {
 // GET distinct species
 router.get('/especies', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT DISTINCT especie_biologica FROM cultivos_catalogo WHERE especie_biologica IS NOT NULL AND especie_biologica != ""');
-    res.json(rows.map(r => r.especie_biologica));
+    const db = req.tenantPool || pool;
+    const [rows] = await db.query('SELECT DISTINCT especie_biologica FROM cultivos_catalogo WHERE especie_biologica IS NOT NULL AND especie_biologica != "" ORDER BY especie_biologica ASC');
+    res.json(rows.map(r => ({ especie_biologica: r.especie_biologica })));
   } catch (error) {
+    console.error('Error fetching especies:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -27,18 +31,19 @@ router.get('/especies', async (req, res) => {
 // GET single crop with all its relational data
 router.get('/:id', async (req, res) => {
   try {
+    const db = req.tenantPool || pool;
     const { id } = req.params;
-    const [cultivo] = await pool.query('SELECT * FROM cultivos_catalogo WHERE id_catalogo = ?', [id]);
+    const [cultivo] = await db.query('SELECT * FROM cultivos_catalogo WHERE id_catalogo = ?', [id]);
     
     if (cultivo.length === 0) return res.status(404).json({ message: 'No encontrado' });
 
-    const [plagas] = await pool.query('SELECT * FROM catalogo_plagas_cultivo WHERE id_catalogo = ?', [id]);
-    const [enfermedades] = await pool.query('SELECT * FROM catalogo_enfermedades WHERE id_catalogo = ?', [id]);
-    const [abonos] = await pool.query('SELECT * FROM catalogo_abonos_formulas WHERE id_catalogo = ?', [id]);
-    const [fumigacion] = await pool.query('SELECT * FROM catalogo_fumigacion_formulas WHERE id_catalogo = ?', [id]);
-    const [semillas] = await pool.query('SELECT * FROM catalogo_semillas_variedades WHERE id_catalogo = ?', [id]);
-    const [riegos] = await pool.query('SELECT * FROM catalogo_riegos WHERE id_catalogo = ?', [id]);
-    const [siembra] = await pool.query('SELECT * FROM catalogo_siembra_patrones WHERE id_catalogo = ?', [id]);
+    const [plagas] = await db.query('SELECT * FROM catalogo_plagas_cultivo WHERE id_catalogo = ?', [id]);
+    const [enfermedades] = await db.query('SELECT * FROM catalogo_enfermedades WHERE id_catalogo = ?', [id]);
+    const [abonos] = await db.query('SELECT * FROM catalogo_abonos_formulas WHERE id_catalogo = ?', [id]);
+    const [fumigacion] = await db.query('SELECT * FROM catalogo_fumigacion_formulas WHERE id_catalogo = ?', [id]);
+    const [semillas] = await db.query('SELECT * FROM catalogo_semillas_variedades WHERE id_catalogo = ?', [id]);
+    const [riegos] = await db.query('SELECT * FROM catalogo_riegos WHERE id_catalogo = ?', [id]);
+    const [siembra] = await db.query('SELECT * FROM catalogo_siembra_patrones WHERE id_catalogo = ?', [id]);
 
     res.json({
       ...cultivo[0],
@@ -51,41 +56,44 @@ router.get('/:id', async (req, res) => {
       siembra
     });
   } catch (error) {
+    console.error('Error fetching crop details:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// POST to fetch scientific data automatically
+// POST to fetch scientific data automatically from Wikipedia
 router.post('/auto-fetch', async (req, res) => {
   try {
     const { nombre_oficial, especie_biologica } = req.body;
     let query = especie_biologica || nombre_oficial;
+    if (!query) {
+      return res.json({ imagen_url: null, resumen_cientifico_api: '' });
+    }
     
     // Wikipedia API call
     const wikiUrl = `https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
     
     try {
-      const response = await axios.get(wikiUrl);
+      const response = await axios.get(wikiUrl, { timeout: 5000 });
       const data = response.data;
       
-      res.json({
+      return res.json({
         imagen_url: data.thumbnail?.source || null,
         resumen_cientifico_api: data.extract || 'Resumen no encontrado'
       });
     } catch (wikiError) {
-      // If it fails, try just the first word of the biological species (genus)
       try {
-         let genus = query.split(' ')[0];
-         const res2 = await axios.get(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(genus)}`);
-         res.json({
-            imagen_url: res2.data.thumbnail?.source || null,
-            resumen_cientifico_api: res2.data.extract || 'Resumen no encontrado'
-         });
+        let genus = query.split(' ')[0];
+        const res2 = await axios.get(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(genus)}`, { timeout: 5000 });
+        return res.json({
+          imagen_url: res2.data.thumbnail?.source || null,
+          resumen_cientifico_api: res2.data.extract || 'Resumen no encontrado'
+        });
       } catch (e) {
-         res.json({
-           imagen_url: null,
-           resumen_cientifico_api: 'No se encontró información científica para este nombre.'
-         });
+        return res.json({
+          imagen_url: null,
+          resumen_cientifico_api: 'No se encontró información científica para este nombre.'
+        });
       }
     }
   } catch (error) {
@@ -95,14 +103,15 @@ router.post('/auto-fetch', async (req, res) => {
 
 // POST to create crop and its child tables
 router.post('/', async (req, res) => {
-  const connection = await pool.getConnection();
+  const db = req.tenantPool || pool;
+  const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
     const data = req.body;
 
     // 1. Check for duplicates
     const [existing] = await connection.query(
-      'SELECT id_catalogo FROM cultivos_catalogo WHERE nombre_oficial = ? OR especie_biologica = ?',
+      'SELECT id_catalogo FROM cultivos_catalogo WHERE nombre_oficial = ? OR (especie_biologica = ? AND especie_biologica != "")',
       [data.nombre_oficial, data.especie_biologica]
     );
 
@@ -211,10 +220,65 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Update crop
+// PUT /:id to update crop
 router.put('/:id', async (req, res) => {
-    // Basic update logic for now
-    res.json({ message: 'Update success' });
+  const db = req.tenantPool || pool;
+  try {
+    const { id } = req.params;
+    const data = req.body;
+    await db.query(`
+      UPDATE cultivos_catalogo SET
+        nombre_oficial = ?,
+        especie_biologica = ?,
+        familia_botanica = ?,
+        imagen_url = ?,
+        resumen_cientifico_api = ?,
+        distancia_siembra_m = ?,
+        densidad_ha = ?,
+        dias_ciclo = ?
+      WHERE id_catalogo = ?
+    `, [
+      data.nombre_oficial,
+      data.especie_biologica,
+      data.familia_botanica,
+      data.imagen_url,
+      data.resumen_cientifico_api,
+      data.distancia_siembra_m || null,
+      data.densidad_ha || null,
+      data.dias_ciclo || null,
+      id
+    ]);
+    res.json({ success: true, message: 'Cultivo actualizado exitosamente' });
+  } catch (error) {
+    console.error('Error updating cultivo:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /:id to delete crop
+router.delete('/:id', async (req, res) => {
+  const db = req.tenantPool || pool;
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const { id } = req.params;
+    await connection.query('DELETE FROM catalogo_plagas_cultivo WHERE id_catalogo = ?', [id]);
+    await connection.query('DELETE FROM catalogo_enfermedades WHERE id_catalogo = ?', [id]);
+    await connection.query('DELETE FROM catalogo_abonos_formulas WHERE id_catalogo = ?', [id]);
+    await connection.query('DELETE FROM catalogo_fumigacion_formulas WHERE id_catalogo = ?', [id]);
+    await connection.query('DELETE FROM catalogo_semillas_variedades WHERE id_catalogo = ?', [id]);
+    await connection.query('DELETE FROM catalogo_riegos WHERE id_catalogo = ?', [id]);
+    await connection.query('DELETE FROM catalogo_siembra_patrones WHERE id_catalogo = ?', [id]);
+    await connection.query('DELETE FROM cultivos_catalogo WHERE id_catalogo = ?', [id]);
+    await connection.commit();
+    res.json({ success: true, message: 'Cultivo eliminado correctamente' });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error deleting cultivo:', error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    connection.release();
+  }
 });
 
 export default router;

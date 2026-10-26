@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { FileText, Search, Eye, Download, Calendar, Filter, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { authFetch } from '../../utils/api';
@@ -112,23 +113,17 @@ function POSHistorial() {
             <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '5px' }}>
               <Calendar size={12} style={{ marginRight: '4px' }} />Desde
             </label>
-            <input
-              type="date"
-              value={filtroFechaDesde}
+            <DatePickerClaro value={filtroFechaDesde}
               onChange={(e) => setFiltroFechaDesde(e.target.value)}
-              style={inputStyle}
-            />
+              style={inputStyle} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '5px' }}>
               <Calendar size={12} style={{ marginRight: '4px' }} />Hasta
             </label>
-            <input
-              type="date"
-              value={filtroFechaHasta}
+            <DatePickerClaro value={filtroFechaHasta}
               onChange={(e) => setFiltroFechaHasta(e.target.value)}
-              style={inputStyle}
-            />
+              style={inputStyle} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '5px' }}>

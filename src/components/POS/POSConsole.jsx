@@ -1400,19 +1400,40 @@ $${(Number(resumen.saldo_inicial) + Number(resumen.ventas_efectivo) - Number(res
                       }} style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
                     <button 
                       type="button"
-                      onClick={() => {
+                      onClick={async () => {
                         if (!newClient.documento) return alert('Ingrese un número de identificación primero');
-                        // Simulación de consumo API RUES / DIAN
-                        alert(`Consultando API (Simulado) para: ${newClient.documento}`);
-                        if (newClient.tipo_persona === 'Juridica') {
-                          setNewClient(prev => ({ ...prev, nombre_comercial: 'EMPRESA CONSULTADA SAS', direccion: 'CALLE Falsa 123', telefono: '3000000000', email: 'contacto@empresaconsultada.com', codigo_municipio: '11001' }));
-                        } else {
-                          setNewClient(prev => ({ ...prev, primer_nombre: 'JUAN', primer_apellido: 'PEREZ', direccion: 'CRA 45 #12-34', telefono: '3100000000', email: 'juan.perez@email.com', codigo_municipio: '11001' }));
+                        try {
+                          const res = await authFetch(`/api/parametros/terceros/consulta/${encodeURIComponent(newClient.documento)}?tenantId=${tenantId || 1}`);
+                          if (res.ok) {
+                            const data = await res.json();
+                            setNewClient(prev => ({
+                              ...prev,
+                              tipo_persona: data.tipo_persona || prev.tipo_persona,
+                              tipo_documento: data.tipo_documento || prev.tipo_documento,
+                              dv: data.dv !== null && data.dv !== undefined ? String(data.dv) : prev.dv,
+                              nombre_comercial: data.nombre_comercial || data.razon_social || '',
+                              primer_nombre: data.primer_nombre || '',
+                              segundo_nombre: data.segundo_nombre || '',
+                              primer_apellido: data.primer_apellido || '',
+                              segundo_apellido: data.segundo_apellido || '',
+                              direccion: data.direccion || '',
+                              telefono: data.telefono || data.celular || '',
+                              email: data.email || data.correo_facturacion || '',
+                              codigo_municipio: data.codigo_municipio || prev.codigo_municipio,
+                              regimen_fiscal: data.regimen_fiscal || prev.regimen_fiscal
+                            }));
+                            alert(`Cliente encontrado en la base de datos: ${data.nombre_completo || data.nombre_comercial || data.primer_nombre}`);
+                          } else {
+                            alert('El documento no se encuentra registrado en la base de datos. Por favor complete los datos del cliente manualmente.');
+                          }
+                        } catch (err) {
+                          console.error('Error al consultar tercero:', err);
+                          alert('Error al consultar la base de datos.');
                         }
                       }}
                       style={{ padding: '0 15px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
                     >
-                      Consultar API
+                      Consultar BD
                     </button>
                   </div>
                 </div>

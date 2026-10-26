@@ -78,4 +78,34 @@ router.get('/dashboard', async (req, res) => {
   }
 });
 
+// Catálogo agroecológico experto por pisos térmicos de Colombia desde BD
+router.get('/expertos', async (req, res) => {
+  try {
+    const [rows] = await getDb(req).query(`
+      SELECT 
+        id_cultivo_experto as id,
+        nombre,
+        icono,
+        altitud_min,
+        altitud_max,
+        piso_ideal,
+        ciclo_dias,
+        distancia_surco,
+        distancia_planta,
+        sistema,
+        rendimiento_ton_ha,
+        suelo_ideal,
+        descripcion
+      FROM cultivos_expertos
+      WHERE activo = 1
+      ORDER BY id_cultivo_experto ASC
+    `);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching cultivos expertos:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
+

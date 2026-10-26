@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { authFetch } from '../../utils/api';
 
 function ConciliacionFiscal() {
   const [filtros, setFiltros] = useState({ anio: '2026' });
@@ -8,15 +9,17 @@ function ConciliacionFiscal() {
   const fetchConciliacion = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/contabilidad/reportes/conciliacion-fiscal?anio=${filtros.anio}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = await authFetch(`/api/contabilidad/reportes/conciliacion-fiscal?anio=${filtros.anio}`);
       if (res.ok) {
         const json = await res.json();
         setData(json);
       } else {
-        setData([]);
+        const resAlt = await authFetch(`/api/contabilidad/conciliacion-fiscal?anio=${filtros.anio}`);
+        if (resAlt.ok) {
+          setData(await resAlt.json());
+        } else {
+          setData([]);
+        }
       }
     } catch (err) {
       console.error('Error cargando conciliación fiscal:', err);
@@ -59,7 +62,7 @@ function ConciliacionFiscal() {
 
       <div className="card" style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '8px' }}>
         <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '15px' }}>
-          Diferencias temporarias y permanentes calculadas dinámicamente desde el Plan de Cuentas y Comprobantes registrados en MySQL.
+          Diferencias temporarias y permanentes calculadas dinámicamente desde el Plan de Cuentas y Comprobantes registrados en MySQL (Datos Reales).
         </p>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
           <thead>

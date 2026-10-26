@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -914,12 +915,9 @@ export default function RendimientoROIManager() {
 
                 <div className="form-group">
                   <label>Fecha de Cosecha *</label>
-                  <input 
-                    type="date" 
-                    required 
+                  <DatePickerClaro required 
                     value={mapaForm.fecha_cosecha}
-                    onChange={(e) => setMapaForm({ ...mapaForm, fecha_cosecha: e.target.value })}
-                  />
+                    onChange={(e) => setMapaForm({ ...mapaForm, fecha_cosecha: e.target.value })} />
                 </div>
               </div>
 

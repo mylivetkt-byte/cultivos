@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { authFetch } from '../../utils/api';
 
 function AuditoriaExogena() {
   const [filtros, setFiltros] = useState({ formato: '1001', vigencia: '2026' });
@@ -8,15 +9,18 @@ function AuditoriaExogena() {
   const fetchExogena = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/contabilidad/reportes/exogena?formato=${filtros.formato}&vigencia=${filtros.vigencia}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = await authFetch(`/api/contabilidad/reportes/exogena?formato=${filtros.formato}&vigencia=${filtros.vigencia}`);
       if (res.ok) {
         const json = await res.json();
         setData(json);
       } else {
-        setData([]);
+        // Fallback al endpoint alternativo
+        const resAlt = await authFetch(`/api/contabilidad/auditoria-exogena?formato=${filtros.formato}&vigencia=${filtros.vigencia}`);
+        if (resAlt.ok) {
+          setData(await resAlt.json());
+        } else {
+          setData([]);
+        }
       }
     } catch (err) {
       console.error('Error cargando exógena:', err);
@@ -69,7 +73,7 @@ function AuditoriaExogena() {
 
       <div className="card" style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '8px' }}>
         <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '15px' }}>
-          Vista previa generada dinámicamente desde el motor contable y terceros registrados en la base de datos.
+          Vista previa generada dinámicamente desde el motor contable y terceros registrados en la base de datos (DIAN).
         </p>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
           <thead>

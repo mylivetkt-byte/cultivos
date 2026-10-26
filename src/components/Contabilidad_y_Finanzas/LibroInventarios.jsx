@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { authFetch } from '../../utils/api';
 
 const LibroInventarios = ({ tenantId }) => {
@@ -167,7 +168,7 @@ const LibroInventarios = ({ tenantId }) => {
           <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '24px', display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>Fecha de Corte *</label>
-              <input type="date" value={fechaCorte} onChange={e => setFechaCorte(e.target.value)} style={inputStyle} />
+              <DatePickerClaro value={fechaCorte} onChange={e => setFechaCorte(e.target.value)} style={inputStyle} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>Finca (Consolidado)</label>

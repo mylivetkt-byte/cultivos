@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { authFetch } from '../../utils/api';
 
 const ControlConsecutivos = ({ tenantId }) => {
@@ -95,11 +96,11 @@ const ControlConsecutivos = ({ tenantId }) => {
           <div style={{ background: 'var(--bg-main)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '24px', display: 'flex', gap: '20px', alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>Fecha Desde</label>
-              <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={inputStyle} />
+              <DatePickerClaro value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={inputStyle} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>Fecha Hasta</label>
-              <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} style={inputStyle} />
+              <DatePickerClaro value={fechaFin} onChange={e => setFechaFin(e.target.value)} style={inputStyle} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>Tipo de Documento</label>

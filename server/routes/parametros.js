@@ -238,6 +238,24 @@ router.get('/terceros', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+router.get('/terceros/consulta/:documento', async (req, res) => {
+  const { documento } = req.params;
+  const tenantId = req.query.tenantId || req.user?.tenantId || 1;
+  try {
+    const [rows] = await getDb(req).query(
+      'SELECT * FROM terceros WHERE id_tenant = ? AND documento = ? LIMIT 1',
+      [tenantId, documento]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ error: 'Tercero no registrado en la base de datos' });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 router.post('/terceros', async (req, res) => {
   const { id_tenant, documento, tipo_documento, dv, nombre_completo, razon_social, email, direccion, telefono, celular, tipo_tercero } = req.body;
   try {

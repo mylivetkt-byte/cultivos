@@ -1,4 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { authFetch } from '../../utils/api';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { Card, Button, InputNumber, Slider, Radio, Tag, Alert, Row, Col, Typography, Space, Tooltip } from 'antd';
 import { 
   CalculatorOutlined, SoundOutlined, ShareAltOutlined, CheckCircleOutlined, 
@@ -86,97 +88,31 @@ export default function AsistenteGanaderoCampesino({ onClose, fincaId }) {
   // --- PASO 3: CONDICIÓN CORPORAL (1 a 5) ---
   const [condicionSeleccionada, setCondicionSeleccionada] = useState(3);
 
-  const ESCALA_CONDICION = [
-    {
-      grado: 1,
-      titulo: '1 - Muy Flaca (Emaciada / Serrucho)',
-      icono: '🔴',
-      color: '#ef4444',
-      senales: 'Costillas, cadera y vértebras sobresalen como cuchillas. No hay nada de grasa.',
-      problemas: 'No entra en calor (anestro), bajas defensas, peligro inminente de muerte.',
-      receta: 'Separar al lote de enfermería. Suministrar pasto de corte picado, 2 kg de concentrado/silo con melaza y sal mineralizada al 8% rica en fósforo.'
-    },
-    {
-      grado: 2,
-      titulo: '2 - Flaca (Baja Condición)',
-      icono: '🟡',
-      color: '#f59e0b',
-      senales: 'Costillas y punta de nalga visibles, pero los huecos entre huesos están suaves.',
-      problemas: 'Se demora muchos meses en volver a preñarse; produce poca leche.',
-      receta: 'Dar mejor potrero con buen aforo, suplementar con 1 kg de maíz molido o silo y sal mineralizada.'
-    },
-    {
-      grado: 3,
-      titulo: '3 - Óptima / Ideal Campesina 🟢',
-      icono: '🟢',
-      color: '#10b981',
-      senales: 'Lomo parejo, costillas cubiertas con una capa delgada de carne. Piel brillante.',
-      problemas: '¡Punto ideal! Máxima fertilidad, fácil parto y excelente producción de leche.',
-      receta: 'Mantener la rotación de praderas Voisin y sal mineralizada a voluntad.'
-    },
-    {
-      grado: 4,
-      titulo: '4 - Gorda (Sobrecondición)',
-      icono: '🟡',
-      color: '#eab308',
-      senales: 'Lomo plano y ancho, rollos de grasa evidentes alrededor de la base de la cola.',
-      problemas: 'Partos difíciles (distocias), retención de placenta y desperdicio de alimento.',
-      receta: 'No engordar más. Ajustar la carga animal y aumentar el ejercicio en potrero.'
-    },
-    {
-      grado: 5,
-      titulo: '5 - Muy Obesa',
-      icono: '🔴',
-      color: '#dc2626',
-      senales: 'Huesos de cadera invisibles enterrados en grasa. Movimiento pesado y torpe.',
-      problemas: 'Hígado graso, problemas en patas e infertilidad casi total.',
-      receta: 'Restringir suplementación calórica y racionar pasturas.'
-    }
-  ];
+  const [ESCALA_CONDICION, setEscalaCondicion] = useState([]);
+  const [MEDICAMENTOS_GUIA, setMedicamentosGuia] = useState({});
+
+  useEffect(() => {
+    const fetchGuiaCampesina = async () => {
+      try {
+        const res = await authFetch('/api/ganado_avanzado/guia-campesina');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setEscalaCondicion(data.escalaCondicion || []);
+            setMedicamentosGuia(data.medicamentosGuia || {});
+          }
+        }
+      } catch (err) {
+        console.error('Error cargando guia campesina ganadera:', err);
+      }
+    };
+    fetchGuiaCampesina();
+  }, []);
 
   // --- PASO 4: SEMÁFORO DE TIEMPO DE RETIRO ---
   const [medicamentoSel, setMedicamentoSel] = useState('oxitetraciclina');
   const [fechaAplicacion, setFechaAplicacion] = useState(new Date().toISOString().split('T')[0]);
-
-  const MEDICAMENTOS_GUIA = {
-    oxitetraciclina: {
-      nombre: 'Oxitetraciclina L.A. (Antibiótico)',
-      diasLeche: 6,
-      diasCarne: 21,
-      alerta: 'Inhibe el cuajo de los quesos y deja residuos tóxicos en la leche.',
-      icono: '💉'
-    },
-    penicilina: {
-      nombre: 'Penicilina G + Estreptomicina (Antibiótico)',
-      diasLeche: 3,
-      diasCarne: 14,
-      alerta: 'Altamente alergénico en humanos si se consume leche antes de tiempo.',
-      icono: '🧪'
-    },
-    ivermectina: {
-      nombre: 'Ivermectina al 1% o 3.15% (Desparasitante)',
-      diasLeche: 999, // Prohibido en ordeño
-      diasCarne: 35,
-      alerta: '¡PROHIBIDO EN VACAS DE LECHE! Se fija en la grasa de la ubre por meses.',
-      icono: '🚫'
-    },
-    albendazol: {
-      nombre: 'Albendazol / Fenbendazol Oral (Purgante)',
-      diasLeche: 3,
-      diasCarne: 14,
-      alerta: 'Apto para ganado de leche respetando los 3 días de descarte.',
-      icono: '🥣'
-    },
-    vacuna_aftosa: {
-      nombre: 'Vacuna Aftosa / Rabia / Cepa 19 (ICA)',
-      diasLeche: 0,
-      diasCarne: 0,
-      alerta: 'Cero días de retiro. La leche y carne son totalmente seguras.',
-      icono: '🛡️'
-    }
-  };
-
-  const medInfo = MEDICAMENTOS_GUIA[medicamentoSel];
+  const medInfo = MEDICAMENTOS_GUIA[medicamentoSel] || { nombre: "Medicamento", diasLeche: 0, diasCarne: 0, alerta: "", icono: "💉" };
 
   const fechaLiberacionLeche = useMemo(() => {
     if (medInfo.diasLeche === 999) return 'PROHIBIDO en vacas de ordeño';
@@ -796,9 +732,7 @@ export default function AsistenteGanaderoCampesino({ onClose, fincaId }) {
                   <Text style={{ color: '#9ca3af', display: 'block', marginBottom: '6px' }}>
                     Fecha de Aplicación de la Dosis:
                   </Text>
-                  <input
-                    type="date"
-                    value={fechaAplicacion}
+                  <DatePickerClaro value={fechaAplicacion}
                     onChange={e => setFechaAplicacion(e.target.value)}
                     style={{
                       width: '100%',
@@ -807,8 +741,7 @@ export default function AsistenteGanaderoCampesino({ onClose, fincaId }) {
                       color: '#fff',
                       border: '1px solid #374151',
                       borderRadius: '8px'
-                    }}
-                  />
+                    }} />
                 </div>
               </Card>
             </Col>

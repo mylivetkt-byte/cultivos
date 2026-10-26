@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { authFetch } from '../../utils/api';
 import Pagination from '../Pagination';
 
@@ -181,11 +182,11 @@ function RecepcionMercancia({ tenantId, fincaId }) {
           <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'flex-end', background: '#f8fafc', padding: '16px', borderRadius: '8px' }}>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Desde</label>
-              <input type="date" className="form-control" value={startDate} onChange={e => setStartDate(e.target.value)} />
+              <DatePickerClaro className="form-control" value={startDate} onChange={e => setStartDate(e.target.value)} />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Hasta</label>
-              <input type="date" className="form-control" value={endDate} onChange={e => setEndDate(e.target.value)} />
+              <DatePickerClaro className="form-control" value={endDate} onChange={e => setEndDate(e.target.value)} />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Producto (Cod/Nombre)</label>

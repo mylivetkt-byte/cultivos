@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Card, Typography, Select, Row, Col, Space, Tag, notification, Tabs } from 'antd';
 import { FileExcelOutlined, FilePdfOutlined, CheckCircleOutlined, AlertOutlined, SafetyCertificateOutlined, CarOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { downloadExcelWorkbook } from '../../utils/exportExcel';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from '../../utils/exportPdf';
+
 import { authFetch } from '../../utils/api';
 
 const { Title, Text } = Typography;
@@ -73,11 +74,11 @@ export default function CustodiaRepuestosDashboard({ tenantId, currentUserId }) 
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Deudores_Repuestos");
-    XLSX.writeFile(wb, `Auditoria_Repuestos.xlsx`);
+    downloadExcelWorkbook(wb, `Auditoria_Repuestos.xlsx`);
   };
 
   const exportToPDF = () => {
-    const doc = new jsPDF();
+    const doc = new (getJsPDFConstructor())();
     doc.text(`Cuentas por Cobrar de Repuestos (Control Antirrobo)`, 14, 15);
     
     const tableColumn = ["PEDIDO", "MECÁNICO", "REPUESTO", "ESTADO", "ENTREGA"];
@@ -89,8 +90,8 @@ export default function CustodiaRepuestosDashboard({ tenantId, currentUserId }) 
       d.fecha_entrega_pieza?.substring(0,10) || 'NO ENTREGADO'
     ]);
 
-    doc.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
-    doc.save(`Auditoria_Repuestos.pdf`);
+    runAutoTable(doc, { head: [tableColumn], body: tableRows, startY: 20 });
+    downloadPdfDoc(doc, `Auditoria_Repuestos.pdf`);
   };
 
   return (

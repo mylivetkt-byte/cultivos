@@ -8,15 +8,17 @@ const router = express.Router();
 // 1. Consulta Cruzada de Existencias
 router.get('/existencias', async (req, res) => {
   try {
-    const { tenantId, insumoId, bodegaId } = req.query;
+    const { tenantId, insumoId, bodegaId, fincaId } = req.query;
     if (!tenantId) return res.status(400).json({ error: 'Falta tenantId' });
 
     let query = `
       SELECT e.id_existencia, e.id_bodega, b.nombre as bodega_nombre, b.es_principal,
+             b.id_finca, f.nombre as finca_nombre,
              e.id_insumo, i.nombre as insumo_nombre, i.codigo, i.unidad_medida,
              e.cantidad, e.costo_promedio, e.fecha_ultima_actualizacion
       FROM inv_existencias e
       JOIN bod_bodegas b ON e.id_bodega = b.id_bodega
+      LEFT JOIN fincas f ON b.id_finca = f.id_finca
       JOIN insumos i ON e.id_insumo = i.id_insumo
       WHERE b.id_tenant = ?
     `;
@@ -30,6 +32,12 @@ router.get('/existencias', async (req, res) => {
       query += ` AND e.id_bodega = ?`;
       params.push(bodegaId);
     }
+    if (fincaId && fincaId !== 'all' && fincaId !== '') {
+      query += ` AND b.id_finca = ?`;
+      params.push(fincaId);
+    }
+
+    query += ` ORDER BY f.nombre ASC, b.nombre ASC, i.nombre ASC`;
 
     const [rows] = await getDb(req).query(query, params);
     res.json(rows);
@@ -224,19 +232,31 @@ router.post('/documentos', async (req, res) => {
 // 4. Listar Documentos
 router.get('/documentos', async (req, res) => {
   try {
-    const { tenantId } = req.query;
+    const { tenantId, fincaId } = req.query;
     if (!tenantId) return res.status(400).json({ error: 'Falta tenantId' });
 
-    const [rows] = await getDb(req).query(`
-      SELECT d.*, t.nombre as tipo_nombre, t.naturaleza, 
-             bo.nombre as origen_nombre, bd.nombre as destino_nombre
+    let query = `
+      SELECT d.*, t.nombre as tipo_nombre, t.naturaleza, t.codigo as tipo_codigo,
+             bo.nombre as origen_nombre, fo.nombre as finca_origen_nombre,
+             bd.nombre as destino_nombre, fd.nombre as finca_destino_nombre
       FROM inv_documentos d
       JOIN inv_tipos_documento t ON d.id_tipo = t.id_tipo
       LEFT JOIN bod_bodegas bo ON d.id_bodega_origen = bo.id_bodega
+      LEFT JOIN fincas fo ON bo.id_finca = fo.id_finca
       LEFT JOIN bod_bodegas bd ON d.id_bodega_destino = bd.id_bodega
+      LEFT JOIN fincas fd ON bd.id_finca = fd.id_finca
       WHERE d.id_tenant = ?
-      ORDER BY d.fecha DESC LIMIT 100
-    `, [tenantId]);
+    `;
+    const params = [tenantId];
+
+    if (fincaId && fincaId !== 'all' && fincaId !== '') {
+      query += ` AND (bo.id_finca = ? OR bd.id_finca = ?)`;
+      params.push(fincaId, fincaId);
+    }
+
+    query += ` ORDER BY d.fecha DESC, d.id_documento DESC LIMIT 200`;
+
+    const [rows] = await getDb(req).query(query, params);
     res.json(rows);
   } catch (error) {
     console.error('Error fetching documentos:', error);

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { useAuth } from '../../context/AuthContext';
 import { authFetch } from '../../utils/api';
 import { History, FileText, Download, Filter } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
+import { downloadExcelWorkbook } from '../../utils/exportExcel';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from '../../utils/exportPdf';
 import { useSortableData } from '../../hooks/useSortableData';
 import Pagination from '../Pagination';
-import 'jspdf-autotable';
+
 
 export default function POSHistoricoCajeros() {
   const { tenantId } = useAuth();
@@ -76,11 +78,11 @@ export default function POSHistoricoCajeros() {
     const ws = XLSX.utils.json_to_sheet(historial);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Historial");
-    XLSX.writeFile(wb, "historico_cajeros.xlsx");
+    downloadExcelWorkbook(wb, "historico_cajeros.xlsx");
   };
 
   const exportPDF = () => {
-    const doc = new jsPDF('landscape');
+    const doc = new (getJsPDFConstructor())('landscape');
     doc.text("Histórico de Arqueos / Turnos", 14, 15);
     const tableData = historial.map(h => [
       h.bodega_nombre || 'N/A',
@@ -96,13 +98,13 @@ export default function POSHistoricoCajeros() {
       `$${h.ventas_nequi}`,
       `$${h.saldo_final_sistema}`
     ]);
-    doc.autoTable({
+    runAutoTable(doc, {
       head: [['Bodega', 'Fecha', 'Turno', 'Caja', 'Cajero', 'Base', 'Efectivo', 'Crédito', 'Bancos', 'T.C', 'Nequi', 'Total Sist.']],
       body: tableData,
       startY: 20,
       styles: { fontSize: 8 }
     });
-    doc.save("historico_cajeros.pdf");
+    downloadPdfDoc(doc, "historico_cajeros.pdf");
   };
 
   return (
@@ -125,11 +127,11 @@ export default function POSHistoricoCajeros() {
         <form onSubmit={handleFilter} style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div>
             <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '5px' }}>Desde</label>
-            <input type="date" value={filtros.fechaDesde} onChange={e => setFiltros({...filtros, fechaDesde: e.target.value})} style={{ padding: '8px', background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '4px' }}/>
+            <DatePickerClaro value={filtros.fechaDesde} onChange={e => setFiltros({...filtros, fechaDesde: e.target.value})} style={{ padding: '8px', background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '4px' }} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '5px' }}>Hasta</label>
-            <input type="date" value={filtros.fechaHasta} onChange={e => setFiltros({...filtros, fechaHasta: e.target.value})} style={{ padding: '8px', background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '4px' }}/>
+            <DatePickerClaro value={filtros.fechaHasta} onChange={e => setFiltros({...filtros, fechaHasta: e.target.value})} style={{ padding: '8px', background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '4px' }} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '5px' }}>Bodega</label>

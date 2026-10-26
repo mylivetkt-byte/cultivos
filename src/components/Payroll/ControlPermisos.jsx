@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { message } from 'antd';
 import Select from 'react-select';
 import { authFetch } from '../../utils/api';
@@ -181,8 +182,8 @@ export default function ControlPermisos({ tenantId, fincaId }) {
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '4px' }}>Rango de Fechas</label>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <input type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }} />
-              <input type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }} />
+              <DatePickerClaro value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }} />
+              <DatePickerClaro value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }} />
             </div>
           </div>
           <div>
@@ -336,11 +337,11 @@ export default function ControlPermisos({ tenantId, fincaId }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '4px' }}>Fecha Inicio *</label>
-                  <input type="date" value={form.fecha_inicio} onChange={e=>handleDateChange('fecha_inicio', e.target.value)} style={{ width:'100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+                  <DatePickerClaro value={form.fecha_inicio} onChange={e=>handleDateChange('fecha_inicio', e.target.value)} style={{ width:'100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '4px' }}>Fecha Fin *</label>
-                  <input type="date" value={form.fecha_fin} onChange={e=>handleDateChange('fecha_fin', e.target.value)} style={{ width:'100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+                  <DatePickerClaro value={form.fecha_fin} onChange={e=>handleDateChange('fecha_fin', e.target.value)} style={{ width:'100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
                 </div>
               </div>
 

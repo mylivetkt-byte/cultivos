@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import Select from 'react-select';
 import { authFetch } from '../../utils/api';
 import { customStyles } from '../PremiumSelect';
@@ -139,12 +140,9 @@ function OrdenCompraCapturer({ tenantId }) {
           </div>
           <div className="form-group">
             <label>Fecha Esperada de Entrega</label>
-            <input 
-              type="date" 
-              className="form-control" 
+            <DatePickerClaro className="form-control" 
               value={fechaEntrega} 
-              onChange={e => setFechaEntrega(e.target.value)} 
-            />
+              onChange={e => setFechaEntrega(e.target.value)} />
           </div>
         </div>
       </div>

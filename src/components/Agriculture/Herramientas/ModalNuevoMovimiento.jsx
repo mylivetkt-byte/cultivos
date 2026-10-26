@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../../Common/DatePickerClaro';
 import { fetchApi, authFetch } from '../../../utils/api';
 import { Select, AutoComplete } from 'antd';
 import AyudaCampesina from '../../Common/AyudaCampesina';
@@ -144,7 +145,7 @@ function ModalNuevoMovimiento({ isOpen, onClose, onRefresh, fincaId, fincas }) {
             </div>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#cbd5e1', marginBottom: '5px', display: 'block' }}>Fecha *</label>
-              <input type="date" required value={form.fecha} onChange={e => setForm({...form, fecha: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #475569', background: '#334155', color: '#fff', fontSize: '14px' }} />
+              <DatePickerClaro required value={form.fecha} onChange={e => setForm({...form, fecha: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #475569', background: '#334155', color: '#fff', fontSize: '14px' }} />
             </div>
           </div>
 

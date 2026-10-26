@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import AsyncSelect from 'react-select/async';
 import { authFetch } from '../../utils/api';
 
@@ -104,7 +105,7 @@ function FichaTecnicaEditor({ value, onChange }) {
         </div>
         <div className="form-group">
           <label>📅 Último Cambio de Aceite</label>
-          <input type="date" value={data.ultima_fecha_cambio_aceite || ''} onChange={e => handleChange('ultima_fecha_cambio_aceite', e.target.value)} />
+          <DatePickerClaro value={data.ultima_fecha_cambio_aceite || ''} onChange={e => handleChange('ultima_fecha_cambio_aceite', e.target.value)} />
         </div>
         <div className="form-group">
           <label>💰 Costos Acumulados Históricos</label>

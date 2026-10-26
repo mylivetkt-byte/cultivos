@@ -3,8 +3,9 @@ import { Tabs, Select, Card, Row, Col, Table, Button, DatePicker, Tag, Space, no
 import { SearchOutlined, FileExcelOutlined, FilePdfOutlined, InfoCircleOutlined, FilterOutlined } from '@ant-design/icons';
 import { fetchTableData } from '../../utils/api';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { downloadExcelWorkbook } from '../../utils/exportExcel';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from '../../utils/exportPdf';
+
 import { authFetch } from '../../utils/api';
 
 const { Option } = Select;
@@ -91,12 +92,12 @@ export default function KardexDashboard({ tenantId }) {
     const ws = XLSX.utils.json_to_sheet(dataToExport);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Kardex");
-    XLSX.writeFile(wb, `Kardex_${kardexData.insumo.codigo}.xlsx`);
+    downloadExcelWorkbook(wb, `Kardex_${kardexData.insumo.codigo}.xlsx`);
   };
 
   const exportKardexPDF = () => {
     if (!kardexData) return;
-    const doc = new jsPDF();
+    const doc = new (getJsPDFConstructor())();
     doc.text(`Kárdex Oficial: ${kardexData.insumo.nombre}`, 14, 15);
     const tableColumn = ["Fecha", "Documento", "Naturaleza", "Bodega", "Cantidad", "Costo U."];
     const tableRows = kardexData.movimientos.map(m => [
@@ -107,8 +108,8 @@ export default function KardexDashboard({ tenantId }) {
       Number(m.cantidad).toLocaleString('es-CO'),
       `$${Number(m.costo_unitario).toLocaleString('es-CO')}`
     ]);
-    doc.autoTable({ head: [tableColumn], body: tableRows, startY: 25 });
-    doc.save(`Kardex_${kardexData.insumo.codigo}.pdf`);
+    runAutoTable(doc, { head: [tableColumn], body: tableRows, startY: 25 });
+    downloadPdfDoc(doc, `Kardex_${kardexData.insumo.codigo}.pdf`);
   };
 
   // ---- Funciones Tab 2 (Rastreo Global) ----
@@ -157,11 +158,11 @@ export default function KardexDashboard({ tenantId }) {
     const ws = XLSX.utils.json_to_sheet(dataToExport);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Movimientos");
-    XLSX.writeFile(wb, `Rastreo_Inventario_${new Date().getTime()}.xlsx`);
+    downloadExcelWorkbook(wb, `Rastreo_Inventario_${new Date().getTime()}.xlsx`);
   };
 
   const exportGlobalPDF = () => {
-    const doc = new jsPDF('landscape');
+    const doc = new (getJsPDFConstructor())('landscape');
     doc.text("Reporte de Rastreo Global de Inventario", 14, 15);
     const tableColumn = ["Fecha", "Tipo", "Insumo", "Cant", "Bodega", "Responsable", "Lote/Maq"];
     const tableRows = globalData.map(m => [
@@ -173,8 +174,8 @@ export default function KardexDashboard({ tenantId }) {
       m.emp_nombres ? `${m.emp_nombres}` : 'N/A',
       m.lote_nombre || m.maquina_nombre || m.vehiculo_placa || 'N/A'
     ]);
-    doc.autoTable({ head: [tableColumn], body: tableRows, startY: 25, styles: { fontSize: 8 } });
-    doc.save(`Rastreo_Inventario_${new Date().getTime()}.pdf`);
+    runAutoTable(doc, { head: [tableColumn], body: tableRows, startY: 25, styles: { fontSize: 8 } });
+    downloadPdfDoc(doc, `Rastreo_Inventario_${new Date().getTime()}.pdf`);
   };
 
   // ---- Definición de Columnas ----

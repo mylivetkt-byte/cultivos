@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { authFetch } from '../../utils/api';
 import Pagination from '../Pagination';
 
@@ -281,11 +282,11 @@ const ConsultasContables = ({ tenantId }) => {
               <>
                 <div>
                   <label style={labelStyle}>Desde</label>
-                  <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} style={inputStyle} />
+                  <DatePickerClaro value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} style={inputStyle} />
                 </div>
                 <div>
                   <label style={labelStyle}>Hasta</label>
-                  <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} style={inputStyle} />
+                  <DatePickerClaro value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} style={inputStyle} />
                 </div>
               </>
             ) : (

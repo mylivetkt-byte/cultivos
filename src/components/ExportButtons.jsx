@@ -33,16 +33,70 @@ const ExportButtons = ({ data, columns, filename = 'Reporte', extraMetadata = {}
 
   const handleExportExcel = () => {
     if (!hasData) return;
-    const exportData = prepareData();
-    const exportColumns = columns.map(col => ({ name: col.header }));
-    exportToExcel(filename, exportColumns, exportData, getMetadata());
+    let previewWindow = null;
+    try {
+      previewWindow = window.open('about:blank', '_blank');
+      if (previewWindow) {
+        previewWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head><title>Generando Excel...</title></head>
+            <body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#0d1527;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;">
+              <div style="text-align:center;">
+                <div style="font-size:36px;margin-bottom:12px;">📊</div>
+                <div style="font-size:16px;font-weight:600;color:#10b981;">Generando documento Excel...</div>
+                <div style="font-size:12px;color:#94a3b8;margin-top:6px;">Un momento por favor, abriendo vista previa.</div>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+    } catch {}
+
+    try {
+      const exportData = prepareData();
+      const exportColumns = columns.map(col => ({ name: col.header }));
+      exportToExcel(filename, exportColumns, exportData, getMetadata(), {}, previewWindow);
+    } catch (e) {
+      if (previewWindow && !previewWindow.closed) {
+        try { previewWindow.close(); } catch {}
+      }
+      console.error(e);
+    }
   };
 
   const handleExportPDF = async () => {
     if (!hasData) return;
-    const exportData = prepareData();
-    const exportColumns = columns.map(col => ({ name: col.header }));
-    await exportToPdf(filename, exportColumns, exportData, getMetadata());
+    let previewWindow = null;
+    try {
+      previewWindow = window.open('about:blank', '_blank');
+      if (previewWindow) {
+        previewWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head><title>Generando PDF...</title></head>
+            <body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#0d1527;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;">
+              <div style="text-align:center;">
+                <div style="font-size:36px;margin-bottom:12px;">📄</div>
+                <div style="font-size:16px;font-weight:600;color:#38bdf8;">Generando documento PDF...</div>
+                <div style="font-size:12px;color:#94a3b8;margin-top:6px;">Un momento por favor, abriendo vista previa.</div>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+    } catch {}
+
+    try {
+      const exportData = prepareData();
+      const exportColumns = columns.map(col => ({ name: col.header }));
+      await exportToPdf(filename, exportColumns, exportData, getMetadata(), {}, previewWindow);
+    } catch (e) {
+      if (previewWindow && !previewWindow.closed) {
+        try { previewWindow.close(); } catch {}
+      }
+      console.error(e);
+    }
   };
 
   const handleExportWhatsApp = () => {

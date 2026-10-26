@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import './CapturadorContable.css';
 import { authFetch } from '../../utils/api';
 import { Select } from 'antd';
@@ -359,7 +360,7 @@ function CapturadorContable({ tenantId }) {
                   {formDoc.id_tipo_doc && tiposDoc.find(t=>t.id_tipo_doc==formDoc.id_tipo_doc)?.es_manual && (
                     <input type="text" className="mod-input" placeholder="Núm/Prefijo..." value={formDoc.numero_doc} onChange={e=>setFormDoc({...formDoc, numero_doc:e.target.value})} style={{width:'100px'}}/>
                   )}
-                  <input type="date" className="mod-input" value={formDoc.fecha} onChange={e=>setFormDoc({...formDoc, fecha:e.target.value})} />
+                  <DatePickerClaro className="mod-input" value={formDoc.fecha} onChange={e=>setFormDoc({...formDoc, fecha:e.target.value})} />
                   <input type="text" className="mod-input" placeholder="Concepto..." value={formDoc.concepto} onChange={e=>setFormDoc({...formDoc, concepto:e.target.value})} />
                   <button className="btn-primary" onClick={handleCreateDoc} disabled={isPeriodClosed}>+ Agregar Doc</button>
                 </div>

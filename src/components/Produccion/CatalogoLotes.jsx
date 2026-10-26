@@ -7,8 +7,9 @@ import { exportReporteGerencialLotes } from '../../utils/exportReporteGerencialL
 import { exportReporteGerencialLotesExcel } from '../../utils/exportReporteGerencialLotesExcel';
 import { exportReporteDetalladoLote } from '../../utils/exportReporteDetalladoLote';
 import { exportReporteDetalladoLoteExcel } from '../../utils/exportReporteDetalladoLoteExcel';
-import jsPDF from 'jspdf';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from '../../utils/exportPdf';
 import * as XLSX from 'xlsx';
+import { downloadExcelWorkbook } from '../../utils/exportExcel';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -258,7 +259,7 @@ export default function CatalogoLotes({ tenantId, selectedFinca, selectedNucleo 
     const ws = XLSX.utils.aoa_to_sheet(excelData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Datos');
-    XLSX.writeFile(wb, `${filename}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    downloadExcelWorkbook(wb, `${filename}_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   // Export handlers

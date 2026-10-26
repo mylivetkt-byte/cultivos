@@ -1,10 +1,10 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from './exportPdf';
 import { API_BASE, getAuthHeaders } from './api';
 
 export async function exportReporteDetalladoLote(historicoData, cosechasData, laboresData, insumosData, metadata = {}) {
   try {
-    const doc = new jsPDF({ orientation: 'portrait' });
+    const PDFConstructor = getJsPDFConstructor();
+    const doc = new PDFConstructor({ orientation: 'portrait' });
     const { lote, siembra, produccionAcumulada } = historicoData;
 
     // 1. Fetch Logo
@@ -113,14 +113,14 @@ export async function exportReporteDetalladoLote(historicoData, cosechasData, la
       });
       rows.push([{ content: 'TOTAL MANO OBRA', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: `$${Number(totalCosto).toLocaleString()}`, styles: { fontStyle: 'bold' } }, '']);
 
-      doc.autoTable({
+      runAutoTable(doc, {
         head: [cols],
         body: rows,
         startY: currentY,
         styles: { fontSize: 8 },
         headStyles: { fillColor: [19, 78, 94] }
       });
-      currentY = doc.lastAutoTable.finalY + 15;
+      currentY = (doc.lastAutoTable?.finalY || currentY) + 15;
     }
 
     // 5. Tabla Insumos Aplicados
@@ -150,7 +150,7 @@ export async function exportReporteDetalladoLote(historicoData, cosechasData, la
       });
       rows.push([{ content: 'TOTAL INSUMOS', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, { content: `$${Number(totalInsumos).toLocaleString()}`, styles: { fontStyle: 'bold' } }]);
 
-      doc.autoTable({
+      runAutoTable(doc, {
         head: [cols],
         body: rows,
         startY: currentY,
@@ -174,11 +174,10 @@ export async function exportReporteDetalladoLote(historicoData, cosechasData, la
     }
 
     const safeLoteName = (lote?.codigo || 'Lote').replace(/[^a-zA-Z0-9]/g, '_');
-    doc.save(`Reporte_Detallado_${safeLoteName}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    downloadPdfDoc(doc, `Reporte_Detallado_${safeLoteName}_${new Date().toISOString().slice(0, 10)}.pdf`);
     return true;
   } catch (err) {
     console.error('Error exporting PDF:', err);
-    alert('Error al generar PDF: ' + err.message);
-    return false;
+    throw new Error('Error al generar PDF: ' + err.message);
   }
 }

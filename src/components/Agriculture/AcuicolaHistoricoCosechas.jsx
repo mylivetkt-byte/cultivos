@@ -3,8 +3,9 @@ import { Card, Button, DatePicker, message, Table, Row, Col, Space } from 'antd'
 import Select from 'react-select';
 import { Download, FileText, Send, Search } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { downloadExcelWorkbook } from '../../utils/exportExcel';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from '../../utils/exportPdf';
+
 import { authFetch, API_BASE } from '../../utils/api';
 import moment from 'moment';
 
@@ -141,12 +142,12 @@ export default function AcuicolaHistoricoCosechas({ tenantId }) {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Histórico Cosechas");
-    XLSX.writeFile(wb, `historico_cosechas_${moment().format('YYYYMMDD')}.xlsx`);
+    downloadExcelWorkbook(wb, `historico_cosechas_${moment().format('YYYYMMDD')}.xlsx`);
   };
 
   const exportPDF = () => {
     if (data.length === 0) return message.warning("No hay datos para exportar");
-    const doc = new jsPDF();
+    const doc = new (getJsPDFConstructor())();
     doc.text("Histórico de Cosechas Acuícola", 14, 15);
     
     const tableColumn = ["Fecha", "Finca", "Lago", "Especie", "Empleado", "Kilos", "Cantidad"];
@@ -165,13 +166,13 @@ export default function AcuicolaHistoricoCosechas({ tenantId }) {
       tableRows.push(rowData);
     });
     
-    doc.autoTable({
+    runAutoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 20,
     });
     
-    doc.save(`historico_cosechas_${moment().format('YYYYMMDD')}.pdf`);
+    downloadPdfDoc(doc, `historico_cosechas_${moment().format('YYYYMMDD')}.pdf`);
   };
 
   const exportWhatsApp = () => {

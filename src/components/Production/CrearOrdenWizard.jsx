@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import axios from 'axios';
 import { Select } from 'antd';
 import { Play, Check, ChevronRight, ChevronLeft, Calculator, Plus, Trash2, ShieldCheck, HelpCircle, FileText, Download, Send } from 'lucide-react';
@@ -43,7 +44,7 @@ const darkSelectStyles = `
 const CrearOrdenWizard = () => {
   const { user } = useAuth();
   const id_tenant = localStorage.getItem('tenant_id') || 1;
-  const creado_por = 1; // Default user id for demo
+  const creado_por = user?.id || user?.id_usuario || 1;
 
   // Wizard state
   const [step, setStep] = useState(1);
@@ -808,9 +809,9 @@ const CrearOrdenWizard = () => {
       0
     ) || 0;
 
-    const formulaMODCosto = simFormula.maquinarias?.length * 10000; // Mock standard MOD
+    const formulaMODCosto = simFormula.maquinarias?.reduce((sum, item) => sum + (parseFloat(item.tiempo_estandar_horas || 1) * simCantidad * parseFloat(item.costo_operario_hora || item.costo_hora || 0)), 0) || 0;
     const formulaCIFCosto = simFormula.maquinarias?.reduce(
-      (sum, item) => sum + (parseFloat(item.tiempo_estandar_horas) * simCantidad * 15000),
+      (sum, item) => sum + (parseFloat(item.tiempo_estandar_horas) * simCantidad * parseFloat(item.costo_hora || 0)),
       0
     ) || 0;
 
@@ -1005,12 +1006,9 @@ const CrearOrdenWizard = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-300 mb-2">Fecha de Orden</label>
-                  <input
-                    type="date"
-                    value={fechaOrden}
+                  <DatePickerClaro value={fechaOrden}
                     onChange={(e) => setFechaOrden(e.target.value)}
-                    className="w-full bg-[#1b253b] border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-teal-500"
-                  />
+                    className="w-full bg-[#1b253b] border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-teal-500" />
                 </div>
               </div>
             </div>

@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/tables/finca & /api/tables/fincas — get fincas table data with tenant filtering
-const getFincasHandler = async (req, res) => {
+export const getFincasHandler = async (req, res) => {
   try {
     const id_tenant = req.query.tenantId || req.user?.id_tenant || 1;
     const [rows] = await pool.query(`

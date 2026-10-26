@@ -827,73 +827,92 @@ router.get('/consultas/balance-mensual', async (req, res) => {
   });
 
   // 13. Auditoría de Información Exógena (DIAN) desde base de datos
-  router.get('/reportes/exogena', async (req, res) => {
+  const handleExogena = async (req, res) => {
     try {
       const { formato = '1001', vigencia = '2026', tenantId } = req.query;
-      const tId = tenantId || 1;
+      const tId = tenantId || req.user?.id_tenant || 1;
+      const anio = vigencia || new Date().getFullYear();
 
-      // Consultar pagos y retenciones reales vinculados a terceros y documentos
+      let whereFormato = '';
+      if (formato === '1001') {
+        whereFormato = "AND (p.codigo LIKE '5%' OR p.codigo LIKE '7%' OR p.codigo LIKE '2365%')";
+      } else if (formato === '1003') {
+        whereFormato = "AND p.codigo LIKE '1355%'";
+      } else if (formato === '1005') {
+        whereFormato = "AND p.codigo LIKE '2408%'";
+      } else if (formato === '1007') {
+        whereFormato = "AND p.codigo LIKE '4%'";
+      }
+
       const [rows] = await getDb(req).query(`
         SELECT 
           CONCAT(COALESCE(p.codigo, '5001'), ' - ', COALESCE(p.nombre, 'Pagos a Terceros')) AS concepto,
-          t.nit,
-          COALESCE(t.razon_social, CONCAT(t.nombres, ' ', t.apellidos), 'Tercero General') AS nombre,
-          SUM(COALESCE(d.debito, 0)) AS pago,
-          SUM(COALESCE(d.credito, 0)) AS retencion
+          COALESCE(t.documento, '222222222') AS nit,
+          COALESCE(t.nombre_completo, t.nombre_comercial, 'Tercero General') AS nombre,
+          ROUND(SUM(COALESCE(d.debito, 0)), 2) AS pago,
+          ROUND(SUM(CASE WHEN p.codigo LIKE '2365%' OR p.maneja_retefuente = 1 THEN COALESCE(d.credito, 0) ELSE 0 END), 2) AS retencion
         FROM contab_detalles d
         JOIN contab_documentos doc ON d.id_documento = doc.id_documento
         JOIN contab_comprobantes c ON doc.id_comprobante = c.id_comprobante
         JOIN plan_contable p ON d.id_cuenta = p.id_cuenta
         LEFT JOIN terceros t ON d.id_tercero = t.id_tercero
-        WHERE c.id_tenant = ? AND YEAR(doc.fecha) = ?
-        GROUP BY p.codigo, p.nombre, t.nit, t.razon_social, t.nombres, t.apellidos
+        WHERE c.id_tenant = ? AND YEAR(doc.fecha) <= ? ${whereFormato}
+        GROUP BY p.codigo, p.nombre, t.documento, t.nombre_completo, t.nombre_comercial
         HAVING pago > 0 OR retencion > 0
         ORDER BY pago DESC
-      `, [tId, vigencia]);
+        LIMIT 100
+      `, [tId, anio]);
 
       res.json(rows);
     } catch (error) {
       console.error('Error generando exógena:', error);
       res.status(500).json({ error: error.message });
     }
-  });
+  };
+
+  router.get('/reportes/exogena', handleExogena);
+  router.get('/auditoria-exogena', handleExogena);
 
   // 14. Conciliación Fiscal (NIIF vs Fiscal) desde base de datos
-  router.get('/reportes/conciliacion-fiscal', async (req, res) => {
+  const handleConciliacionFiscal = async (req, res) => {
     try {
       const { anio = '2026', tenantId } = req.query;
-      const tId = tenantId || 1;
+      const tId = tenantId || req.user?.id_tenant || 1;
 
-      // Cuentas clave de diferencias temporarias/permanentes NIIF vs Fiscal
       const [cuentas] = await getDb(req).query(`
         SELECT 
           CONCAT(p.codigo, ' - ', p.nombre) AS cuenta,
           p.codigo,
-          COALESCE(SUM(d.debito - d.credito), 0) AS saldoNIIF
+          p.naturaleza,
+          COALESCE(SUM(d.debito), 0) AS total_debito,
+          COALESCE(SUM(d.credito), 0) AS total_credito,
+          CASE 
+            WHEN p.naturaleza = 'D' THEN COALESCE(SUM(d.debito - d.credito), 0)
+            ELSE COALESCE(SUM(d.credito - d.debito), 0)
+          END AS saldoNIIF
         FROM plan_contable p
         LEFT JOIN contab_detalles d ON d.id_cuenta = p.id_cuenta
-        LEFT JOIN contab_documentos doc ON d.id_documento = doc.id_documento AND YEAR(doc.fecha) = ?
+        LEFT JOIN contab_documentos doc ON d.id_documento = doc.id_documento AND YEAR(doc.fecha) <= ?
         LEFT JOIN contab_comprobantes c ON doc.id_comprobante = c.id_comprobante AND c.id_tenant = ?
-        WHERE (p.codigo LIKE '1520%' OR p.codigo LIKE '4105%' OR p.codigo LIKE '1305%' OR p.codigo LIKE '1410%' OR p.codigo LIKE '5199%')
-          AND p.nivel >= 3
-        GROUP BY p.codigo, p.nombre
+        WHERE p.id_tenant = ? AND (doc.fecha IS NULL OR YEAR(doc.fecha) <= ?)
+          AND p.nivel <= 4
+        GROUP BY p.id_cuenta, p.codigo, p.nombre, p.naturaleza
+        HAVING ABS(saldoNIIF) > 0
         ORDER BY p.codigo
-      `, [anio, tId]);
+        LIMIT 50
+      `, [anio, tId, tId, anio]);
 
-      // Formatear diferencias fiscales reales
       const resultado = cuentas.map(c => {
         let saldoFiscal = c.saldoNIIF;
-        let observacion = 'Sin diferencia tributaria';
+        let observacion = 'Sin diferencia tributaria relevante';
 
-        if (c.codigo.startsWith('4105') || c.codigo.startsWith('1410')) {
-          // Activos Biológicos NIC 41
+        if (c.codigo.startsWith('4105') || c.codigo.startsWith('1410') || c.codigo.startsWith('1430')) {
           saldoFiscal = 0;
           observacion = 'NIC 41 (Valor Razonable) no se reconoce fiscalmente hasta su venta';
-        } else if (c.codigo.startsWith('1520')) {
-          // Maquinaria y equipo (diferencia en vida útil fiscal vs contable)
+        } else if (c.codigo.startsWith('15')) {
           saldoFiscal = Math.round(c.saldoNIIF * 0.8);
           observacion = 'Diferencia en tasa de depreciación técnica (NIIF) vs límite tributario (E.T. Art 137)';
-        } else if (c.codigo.startsWith('5199')) {
+        } else if (c.codigo.startsWith('5199') || c.codigo.startsWith('1399')) {
           saldoFiscal = 0;
           observacion = 'Provisión no deducible fiscalmente hasta su castigo definitivo';
         }
@@ -912,7 +931,10 @@ router.get('/consultas/balance-mensual', async (req, res) => {
       console.error('Error generando conciliación fiscal:', error);
       res.status(500).json({ error: error.message });
     }
-  });
+  };
+
+  router.get('/reportes/conciliacion-fiscal', handleConciliacionFiscal);
+  router.get('/conciliacion-fiscal', handleConciliacionFiscal);
 
 export default router;
 

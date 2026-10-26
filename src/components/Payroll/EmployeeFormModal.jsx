@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import Select from 'react-select';
 import { Camera, Save, X, User, Briefcase, FileText, Calculator } from 'lucide-react';
 import { authFetch, insertRecord, updateRecord } from '../../utils/api';
@@ -327,7 +328,7 @@ function EmployeeFormModal({ isOpen, onClose, mode = 'add', pkValue, defaultValu
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label style={{ fontWeight: '600', color: '#334155' }}>Fecha Nacimiento</label>
-                    <input type="date" name="fecha_nacimiento" value={formData.fecha_nacimiento || ''} onChange={handleChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                    <DatePickerClaro name="fecha_nacimiento" value={formData.fecha_nacimiento || ''} onChange={handleChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label style={{ fontWeight: '600', color: '#334155' }}>Sexo</label>
@@ -451,7 +452,7 @@ function EmployeeFormModal({ isOpen, onClose, mode = 'add', pkValue, defaultValu
 
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label style={{ fontWeight: '600', color: '#334155' }}>Fecha de Ingreso</label>
-                  <input type="date" name="fecha_ingreso" value={formData.fecha_ingreso || ''} onChange={handleChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                  <DatePickerClaro name="fecha_ingreso" value={formData.fecha_ingreso || ''} onChange={handleChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 0 }}>
@@ -508,11 +509,11 @@ function EmployeeFormModal({ isOpen, onClose, mode = 'add', pkValue, defaultValu
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label style={{ fontWeight: '600', color: '#7f1d1d' }}>Fecha de Inicio de Contrato</label>
-                  <input type="date" value={formData.fecha_ingreso || ''} readOnly style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #fca5a5', background: '#f8717111', color: '#7f1d1d' }} />
+                  <DatePickerClaro value={formData.fecha_ingreso || ''} readOnly style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #fca5a5', background: '#f8717111', color: '#7f1d1d' }} />
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label style={{ fontWeight: '600', color: '#7f1d1d' }}>Fecha de Retiro</label>
-                  <input type="date" name="fecha_retiro" value={liquidationData?.fecha_liquidacion ? liquidationData.fecha_liquidacion.substring(0, 10) : formData.fecha_retiro || ''} onChange={handleChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #fca5a5', background: 'var(--bg-card)' }} />
+                  <DatePickerClaro name="fecha_retiro" value={liquidationData?.fecha_liquidacion ? liquidationData.fecha_liquidacion.substring(0, 10) : formData.fecha_retiro || ''} onChange={handleChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #fca5a5', background: 'var(--bg-card)' }} />
                 </div>
               </div>
 

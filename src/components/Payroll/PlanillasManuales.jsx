@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { message } from 'antd';
 import Select from 'react-select';
 import { authFetch } from '../../utils/api';
@@ -267,20 +268,14 @@ export default function PlanillasManuales({ tenantId, fincaId }) {
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '4px' }}>Rango de Fechas</label>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <input 
-                type="date" 
-                value={fechaDesde} 
+              <DatePickerClaro value={fechaDesde} 
                 onChange={e => setFechaDesde(e.target.value)}
                 style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }}
-                title="Desde"
-              />
-              <input 
-                type="date" 
-                value={fechaHasta} 
+                title="Desde" />
+              <DatePickerClaro value={fechaHasta} 
                 onChange={e => setFechaHasta(e.target.value)}
                 style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }}
-                title="Hasta"
-              />
+                title="Hasta" />
             </div>
           </div>
 
@@ -415,11 +410,11 @@ export default function PlanillasManuales({ tenantId, fincaId }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Fecha Inicio</label>
-                  <input type="date" value={headerForm.fecha_inicio} onChange={e=>setHeaderForm({...headerForm, fecha_inicio:e.target.value})} style={{ width:'100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+                  <DatePickerClaro value={headerForm.fecha_inicio} onChange={e=>setHeaderForm({...headerForm, fecha_inicio:e.target.value})} style={{ width:'100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Fecha Fin</label>
-                  <input type="date" value={headerForm.fecha_fin} onChange={e=>setHeaderForm({...headerForm, fecha_fin:e.target.value})} style={{ width:'100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+                  <DatePickerClaro value={headerForm.fecha_fin} onChange={e=>setHeaderForm({...headerForm, fecha_fin:e.target.value})} style={{ width:'100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
                 </div>
               </div>
             </div>
@@ -459,7 +454,7 @@ export default function PlanillasManuales({ tenantId, fincaId }) {
               <div className="print:hidden" style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '20px', display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>Fecha Labor</label>
-                  <input type="date" value={detailForm.fecha_labor} onChange={e=>setDetailForm({...detailForm, fecha_labor:e.target.value})} style={{ width:'100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                  <DatePickerClaro value={detailForm.fecha_labor} onChange={e=>setDetailForm({...detailForm, fecha_labor:e.target.value})} style={{ width:'100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
                 </div>
                 <div style={{ flex: 2 }}>
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>Trabajador</label>

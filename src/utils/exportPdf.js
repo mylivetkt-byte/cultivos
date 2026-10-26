@@ -1,14 +1,95 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { API_BASE, getAuthHeaders } from './api';
+import { triggerFileDownload } from './fileDownload';
 
-export async function exportToPdf(tableName, columns, data, metadata = {}, fkOptions = {}) {
+export const getJsPDFConstructor = () => {
+  if (typeof jsPDF === 'function') return jsPDF;
+  if (jsPDF && typeof jsPDF.jsPDF === 'function') return jsPDF.jsPDF;
+  if (jsPDF && typeof jsPDF.default === 'function') return jsPDF.default;
+  if (typeof window !== 'undefined') {
+    if (window.jspdf && typeof window.jspdf.jsPDF === 'function') return window.jspdf.jsPDF;
+    if (window.jsPDF && typeof window.jsPDF === 'function') return window.jsPDF;
+  }
+  return jsPDF;
+};
+
+export const runAutoTable = (doc, options) => {
+  if (typeof doc.autoTable === 'function') {
+    return doc.autoTable(options);
+  }
+  if (typeof autoTable === 'function') {
+    return autoTable(doc, options);
+  }
+  if (autoTable && typeof autoTable.default === 'function') {
+    return autoTable.default(doc, options);
+  }
+  console.warn('doc.autoTable and autoTable function not found, skipping table render');
+};
+
+export function downloadPdfDoc(doc, fileName = 'reporte.pdf', previewWindow = null) {
+  const safeFileName = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
+  const blob = doc.output('blob');
+
+  // Open directly in browser tab so user can immediately view, verify and print
+  let targetWindow = previewWindow;
+  if (!targetWindow) {
+    try {
+      targetWindow = window.open('about:blank', '_blank');
+    } catch {}
+  }
+
+  if (targetWindow && !targetWindow.closed) {
+    try {
+      const previewUrl = URL.createObjectURL(blob);
+      targetWindow.document.open();
+      targetWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>${safeFileName}</title>
+            <style>
+              html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #525659; }
+              iframe { width: 100%; height: 100%; border: none; }
+            </style>
+          </head>
+          <body>
+            <iframe src="${previewUrl}#view=FitH" type="application/pdf"></iframe>
+          </body>
+        </html>
+      `);
+      targetWindow.document.close();
+      setTimeout(() => {
+        try { URL.revokeObjectURL(previewUrl); } catch {}
+      }, 600000);
+    } catch {
+      try {
+        const previewUrl = URL.createObjectURL(blob);
+        targetWindow.location.href = previewUrl;
+      } catch {}
+    }
+  }
+
+  // Also trigger robust physical file download to user's device
+  triggerFileDownload(blob, safeFileName);
+}
+
+export async function exportToPdf(tableName, columns = [], data = [], metadata = {}, fkOptions = {}, previewWindow = null) {
   try {
-    const doc = new jsPDF({ orientation: 'landscape' });
+    const PDFConstructor = getJsPDFConstructor();
+    const doc = new PDFConstructor({ orientation: 'landscape' });
 
     let logoBase64 = null;
     try {
-      const resPath = await fetch(`${API_BASE}/config/logo`, { headers: getAuthHeaders() });
+      // 2-second timeout so logo loading never blocks or freezes export
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const resPath = await fetch(`${API_BASE}/config/logo`, { 
+        headers: getAuthHeaders(),
+        signal: controller.signal 
+      });
+      clearTimeout(timeoutId);
+
       if (resPath.ok) {
         const { logo_path } = await resPath.json();
         if (logo_path) {
@@ -26,10 +107,10 @@ export async function exportToPdf(tableName, columns, data, metadata = {}, fkOpt
         }
       }
     } catch (e) {
-      console.warn("Could not load logo", e);
+      console.warn("Could not load logo for PDF", e);
     }
 
-    const title = tableName
+    const title = (tableName || 'Reporte')
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -79,13 +160,13 @@ export async function exportToPdf(tableName, columns, data, metadata = {}, fkOpt
       });
     }
     
-    doc.text(`Total de Registros: ${data.length}`, startX, currentY);
+    doc.text(`Total de Registros: ${(data || []).length}`, startX, currentY);
 
     // Filter out huge/unprintable columns
     const excludedTypes = ['json', 'polygon', 'point', 'longtext', 'mediumtext', 'blob'];
     const excludedNames = ['fotografia', 'imagen_url', 'poligono_gps', 'centro_gps', 'ficha_tecnica', 'contrasena', 'password', 'id_tenant', 'tenant_id', 'created_at', 'updated_at'];
     
-    let printableColumns = columns.filter(col => {
+    let printableColumns = (columns || []).filter(col => {
       const typeStr = (col.type || '').toLowerCase();
       const displayStr = (col.displayType || '').toLowerCase();
       if (excludedTypes.includes(typeStr) || excludedTypes.includes(displayStr)) return false;
@@ -100,24 +181,29 @@ export async function exportToPdf(tableName, columns, data, metadata = {}, fkOpt
 
     // Column headers and data rows
     const headers = printableColumns.map((col) =>
-      col.name
+      (col.name || '')
         .replace(/_/g, ' ')
         .replace(/\b\w/g, (c) => c.toUpperCase())
     );
 
-    const rows = data.map((row) =>
+    const rows = (data || []).map((row) =>
       printableColumns.map((col) => {
         const val = row[col.name];
         if (val === null || val === undefined) return '';
         
         // Booleans
         if (col.displayType === 'boolean' || col.type === 'tinyint(1)') {
-          return val ? 'Sí' : 'No';
+          return (val === 1 || val === true || val === '1') ? 'Sí' : 'No';
         }
         
         // Dates
-        if (col.displayType === 'date' || col.type === 'date') {
-           try { return new Date(val).toLocaleDateString('es-ES'); } catch { return String(val); }
+        if (col.displayType === 'date' || col.type === 'date' || (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}(T|\b)/.test(val))) {
+           try { 
+             const d = new Date(val);
+             return !isNaN(d.getTime()) ? d.toLocaleDateString('es-CO') : String(val); 
+           } catch { 
+             return String(val); 
+           }
         }
 
         // Currency / Decimals
@@ -141,7 +227,7 @@ export async function exportToPdf(tableName, columns, data, metadata = {}, fkOpt
       })
     );
 
-    doc.autoTable({
+    runAutoTable(doc, {
       head: [headers],
       body: rows,
       startY: currentY + 5,
@@ -172,7 +258,7 @@ export async function exportToPdf(tableName, columns, data, metadata = {}, fkOpt
       doc.setFontSize(8);
       doc.setTextColor(150);
       const rolStr = metadata.rol ? ` (Rol: ${metadata.rol})` : '';
-      const footerText1 = `Generado por: ${metadata.usuario || 'Usuario del Sistema'}${rolStr} | Fecha y Hora: ${new Date().toLocaleString('es-ES')}`;
+      const footerText1 = `Generado por: ${metadata.usuario || 'Usuario del Sistema'}${rolStr} | Fecha y Hora: ${new Date().toLocaleString('es-CO')}`;
       const footerText2 = `Página ${i} de ${pageCount} — AgroPaccioli © ${new Date().getFullYear()}`;
       
       doc.text(
@@ -190,11 +276,21 @@ export async function exportToPdf(tableName, columns, data, metadata = {}, fkOpt
     }
 
     if (metadata.returnBase64) {
+      if (previewWindow && !previewWindow.closed) previewWindow.close();
       return doc.output('datauristring');
     }
-    doc.save(`${tableName}_${new Date().toISOString().slice(0, 10)}.pdf`);
+
+    const cleanTableName = (tableName || 'reporte').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const fileName = `${cleanTableName}_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+    downloadPdfDoc(doc, fileName, previewWindow);
+
+    return true;
   } catch (err) {
+    if (previewWindow && !previewWindow.closed) {
+      try { previewWindow.close(); } catch {}
+    }
     console.error('Error exporting PDF:', err);
-    alert('Error al generar PDF: ' + err.message);
+    throw new Error('Error al generar PDF: ' + err.message);
   }
 }
