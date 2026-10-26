@@ -28,6 +28,7 @@ import CosechasAvanzado from '../components/Agriculture/CosechasAvanzado';
 import ConfiguracionBasculas from '../components/Basculas/ConfiguracionBasculas';
 import PruebasBasculas from '../components/Basculas/PruebasBasculas';
 import SatelliteCommandCenter from '../components/SatelliteCommandCenter';
+import SatelliteMonitor from '../components/SatelliteMonitor';
 import MuestreoSuelosManager from '../components/Precision/MuestreoSuelosManager';
 import SensoresIoTManager from '../components/Precision/SensoresIoTManager';
 import RiegoPrecisionManager from '../components/Precision/RiegoPrecisionManager';
@@ -231,7 +232,9 @@ export default function SelectedTableContent({
     ) : selectedTable === 'rendimiento-roi' ? (
       <RendimientoROIManager />
     ) : selectedTable === 'satellite-monitor' ? (
-      <SatelliteCommandCenter tenantId={tenantId} />
+      <SatelliteCommandCenter tenantId={tenantId} onOpenConfig={() => onSelectTable && onSelectTable('satellite-config')} />
+    ) : selectedTable === 'satellite-config' ? (
+      <SatelliteMonitor />
     ) : selectedTable === 'gps-tracker' ? (
       <GPSTracker tenantId={tenantId} fincaId={selectedFinca} nucleoId={selectedNucleo} />
     ) : selectedTable === 'salud_arboles' ? (

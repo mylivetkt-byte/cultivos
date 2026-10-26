@@ -36,7 +36,7 @@ function MapController({ finca, selectedLote }) {
   return null;
 }
 
-function SatelliteCommandCenter({ tenantId = 1 } = {}) {
+function SatelliteCommandCenter({ tenantId = 1, onOpenConfig } = {}) {
   const [lotes, setLotes] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [activeLayer, setActiveLayer] = useState('NDVI');
@@ -783,6 +783,16 @@ function SatelliteCommandCenter({ tenantId = 1 } = {}) {
                 <div>🛰️ <strong>Resolución:</strong> 10m multiespectral (ESA).</div>
                 <div>💧 <strong>Microclima:</strong> Evapotranspiración y lluvia.</div>
               </div>
+              <button 
+                className="btn-full-outline mt-2" 
+                style={{ fontSize: '11px', padding: '6px', borderColor: '#10b981', color: '#10b981', width: '100%', cursor: 'pointer', borderRadius: '4px' }}
+                onClick={() => {
+                  if (typeof onOpenConfig === 'function') onOpenConfig();
+                  else window.location.href = '/satelite';
+                }}
+              >
+                ⚙️ Configuración API Copernicus (CDSE)
+              </button>
             </div>
 
             <div className="panel-section">

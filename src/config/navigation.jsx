@@ -93,6 +93,7 @@ export const STATIC_NAVIGATION = [
           { id: 'rotaciones_fases', name: 'Fases de Rotación' },
           { id: 'asociacion_cultivos', name: 'Asociaciones' },
           { id: 'satellite-monitor', name: 'Monitoreo Satelital' },
+          { id: 'satellite-config', name: 'Conexión Satelital (CDSE)' },
           { id: 'salud_arboles', name: 'Salud Árboles' }
         ]
       },
