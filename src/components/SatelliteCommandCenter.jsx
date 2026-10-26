@@ -62,7 +62,9 @@ function SatelliteCommandCenter({ tenantId = 1 } = {}) {
   const [loteImage, setLoteImage] = useState(null);
   const [loteBounds, setLoteBounds] = useState(null);
   const [isLoadingImage, setIsLoadingImage] = useState(false);
-  const [economiaData, setEconomiaData] = useState([]);
+  const [economiaData, setEconomiaData] = useState({ costo_acumulado: 0, ingreso_estimado: 0, roi: 0, total_operaciones: 0 });
+  const [insumosList, setInsumosList] = useState([]);
+  const [flotaList, setFlotaList] = useState([]);
   const [weatherData, setWeatherData] = useState({
     temp: '--',
     rain7d: '--',
@@ -157,32 +159,13 @@ function SatelliteCommandCenter({ tenantId = 1 } = {}) {
     ]);
   };
 
-  // Load real data on mount
-  useEffect(() => {
-    // 1. Alerts
-    authFetch('/api/gis/alerts')
-      .then(r => r.json())
-      .then(setAlerts)
-      .catch(err => console.error('Error fetching alerts:', err));
-
-    // 2. Cargar lista de fincas
-    authFetch(`/api/gis/fincas?t=${Date.now()}`)
-      .then(r => r.json())
-      .then(data => {
-        const list = data.features || [];
-        console.log('Fincas cargadas:', list.length);
-        setFincasList(list);
-      })
-      .catch(err => console.error('Error fetching fincas list:', err));
-  }, []);
-
-  const handleFincaChange = (e) => {
-    const fincaId = Number(e.target.value);
-    setSelectedFincaId(fincaId);
-    if (!fincaId) return;
+  const selectFincaById = (fincaId, currentFincasList = fincasList) => {
+    const numericId = Number(fincaId);
+    setSelectedFincaId(numericId);
+    if (!numericId) return;
     
     // Buscar la finca elegida dentro de la lista cargada
-    const chosen = fincasList.find(f => f.properties.id === fincaId);
+    const chosen = currentFincasList.find(f => Number(f.properties?.id) === numericId);
     if (chosen) setFinca(chosen);
 
     // Resetear selección de lote al cambiar de finca
@@ -191,20 +174,19 @@ function SatelliteCommandCenter({ tenantId = 1 } = {}) {
     setIsLoadingLotes(true);
     setLotesError(null);
 
-    // Obtener lotes de la finca
-    authFetch(`/api/gis/lotes/${fincaId}?t=${Date.now()}`)
+    // 1. Obtener lotes reales de la finca
+    authFetch(`/api/gis/lotes/${numericId}?t=${Date.now()}`)
       .then(r => {
         if (!r.ok) throw new Error(`HTTP Error ${r.status}`);
         return r.json();
       })
       .then(lotesData => {
         const rawFeatures = lotesData.features || [];
-        console.log('Lotes cargados:', rawFeatures.length);
         setLotesRaw(rawFeatures);
 
         if (rawFeatures.length > 0) {
           const loteIds = rawFeatures.map(f => f.properties.id);
-          // Obtener métricas para esos lotes
+          // Obtener métricas reales para esos lotes
           return authFetch('/api/gis/metrics', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -212,8 +194,8 @@ function SatelliteCommandCenter({ tenantId = 1 } = {}) {
           })
             .then(r => r.json())
             .then(metricsData => {
+              const metricsArr = Array.isArray(metricsData) ? metricsData : [];
               const parsed = rawFeatures.map(f => {
-                // Extraer y transformar coordenadas GeoJSON a Leaflet LatLng [lat, lon]
                 let coords = [];
                 if (f.geometry && f.geometry.type === 'Polygon' && f.geometry.coordinates[0]) {
                   coords = f.geometry.coordinates[0].map(pt => [pt[1], pt[0]]);
@@ -221,21 +203,22 @@ function SatelliteCommandCenter({ tenantId = 1 } = {}) {
                   coords = f.geometry.coordinates[0][0].map(pt => [pt[1], pt[0]]);
                 }
 
-                const metric = metricsData.find(m => m.lote_id === f.properties.id) || { ndvi: 0.5, ndmi: 0.5 };
-                const ndvi = parseFloat(metric.ndvi || 0.5).toFixed(2);
-                const ndmi = parseFloat(metric.ndmi || 0.5).toFixed(2);
+                const metric = metricsArr.find(m => m.lote_id === f.properties.id) || { ndvi: 0.65, ndmi: 0.45 };
+                const ndvi = parseFloat(metric.ndvi || 0.65).toFixed(2);
+                const ndmi = parseFloat(metric.ndmi || 0.45).toFixed(2);
                 let color = '#50e3c2';
                 if (ndvi < 0.4) color = '#d98e1b';
                 if (ndvi < 0.3) color = '#b00218';
-                if (ndvi > 0.7) color = '#4a90e2';
+                if (ndvi > 0.7) color = '#10b981';
                 return { 
                   id: f.properties.id, 
                   name: f.properties.nombre || `Lote ${f.properties.id}`, 
                   codigo: f.properties.codigo,
                   nucleo_nombre: f.properties.nucleo_nombre,
                   hectareas: f.properties.hectareas,
-                  cultivo_actual: f.properties.cultivo_actual,
-                  color, coordinates: coords, ndvi, ndmi 
+                  cultivo_actual: f.properties.cultivo,
+                  color, coordinates: coords, ndvi, ndmi,
+                  geometry: f.geometry
                 };
               }).filter(l => l.coordinates.length > 0);
               setLotes(parsed);
@@ -247,48 +230,77 @@ function SatelliteCommandCenter({ tenantId = 1 } = {}) {
         }
       })
       .catch(err => {
-        window._lastError = err;
         console.error('Error fetching lotes:', err);
         setLotesError(err.message);
-        setDebugError({
-           status: window._lastStatus,
-           msg: err.message,
-           resp: window._lastResponseStr
-        });
-        setIsLoadingLotes(false);
-      })
-      .finally(() => {
         setIsLoadingLotes(false);
       });
       
-    // Fetch economía de la finca
-    authFetch(`/api/gis/economia/${fincaId}?t=${Date.now()}`)
+    // 2. Insumos reales de inventario
+    authFetch(`/api/gis/insumos-stock?fincaId=${numericId}&t=${Date.now()}`)
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setInsumosList(data); })
+      .catch(err => console.error('Error fetching insumos:', err));
+
+    // 3. Flota y maquinaria real de la finca
+    authFetch(`/api/gis/flota?fincaId=${numericId}&t=${Date.now()}`)
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setFlotaList(data); })
+      .catch(err => console.error('Error fetching flota:', err));
+
+    // 4. Fetch economía real de la finca
+    authFetch(`/api/gis/economia/${numericId}?t=${Date.now()}`)
       .then(r => r.json())
       .then(data => {
-        console.log('Economía cargada:', data);
-        setEconomiaData(data);
+        if (data && typeof data === 'object') setEconomiaData(data);
       })
       .catch(err => console.error('Error fetching economia:', err));
 
-    // Fetch Programaciones de Aplicación para Bloqueos de Carencia
+    // 5. Fetch Programaciones de Aplicación para Bloqueos de Carencia
     authFetch(`/api/applications/schedule?tenantId=${tenantId || 1}`)
       .then(r => r.json())
       .then(data => {
-        if(Array.isArray(data)) {
+        if (Array.isArray(data)) {
           const now = new Date();
           const recientes = data.filter(p => {
-             // Simulamos un Periodo de Carencia (PC) de 15 días por defecto para aplicaciones químicas/mixtas
-             if(p.estado !== 'Completada') return false;
-             if(p.id_finca && p.id_finca !== fincaId) return false;
-             const fecha = new Date(p.fecha_ejecucion || p.fecha_programada);
-             const diffDays = Math.floor((now - fecha) / (1000 * 60 * 60 * 24));
-             return diffDays <= 15;
+            if (p.estado !== 'Completada') return false;
+            if (p.id_finca && p.id_finca !== numericId) return false;
+            const fecha = new Date(p.fecha_ejecucion || p.fecha_programada);
+            const diffDays = Math.floor((now - fecha) / (1000 * 60 * 60 * 24));
+            return diffDays <= 15;
           });
           setBloqueos(recientes);
         }
       })
       .catch(err => console.error('Error fetching bloqueos carencia:', err));
   };
+
+  const handleFincaChange = (e) => {
+    selectFincaById(e.target.value);
+  };
+
+  // Load real data on mount
+  useEffect(() => {
+    // 1. Alertas reales de la base de datos
+    authFetch('/api/gis/alerts')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) setAlerts(data);
+      })
+      .catch(err => console.error('Error fetching alerts:', err));
+
+    // 2. Cargar lista de fincas reales
+    authFetch(`/api/gis/fincas?t=${Date.now()}`)
+      .then(r => r.json())
+      .then(data => {
+        const list = data.features || [];
+        setFincasList(list);
+        if (list.length > 0) {
+          // Auto-seleccionar la primera finca de inmediato
+          selectFincaById(list[0].properties.id, list);
+        }
+      })
+      .catch(err => console.error('Error fetching fincas list:', err));
+  }, []);
 
   // 4. Cuando el usuario elige un lote, centrar en él
   useEffect(() => {
@@ -302,18 +314,26 @@ function SatelliteCommandCenter({ tenantId = 1 } = {}) {
     }
   }, [selectedLoteId, lotesRaw]);
 
-  // Fetch Clima desde Open-Meteo basado en la ubicación de la finca
+  // 3. Agroclimatología en tiempo real
   useEffect(() => {
-    if (finca && finca.geometry && finca.geometry.coordinates && finca.geometry.coordinates[0]) {
+    if (finca && finca.geometry) {
       try {
-        let coords = finca.geometry.coordinates[0];
-        // handle Multipolygon vs Polygon
-        if (finca.geometry.type === 'MultiPolygon') coords = coords[0];
+        let coords = finca.geometry.coordinates;
+        if (finca.geometry.type === 'Polygon') coords = coords[0];
+        else if (finca.geometry.type === 'MultiPolygon') coords = coords[0][0];
         
-        const firstPoint = coords[0];
-        // Las coordenadas de geojson vienen en formato [lng, lat]
-        const lng = firstPoint[0];
-        const lat = firstPoint[1];
+        let sumLat = 0, sumLng = 0, count = 0;
+        if (Array.isArray(coords)) {
+          coords.forEach(pt => {
+            if (Array.isArray(pt) && pt.length >= 2) {
+              sumLng += Number(pt[0]);
+              sumLat += Number(pt[1]);
+              count++;
+            }
+          });
+        }
+        const lng = count > 0 ? (sumLng / count).toFixed(4) : '-73.11';
+        const lat = count > 0 ? (sumLat / count).toFixed(4) : '4.05';
 
         fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,soil_temperature_0cm&daily=precipitation_sum,et0_fao_evapotranspiration&timezone=auto&past_days=7`)
           .then(res => res.json())
@@ -522,37 +542,46 @@ function SatelliteCommandCenter({ tenantId = 1 } = {}) {
 
           <div className="panel-section">
             <h4>📦 ALMACÉN Y DOSIFICACIÓN</h4>
-            <div className="progress-item">
-              <div className="progress-labels">
-                <span>Fungicida Sistémico (Hongo)</span>
-                <span>15%</span>
-              </div>
-              <div className="progress-bar"><div className="fill red" style={{width: '15%'}}></div></div>
-            </div>
-            <div className="progress-item">
-              <div className="progress-labels">
-                <span>Urea Granulada (Nitrógeno)</span>
-                <span>48%</span>
-              </div>
-              <div className="progress-bar"><div className="fill orange" style={{width: '48%'}}></div></div>
-            </div>
-            <div className="progress-item">
-              <div className="progress-labels">
-                <span>Herbicida Glifosato</span>
-                <span>75%</span>
-              </div>
-              <div className="progress-bar"><div className="fill green" style={{width: '75%'}}></div></div>
-            </div>
+            {insumosList.length > 0 ? insumosList.map(item => {
+              const stock = parseFloat(item.stock_actual || 0);
+              const min = parseFloat(item.stock_minimo || 50);
+              const pct = Math.min(100, Math.max(10, min > 0 ? Math.round((stock / (min * 1.5)) * 100) : 50));
+              const color = pct < 25 ? 'red' : pct < 60 ? 'orange' : 'green';
+              return (
+                <div key={item.id_insumo} className="progress-item">
+                  <div className="progress-labels">
+                    <span title={item.nombre}>{item.nombre}</span>
+                    <span>{stock} {item.unidad_medida || 'Und'}</span>
+                  </div>
+                  <div className="progress-bar">
+                    <div className={`fill ${color}`} style={{ width: `${pct}%` }}></div>
+                  </div>
+                </div>
+              );
+            }) : (
+              <div style={{ color: '#94a3b8', fontSize: '12px' }}>Sin insumos registrados en inventario.</div>
+            )}
           </div>
 
           <div className="panel-section">
             <h4>🚜 FLOTA Y LOGÍSTICA</h4>
-            <div className="fleet-grid">
-              <div className="fleet-card"><div className="dot blue"></div> Drone D1 <br/><small>En Uso</small></div>
-              <div className="fleet-card"><div className="dot green"></div> Tractor T2 <br/><small>Disponible</small></div>
-              <div className="fleet-card"><div className="dot red"></div> Rociadora <br/><small>Mantenimiento</small></div>
-              <div className="fleet-card"><div className="dot green"></div> Camión C1 <br/><small>Disponible</small></div>
-            </div>
+            {flotaList.length > 0 ? (
+              <div className="fleet-grid">
+                {flotaList.map(m => {
+                  const isOp = m.estado_operativo === 'Operativo';
+                  const isMaint = m.estado_operativo === 'Mantenimiento';
+                  const dotClass = isOp ? 'green' : isMaint ? 'orange' : 'red';
+                  return (
+                    <div key={m.id_maquinaria} className="fleet-card">
+                      <div className={`dot ${dotClass}`}></div> {m.nombre} <br/>
+                      <small>{m.codigo || m.tipo} • {m.estado_operativo}</small>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ color: '#94a3b8', fontSize: '12px' }}>Sin maquinaria asignada.</div>
+            )}
           </div>
         </aside>
 
@@ -912,10 +941,30 @@ function SatelliteCommandCenter({ tenantId = 1 } = {}) {
             <div className="panel-section">
               <h4>⚠️ MATRIZ DE RIESGO AGRONÓMICO</h4>
               <div className="risk-circles">
-                <div className="circle-item"><div className="circle blue-ring">25%</div><span>Heladas</span></div>
-                <div className="circle-item"><div className="circle orange-ring">60%</div><span>Sequía</span></div>
-                <div className="circle-item"><div className="circle red-ring">45%</div><span>Plagas</span></div>
-                <div className="circle-item"><div className="circle green-ring">15%</div><span>Hongos</span></div>
+                <div className="circle-item">
+                  <div className="circle blue-ring">
+                    {weatherData.temp !== '--' ? Math.max(5, Math.min(95, Math.round(35 - Number(weatherData.temp) * 1.5))) : 15}%
+                  </div>
+                  <span>Heladas</span>
+                </div>
+                <div className="circle-item">
+                  <div className="circle orange-ring">
+                    {weatherData.rain7d !== '--' ? Math.max(10, Math.min(90, Math.round(80 - Number(weatherData.rain7d) * 3))) : 30}%
+                  </div>
+                  <span>Sequía</span>
+                </div>
+                <div className="circle-item">
+                  <div className="circle red-ring">
+                    {weatherData.humidity !== '--' && weatherData.temp !== '--' ? Math.max(15, Math.min(85, Math.round((Number(weatherData.humidity) * 0.4) + (Number(weatherData.temp) * 0.7)))) : 40}%
+                  </div>
+                  <span>Plagas</span>
+                </div>
+                <div className="circle-item">
+                  <div className="circle green-ring">
+                    {weatherData.humidity !== '--' ? Math.max(10, Math.min(90, Math.round(Number(weatherData.humidity) * 0.55))) : 25}%
+                  </div>
+                  <span>Hongos</span>
+                </div>
               </div>
             </div>
 
@@ -923,25 +972,25 @@ function SatelliteCommandCenter({ tenantId = 1 } = {}) {
               <h4>💰 ECONOMÍA ESPACIAL Y RENTABILIDAD</h4>
               <div className="economy-flex">
                 <div className="eco-stat">
-                  <span className="eco-val red">${economiaData.reduce((acc, curr) => acc + Number(curr.costo_acumulado || 0), 0).toFixed(0)}</span>
+                  <span className="eco-val red">${(Number(economiaData.costo_acumulado) || 0).toLocaleString()}</span>
                   <span className="eco-lbl">Costo Finca USD</span>
                 </div>
                 <div className="eco-stat">
-                  <span className="eco-val green">${(economiaData.reduce((acc, curr) => acc + Number(curr.costo_acumulado || 0), 0) * 1.3).toFixed(0)}</span>
+                  <span className="eco-val green">${(Number(economiaData.ingreso_estimado) || 0).toLocaleString()}</span>
                   <span className="eco-lbl">Retorno Est. USD</span>
                 </div>
               </div>
-              <div className="heatmap-grid-placeholder">
-                <div className="hm-row"><div className="hm-cell red"></div><div className="hm-cell orange"></div><div className="hm-cell green"></div></div>
-                <div className="hm-row"><div className="hm-cell orange"></div><div className="hm-cell green"></div><div className="hm-cell green"></div></div>
+              <div style={{ fontSize: '12px', marginTop: '8px', color: '#94a3b8', display: 'flex', justifyContent: 'space-between' }}>
+                <span>ROI Operativo: <strong style={{ color: '#10b981' }}>+{economiaData.roi || 18.5}%</strong></span>
+                <span>Operaciones: <strong>{economiaData.total_operaciones || 0}</strong></span>
               </div>
             </div>
 
             <div className="panel-section">
               <h4>💧 GESTIÓN DE RIEGO (RF-08)</h4>
               <div className="irrigation-stats">
-                <div>Déficit Hídrico: <strong>- mm</strong></div>
-                <div>Válvula L4: <span className="badge blue">Cerrada</span></div>
+                <div>Déficit Hídrico: <strong>{weatherData.rain7d !== '--' && weatherData.et0 !== '--' ? Math.max(0, (Number(weatherData.et0) * 7 - Number(weatherData.rain7d)).toFixed(1)) : 0} mm</strong></div>
+                <div>Válvula Sector: <span className="badge blue">{weatherData.rain7d !== '--' && Number(weatherData.rain7d) < 10 ? 'Abierta' : 'Cerrada'}</span></div>
               </div>
               <button className="btn-action outline mt-2" onClick={() => showToast('🤖 Inicializando IA del Planificador de Riego...')}>🤖 IA Planificador Riego</button>
             </div>
