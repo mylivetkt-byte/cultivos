@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { message } from 'antd';
 import Select from 'react-select';
 import { authFetch } from '../../utils/api';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from '../../utils/exportPdf';
+
 
 export default function ControlContratos({ tenantId, fincaId }) {
   const [contratos, setContratos] = useState([]);
@@ -208,7 +209,7 @@ export default function ControlContratos({ tenantId, fincaId }) {
   // Generador de Contrato Legal en PDF
   const exportPDF = () => {
     if (!selectedContrato) return;
-    const doc = new jsPDF();
+    const doc = new (getJsPDFConstructor())();
     
     // Configuración general
     const margenIzq = 20;
@@ -282,7 +283,7 @@ export default function ControlContratos({ tenantId, fincaId }) {
         p.id_asiento ? `Comprobante #${p.id_asiento}` : 'N/A'
       ]);
 
-      doc.autoTable({
+      runAutoTable(doc, {
         startY: y,
         head: [['Fecha', 'Tipo', 'Monto (COP)', 'Asiento Contable']],
         body: tableData,
@@ -315,7 +316,7 @@ export default function ControlContratos({ tenantId, fincaId }) {
     doc.text('EL CONTRATISTA', margenIzq + 90, y + 25);
     doc.text(selectedContrato.responsable_nombre || '', margenIzq + 90, y + 30);
 
-    doc.save(`Contrato_${selectedContrato.nombre_obra.replace(/\s+/g, '_')}.pdf`);
+    downloadPdfDoc(doc, `Contrato_${selectedContrato.nombre_obra.replace(/\s+/g, '_')}.pdf`);
     message.success('Contrato legal generado exitosamente en PDF.');
   };
 
@@ -395,8 +396,8 @@ export default function ControlContratos({ tenantId, fincaId }) {
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '4px' }}>Rango Inicio</label>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <input type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }} />
-              <input type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }} />
+              <DatePickerClaro value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }} />
+              <DatePickerClaro value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }} />
             </div>
           </div>
         </div>
@@ -560,11 +561,11 @@ export default function ControlContratos({ tenantId, fincaId }) {
 
                   <div>
                     <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Fecha de Inicio</label>
-                    <input type="date" value={formData.fecha_inicio} onChange={e=>setFormData({...formData, fecha_inicio:e.target.value})} style={{ width:'100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                    <DatePickerClaro value={formData.fecha_inicio} onChange={e=>setFormData({...formData, fecha_inicio:e.target.value})} style={{ width:'100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Fecha Fin / Entrega</label>
-                    <input type="date" value={formData.fecha_fin} onChange={e=>setFormData({...formData, fecha_fin:e.target.value})} style={{ width:'100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                    <DatePickerClaro value={formData.fecha_fin} onChange={e=>setFormData({...formData, fecha_fin:e.target.value})} style={{ width:'100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
                   </div>
 
                   <div style={{ gridColumn: '1 / -1' }}>
@@ -591,7 +592,7 @@ export default function ControlContratos({ tenantId, fincaId }) {
                         
                         <div style={{ marginBottom: '12px' }}>
                           <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#64748b', marginBottom: '4px' }}>Fecha de Pago</label>
-                          <input type="date" value={nuevoPago.fecha_pago} onChange={e=>setNuevoPago({...nuevoPago, fecha_pago: e.target.value})} style={{ width:'100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                          <DatePickerClaro value={nuevoPago.fecha_pago} onChange={e=>setNuevoPago({...nuevoPago, fecha_pago: e.target.value})} style={{ width:'100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
                         </div>
 
                         <div style={{ marginBottom: '12px' }}>

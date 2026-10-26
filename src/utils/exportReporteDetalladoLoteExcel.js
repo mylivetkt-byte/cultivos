@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { downloadExcelWorkbook } from './exportExcel';
 
 export function exportReporteDetalladoLoteExcel(historicoData, cosechasData, laboresData, insumosData, metadata = {}) {
   try {
@@ -91,11 +92,10 @@ export function exportReporteDetalladoLoteExcel(historicoData, cosechasData, lab
     }
 
     const safeLoteName = (lote?.codigo || 'Lote').replace(/[^a-zA-Z0-9]/g, '_');
-    XLSX.writeFile(wb, `Reporte_Detallado_${safeLoteName}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    downloadExcelWorkbook(wb, `Reporte_Detallado_${safeLoteName}_${new Date().toISOString().slice(0, 10)}.xlsx`);
     return true;
   } catch (err) {
     console.error('Error exporting Excel:', err);
-    alert('Error al generar Excel: ' + err.message);
-    return false;
+    throw new Error('Error al generar Excel: ' + err.message);
   }
 }

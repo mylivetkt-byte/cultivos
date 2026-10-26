@@ -990,13 +990,16 @@ router.get('/:name/lookup/:fkCol', async (req, res) => {
       displayCol = `CONCAT('Siembra #', id_siembra, ' - ', DATE_FORMAT(fecha_siembra, '%Y-%m-%d'))`;
       isRawSql = true;
     } else if (refTable === 'vehiculos') {
-      displayCol = `CONCAT(placa, ' - ', marca_modelo)`;
+      displayCol = `CONCAT(placa, ' - ', TRIM(CONCAT(IFNULL(marca, ''), ' ', IFNULL(modelo, ''))))`;
       isRawSql = true;
-    } else if (refTable === 'agroind_maquinaria_equipo' || refTable === 'maquinaria') {
+    } else if (refTable === 'maquinaria') {
+      displayCol = `CONCAT(codigo, ' - ', nombre, IF(NULLIF(TRIM(CONCAT(IFNULL(marca, ''), ' ', IFNULL(modelo, ''))), '') IS NOT NULL, CONCAT(' (', TRIM(CONCAT(IFNULL(marca, ''), ' ', IFNULL(modelo, ''))), ')'), ''))`;
+      isRawSql = true;
+    } else if (refTable === 'agroind_maquinaria_equipo') {
       displayCol = `CONCAT(IFNULL(placa, 'S/P'), ' - ', marca_modelo)`;
       isRawSql = true;
     } else if (refTable === 'ordenes_compra') {
-      displayCol = `CONCAT('OC #', id_orden, ' - ', DATE_FORMAT(fecha_orden, '%Y-%m-%d'))`;
+      displayCol = `CONCAT(IFNULL(numero_orden, CONCAT('OC #', id_orden_compra)), ' - ', DATE_FORMAT(fecha_emision, '%Y-%m-%d'))`;
       isRawSql = true;
     } else if (refTable === 'plan_contable') {
       displayCol = `CONCAT(codigo, ' - ', nombre)`;

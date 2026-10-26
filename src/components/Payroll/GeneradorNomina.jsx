@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import axios from 'axios';
 
 export default function GeneradorNomina({ tenantId, fincaId }) {
@@ -250,21 +251,15 @@ export default function GeneradorNomina({ tenantId, fincaId }) {
             </div>
             <div style={{ flex: '1', minWidth: '150px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>Fecha Inicio</label>
-              <input 
-                type="date" 
-                style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text)' }}
+              <DatePickerClaro style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text)' }}
                 value={fechaInicio}
-                onChange={(e) => setFechaInicio(e.target.value)}
-              />
+                onChange={(e) => setFechaInicio(e.target.value)} />
             </div>
             <div style={{ flex: '1', minWidth: '150px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>Fecha Fin</label>
-              <input 
-                type="date" 
-                style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text)' }}
+              <DatePickerClaro style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text)' }}
                 value={fechaFin}
-                onChange={(e) => setFechaFin(e.target.value)}
-              />
+                onChange={(e) => setFechaFin(e.target.value)} />
             </div>
             <div>
               <button 

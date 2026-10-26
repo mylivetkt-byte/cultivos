@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from './Common/DatePickerClaro';
 import { 
   fetchLabores, createLabor, autoGenerateLabores, evaluateLabor, sendLaborReport,
   fetchTableData, fetchTrees, authFetch
@@ -274,20 +275,6 @@ function TaskPlanner({ tenantId, fincaId, nucleoId }) {
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
 
-  // Mock Data (Simulador)
-  const MOCK_SIMULATIONS = [
-    { id: 'sim_1', nombre: 'Simulación Arroz 500msnm - Lote Principal', cultivo: 'Arroz', estado: 'Borrador' },
-    { id: 'sim_2', nombre: 'Prueba Experimental Maíz - Lote 3', cultivo: 'Maíz', estado: 'En Marcha' }
-  ];
-
-  const MOCK_TIMELINE = [
-    { dia: 0, fase: 'Diseño y Trazado', titulo: 'Medición y Trazado de Surcos', desc: 'Orientación Norte-Sur, a 0.8m entre surcos para aprovechar luz solar.', tuto: { title: 'AGROSAVIA: Diseño Espacial y Preparación de Suelos en Laderas', vid: 'https://www.youtube.com/embed/M3X4lYwE83k' } },
-    { dia: 5, fase: 'Preparación', titulo: 'Aplicación de Enmiendas (Cal)', desc: 'Corrección del pH del suelo antes de la siembra.', tuto: { title: 'FENALCE: Correcto uso de Enmiendas y Cal Agrícola', vid: 'https://www.youtube.com/embed/g2qJ1i6tH2g' } },
-    { dia: 15, fase: 'Siembra', titulo: 'Siembra de Semilla Certificada', desc: 'Siembra manual usando semilla certificada Corpoica Rojo 39 (Biofortificada).', tuto: { title: 'AGROSAVIA: Producción y Siembra de Frijol Corpoica Rojo 39', vid: 'https://www.youtube.com/embed/YtN1V3K_qDk' } },
-    { dia: 45, fase: 'Mantenimiento', titulo: 'Control de Malezas', desc: 'Aplicación de herbicida post-emergente con bomba de espalda.', tuto: { title: 'ICA: Manejo Integrado de Malezas en Leguminosas', vid: 'https://www.youtube.com/embed/5-T8_d9LhE8' } },
-    { dia: 120, fase: 'Cosecha', titulo: 'Recolección Mecanizada', desc: 'Uso de combinada, humedad objetivo 22%.', tuto: { title: 'AGROSAVIA: Prácticas de Cosecha y Postcosecha de Frijol', vid: 'https://www.youtube.com/embed/oQ8g-T5ZkFE' } }
-  ];
-
   // Lists
   const [tasks, setTasks] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -559,13 +546,10 @@ function TaskPlanner({ tenantId, fincaId, nucleoId }) {
               <p>Planificación de trabajos de campo, riegos, maquinaria, cosecha y auditoría de cumplimiento.</p>
             </div>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <input
-                type="date"
-                className="form-control"
+              <DatePickerClaro className="form-control"
                 style={{ width: '160px', background: 'var(--card-bg)', border: '1px solid var(--border)', color: '#fff', padding: '8px 12px' }}
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-              />
+                onChange={(e) => setSelectedDate(e.target.value)} />
 
               <button
                 onClick={handleAutoGenerate}
@@ -1481,12 +1465,9 @@ function TaskPlanner({ tenantId, fincaId, nucleoId }) {
                         <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column' }}>
                           <span style={{ color: 'var(--text-secondary)' }}>Inicio (Siembra): </span>
                           <span style={{ color: '#fff', fontWeight: 'bold', marginTop: '4px' }}>
-                            <input 
-                              type="date" 
-                              style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: '#fff', borderRadius: '4px', padding: '6px', width: '100%', boxSizing: 'border-box' }} 
+                            <DatePickerClaro style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', color: '#fff', borderRadius: '4px', padding: '6px', width: '100%', boxSizing: 'border-box' }} 
                               value={wizardData.fechaInicio || new Date().toISOString().split('T')[0]} 
-                              onChange={(e) => setWizardData({...wizardData, fechaInicio: e.target.value})} 
-                            />
+                              onChange={(e) => setWizardData({...wizardData, fechaInicio: e.target.value})} />
                           </span>
                         </div>
                         <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column' }}>

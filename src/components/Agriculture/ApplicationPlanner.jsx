@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import PremiumSelect from '../PremiumSelect';
 import { authFetch } from '../../utils/api.js';
 import '../dashboard.css';
@@ -227,7 +228,7 @@ const ApplicationPlanner = ({ tenantId = 1 }) => {
               </div>
               <div>
                 <label>Fecha Programada</label>
-                <input type="date" className="form-control" required value={formData.fecha_programada} onChange={e => setFormData({...formData, fecha_programada: e.target.value})} />
+                <DatePickerClaro className="form-control" required value={formData.fecha_programada} onChange={e => setFormData({...formData, fecha_programada: e.target.value})} />
               </div>
               <div>
                 <label>Método de Aplicación</label>
@@ -332,11 +333,11 @@ const ApplicationPlanner = ({ tenantId = 1 }) => {
           <div style={{ padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', background: 'rgba(0,0,0,0.15)' }}>
             <div>
               <label style={{ fontSize: '0.95em', fontWeight: 'bold', color: '#fff', marginBottom: '8px', display: 'block' }}>Fecha Desde</label>
-              <input type="date" className="form-control" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '10px', fontSize: '1rem', borderRadius: '6px' }} value={filters.fecha_desde} onChange={e => setFilters({...filters, fecha_desde: e.target.value})} />
+              <DatePickerClaro className="form-control" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '10px', fontSize: '1rem', borderRadius: '6px' }} value={filters.fecha_desde} onChange={e => setFilters({...filters, fecha_desde: e.target.value})} />
             </div>
             <div>
               <label style={{ fontSize: '0.95em', fontWeight: 'bold', color: '#fff', marginBottom: '8px', display: 'block' }}>Fecha Hasta</label>
-              <input type="date" className="form-control" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '10px', fontSize: '1rem', borderRadius: '6px' }} value={filters.fecha_hasta} onChange={e => setFilters({...filters, fecha_hasta: e.target.value})} />
+              <DatePickerClaro className="form-control" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '10px', fontSize: '1rem', borderRadius: '6px' }} value={filters.fecha_hasta} onChange={e => setFilters({...filters, fecha_hasta: e.target.value})} />
             </div>
             <div>
               <label style={{ fontSize: '0.95em', fontWeight: 'bold', color: '#fff', marginBottom: '8px', display: 'block' }}>Lote Destino</label>

@@ -687,7 +687,7 @@
   flex-direction: column;
 }
 
-.modal-header {
+.sensores-iot-manager .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -696,7 +696,7 @@
   background: #f8fafc;
 }
 
-.modal-header h3 {
+.sensores-iot-manager .modal-header h3 {
   margin: 0;
   font-size: 16px;
   font-weight: 700;

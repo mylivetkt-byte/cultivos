@@ -164,8 +164,8 @@ router.post('/', async (req, res) => {
         total_debito += parseFloat(m.debito || 0);
         total_credito += parseFloat(m.credito || 0);
       });
-      contabilidad.total_debito = total_debito;
-      contabilidad.total_credito = total_credito;
+      contabilidad.total_debito = Math.round(total_debito * 100) / 100;
+      contabilidad.total_credito = Math.round(total_credito * 100) / 100;
       contabilidad.detalles = movimientos;
     }
 

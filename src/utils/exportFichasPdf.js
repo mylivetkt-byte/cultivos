@@ -1,10 +1,25 @@
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import { API_BASE, getAuthHeaders } from './api';
+import { triggerFileDownload } from './fileDownload';
+
+const getJsPDFConstructor = () => {
+  if (typeof jsPDF === 'function') return jsPDF;
+  if (jsPDF && typeof jsPDF.jsPDF === 'function') return jsPDF.jsPDF;
+  if (jsPDF && typeof jsPDF.default === 'function') return jsPDF.default;
+  if (typeof window !== 'undefined') {
+    if (window.jspdf && typeof window.jspdf.jsPDF === 'function') return window.jspdf.jsPDF;
+    if (window.jsPDF && typeof window.jsPDF === 'function') return window.jsPDF;
+  }
+  return jsPDF;
+};
 
 const fetchImageBase64 = async (url) => {
   if (!url) return null;
   try {
-    const res = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
     if (!res.ok) return null;
     const blob = await res.blob();
     return new Promise((resolve) => {
@@ -17,16 +32,23 @@ const fetchImageBase64 = async (url) => {
   }
 };
 
-export async function exportFichasPdf(tableName, columns, data, metadata = {}, fkOptions = {}) {
+export async function exportFichasPdf(tableName, columns = [], data = [], metadata = {}, fkOptions = {}, previewWindow = null) {
   try {
-    const doc = new jsPDF({ orientation: 'portrait' });
+    const PDFConstructor = getJsPDFConstructor();
+    const doc = new PDFConstructor({ orientation: 'portrait' });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
 
     // Load Logo
     let logoBase64 = null;
     try {
-      const resPath = await fetch(`${API_BASE}/config/logo`, { headers: getAuthHeaders() });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const resPath = await fetch(`${API_BASE}/config/logo`, { 
+        headers: getAuthHeaders(),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
       if (resPath.ok) {
         const { logo_path } = await resPath.json();
         if (logo_path) {
@@ -61,81 +83,89 @@ export async function exportFichasPdf(tableName, columns, data, metadata = {}, f
 
     drawHeader();
 
-    for (let i = 0; i < data.length; i++) {
+    const itemsPerPage = 3;
+    let cardHeight = 75;
+
+    for (let i = 0; i < (data || []).length; i++) {
       const item = data[i];
-      
-      // Page break check
-      if (currentY > pageHeight - 60) {
+      if (i > 0 && i % itemsPerPage === 0) {
         doc.addPage();
         drawHeader();
       }
 
-      // Card Background
-      doc.setFillColor(245, 247, 250);
-      doc.roundedRect(15, currentY, pageWidth - 30, 50, 3, 3, 'F');
-      doc.setDrawColor(200, 200, 200);
-      doc.roundedRect(15, currentY, pageWidth - 30, 50, 3, 3, 'S');
+      // Card Background Box
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(14, currentY, pageWidth - 28, cardHeight, 3, 3, 'FD');
 
-      // Card Title
-      doc.setFontSize(14);
-      doc.setTextColor(26, 35, 50);
+      // Image or placeholder
+      let imgData = null;
+      if (item.fotografia) {
+        imgData = await fetchImageBase64(item.fotografia);
+      }
+
+      if (imgData) {
+        try {
+          doc.addImage(imgData, 'JPEG', 18, currentY + 5, 65, 65);
+        } catch(e) {
+          try {
+            doc.addImage(imgData, 'PNG', 18, currentY + 5, 65, 65);
+          } catch(err) {
+            doc.setFillColor(230, 230, 230);
+            doc.rect(18, currentY + 5, 65, 65, 'F');
+            doc.setFontSize(9);
+            doc.setTextColor(120);
+            doc.text("Sin Imagen", 40, currentY + 38);
+          }
+        }
+      } else {
+        doc.setFillColor(235, 240, 245);
+        doc.rect(18, currentY + 5, 65, 65, 'F');
+        doc.setFontSize(9);
+        doc.setTextColor(120);
+        doc.text("Sin Imagen", 40, currentY + 38);
+      }
+
+      // Details Column
+      let textX = 90;
+      let textY = currentY + 12;
+
+      // Common Name
+      doc.setFontSize(13);
+      doc.setTextColor(15, 23, 42);
       doc.setFont('helvetica', 'bold');
-      const nombreComun = item.nombre_comun || 'Desconocido';
-      doc.text(nombreComun.toUpperCase(), 20, currentY + 10);
+      doc.text(item.nombre_comun || item.nombre || 'Sin Nombre', textX, textY);
       
-      // Subtitle (Nombre Científico)
-      doc.setFontSize(11);
-      doc.setTextColor(100, 100, 100);
-      doc.setFont('helvetica', 'italic');
-      doc.text(item.nombre_cientifico || '', 20, currentY + 16);
-
-      // Info Fields
+      // Scientific Name
+      textY += 6;
       doc.setFontSize(10);
+      doc.setTextColor(100, 116, 139);
+      doc.setFont('helvetica', 'italic');
+      doc.text(item.nombre_cientifico || 'N/A', textX, textY);
+
+      // Reset Font
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(50, 50, 50);
-      
-      // Resolve Cultivo
+      doc.setFontSize(9);
+      doc.setTextColor(51, 65, 85);
+
+      textY += 8;
       let cultivoName = 'General';
       if (item.id_cultivo && fkOptions['id_cultivo']) {
          const opt = fkOptions['id_cultivo'].find(o => String(o.id) === String(item.id_cultivo));
          if (opt) cultivoName = opt.display || opt.label;
       }
-      
-      doc.text(`Cultivo: ${cultivoName}`, 20, currentY + 24);
-      doc.text(`Gravedad/Agresividad: ${item.gravedad || item.nivel_agresividad || 'N/A'}`, 20, currentY + 30);
-      
-      if (item.agente_causal) {
-         doc.text(`Agente Causal: ${item.agente_causal}`, 20, currentY + 36);
-      } else if (item.hospederos) {
-         doc.text(`Hospederos: ${item.hospederos}`, 20, currentY + 36);
-      }
+      doc.text(`Cultivo Afectado: ${cultivoName}`, textX, textY);
 
-      // Symptoms or Description
-      const textToWrap = item.sintomas || item.descripcion || '';
-      if (textToWrap) {
-         doc.setFontSize(9);
-         doc.setTextColor(80, 80, 80);
-         const lines = doc.splitTextToSize(textToWrap, pageWidth - 90);
-         doc.text(lines, 20, currentY + 44);
-      }
+      textY += 6;
+      const gravedad = item.gravedad || item.nivel_agresividad || 'No especificada';
+      doc.text(`Nivel de Daño / Agresividad: ${gravedad}`, textX, textY);
 
-      // Fetch and draw image
-      if (item.imagen_url) {
-        const itemImageBase64 = await fetchImageBase64(item.imagen_url);
-        if (itemImageBase64) {
-           const imgWidth = 40;
-           const imgHeight = 40;
-           const imgX = pageWidth - 15 - 5 - imgWidth; // right aligned inside card
-           const imgY = currentY + 5;
-           try {
-             doc.addImage(itemImageBase64, 'JPEG', imgX, imgY, imgWidth, imgHeight);
-           } catch(e) {
-             try { doc.addImage(itemImageBase64, 'PNG', imgX, imgY, imgWidth, imgHeight); } catch(err){}
-           }
-        }
-      }
+      textY += 8;
+      const desc = item.sintomas || item.descripcion || 'Sin descripción detallada.';
+      const splitDesc = doc.splitTextToSize(desc, pageWidth - textX - 20);
+      doc.text(splitDesc.slice(0, 3), textX, textY);
 
-      currentY += 55; // space for next card
+      currentY += cardHeight + 8;
     }
 
     // Footer
@@ -144,15 +174,58 @@ export async function exportFichasPdf(tableName, columns, data, metadata = {}, f
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(150);
-      const footerText = `Página ${i} de ${pageCount} - AgroPaccioli - ${new Date().toLocaleString('es-ES')}`;
+      const footerText = `Página ${i} de ${pageCount} - AgroPaccioli - ${new Date().toLocaleString('es-CO')}`;
       doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: 'center' });
     }
 
-    if (metadata.returnBase64) return doc.output('datauristring');
-    doc.save(`${tableName}_ilustrado_${new Date().toISOString().slice(0, 10)}.pdf`);
-    
+    if (metadata.returnBase64) {
+      if (previewWindow && !previewWindow.closed) previewWindow.close();
+      return doc.output('datauristring');
+    }
+
+    const cleanTableName = (tableName || 'reporte').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const fileName = `${cleanTableName}_ilustrado_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+    const blob = doc.output('blob');
+
+    if (previewWindow && !previewWindow.closed) {
+      try {
+        const previewUrl = URL.createObjectURL(blob);
+        previewWindow.document.open();
+        previewWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>${fileName}</title>
+              <style>
+                html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #525659; }
+                iframe { width: 100%; height: 100%; border: none; }
+              </style>
+            </head>
+            <body>
+              <iframe src="${previewUrl}#view=FitH" type="application/pdf"></iframe>
+            </body>
+          </html>
+        `);
+        previewWindow.document.close();
+        setTimeout(() => {
+          try { URL.revokeObjectURL(previewUrl); } catch {}
+        }, 600000);
+      } catch {
+        try {
+          const previewUrl = URL.createObjectURL(blob);
+          previewWindow.location.href = previewUrl;
+        } catch {}
+      }
+    }
+
+    triggerFileDownload(blob, fileName);
+    return true;
   } catch (err) {
+    if (previewWindow && !previewWindow.closed) {
+      try { previewWindow.close(); } catch {}
+    }
     console.error('Error exporting Ficha PDF:', err);
-    alert('Error al generar Catálogo Ilustrado: ' + err.message);
+    throw new Error('Error al generar Catálogo Ilustrado: ' + err.message);
   }
 }

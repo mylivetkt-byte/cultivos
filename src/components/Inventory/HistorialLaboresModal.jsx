@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { exportToPdf } from '../../utils/exportPdf';
 import { exportToExcel } from '../../utils/exportExcel';
 import { authFetch } from '../../utils/api';
@@ -123,11 +124,11 @@ function HistorialLaboresModal({ machine, onClose }) {
         <div className="modal-toolbar" style={{ display: 'flex', padding: '16px 24px', gap: '16px', background: 'var(--bg)', borderBottom: '1px solid var(--border)', flexShrink: 0, alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <div className="form-group" style={{ marginBottom: 0, minWidth: '130px' }}>
             <label style={{ fontSize: '12px' }}>Desde</label>
-            <input type="date" className="form-control" value={startDate} onChange={e => setStartDate(e.target.value)} />
+            <DatePickerClaro className="form-control" value={startDate} onChange={e => setStartDate(e.target.value)} />
           </div>
           <div className="form-group" style={{ marginBottom: 0, minWidth: '130px' }}>
             <label style={{ fontSize: '12px' }}>Hasta</label>
-            <input type="date" className="form-control" value={endDate} onChange={e => setEndDate(e.target.value)} />
+            <DatePickerClaro className="form-control" value={endDate} onChange={e => setEndDate(e.target.value)} />
           </div>
           <div className="form-group" style={{ marginBottom: 0, minWidth: '150px' }}>
             <label style={{ fontSize: '12px' }}>Finca</label>

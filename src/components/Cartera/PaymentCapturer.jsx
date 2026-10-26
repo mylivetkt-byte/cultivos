@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import Select from 'react-select';
 import { authFetch } from '../../utils/api';
 import { customStyles } from '../PremiumSelect';
@@ -197,12 +198,9 @@ function PaymentCapturer({ tenantId, fincaId, currentUserId }) {
             </div>
             <div className="form-group">
               <label>Fecha del Pago</label>
-              <input 
-                type="date" 
-                value={pago.fecha}
+              <DatePickerClaro value={pago.fecha}
                 onChange={e => setPago({...pago, fecha: e.target.value})}
-                style={{ width: '100%' }}
-              />
+                style={{ width: '100%' }} />
             </div>
             <div className="form-group">
               <label>Referencia / Nro Comprobante</label>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../../components/Common/DatePickerClaro';
 import { getProgramacion, createProgramacion, completeProgramacion } from '../../services/aplicacionesApi';
 import { authFetch } from '../../utils/api';
 import '../../components/dashboard.css';
@@ -137,7 +138,7 @@ export default function RegistroAplicacion({ tenantId, fincaId }) {
               <div className="form-row">
                 <div className="form-group">
                   <label>Fecha Programada *</label>
-                  <input className="form-control" type="date" value={form.fecha_programada} onChange={(e) => setForm({ ...form, fecha_programada: e.target.value })} />
+                  <DatePickerClaro className="form-control" value={form.fecha_programada} onChange={(e) => setForm({ ...form, fecha_programada: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label>Método Aplicación</label>

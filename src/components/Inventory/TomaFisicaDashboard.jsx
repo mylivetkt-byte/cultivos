@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Card, Typography, Select, Row, Col, Space, Input, Tag, Modal, notification, Statistic } from 'antd';
 import { PlusOutlined, MobileOutlined, AuditOutlined, CheckCircleOutlined, InfoCircleOutlined, ExclamationCircleOutlined, SearchOutlined, ScanOutlined, FilePdfOutlined, FileExcelOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { downloadExcelWorkbook } from '../../utils/exportExcel';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from '../../utils/exportPdf';
+
 import { fetchTableData } from '../../utils/api';
 import { authFetch } from '../../utils/api';
 
@@ -195,11 +196,11 @@ export default function TomaFisicaDashboard({ tenantId }) {
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Auditoría");
-    XLSX.writeFile(wb, `Auditoria_Toma_${activeToma?.id_toma}.xlsx`);
+    downloadExcelWorkbook(wb, `Auditoria_Toma_${activeToma?.id_toma}.xlsx`);
   };
 
   const exportToPDF = () => {
-    const doc = new jsPDF();
+    const doc = new (getJsPDFConstructor())();
     doc.text(`Resultados de Auditoría: Toma Física #${activeToma?.id_toma} - ${activeToma?.bodega}`, 14, 15);
     
     const tableColumn = ["CÓDIGO", "INSUMO", "TEÓRICO", "FÍSICO", "DIFERENCIA"];
@@ -211,12 +212,12 @@ export default function TomaFisicaDashboard({ tenantId }) {
       i.diferencia !== null ? i.diferencia : '-'
     ]);
 
-    doc.autoTable({
+    runAutoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 20,
     });
-    doc.save(`Auditoria_Toma_${activeToma?.id_toma}.pdf`);
+    downloadPdfDoc(doc, `Auditoria_Toma_${activeToma?.id_toma}.pdf`);
   };
 
   // ---- RENDERIZADOS ----

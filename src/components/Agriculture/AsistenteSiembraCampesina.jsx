@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { authFetch } from '../../utils/api';
 import { hablarEnVozCampesina, pararVozCampesina } from '../../utils/glosarioCampesino';
 import { message } from 'antd';
@@ -8,130 +9,6 @@ import {
 } from '@ant-design/icons';
 import './AsistenteSiembraCampesina.css';
 
-// Catálogo agroecológico experto por pisos térmicos de Colombia / Latinoamérica
-const CULTIVOS_EXPERTOS = [
-  {
-    id: 101,
-    nombre: 'Café (Castillo / Colombia)',
-    icono: '☕',
-    altitud_min: 1200,
-    altitud_max: 2000,
-    piso_ideal: 'Templado - Frío',
-    ciclo_dias: 240, // De floración a cosecha
-    distancia_surco: 1.5,
-    distancia_planta: 1.5,
-    sistema: 'Tresbolillo',
-    rendimiento_ton_ha: 2.2, // Café pergamino seco
-    suelo_ideal: 'Tierra Negra (Franca), bien drenada, pH 5.0 a 6.0',
-    descripcion: 'A mayor altura (1.500 - 1.900 msnm) el grano madura más lento, produciendo mayor acidez cítrica y mejor taza de exportación.'
-  },
-  {
-    id: 102,
-    nombre: 'Aguacate Hass',
-    icono: '🥑',
-    altitud_min: 1600,
-    altitud_max: 2400,
-    piso_ideal: 'Frío Moderado',
-    ciclo_dias: 210,
-    distancia_surco: 6.0,
-    distancia_planta: 5.0,
-    sistema: 'Tresbolillo',
-    rendimiento_ton_ha: 14.0,
-    suelo_ideal: 'Tierra franca profunda, CERO encharcamiento (muy sensible a Phytophthora), pH 5.5 a 6.5',
-    descripcion: 'Exige suelos con excelente drenaje y pendiente moderada. En zonas bajas se enferma la raíz y la fruta pierde materia grasa.'
-  },
-  {
-    id: 103,
-    nombre: 'Plátano (Hartón / Dominico)',
-    icono: '🍌',
-    altitud_min: 0,
-    altitud_max: 1800,
-    piso_ideal: 'Cálido - Templado',
-    ciclo_dias: 360,
-    distancia_surco: 3.0,
-    distancia_planta: 3.0,
-    sistema: 'Tresbolillo',
-    rendimiento_ton_ha: 15.0,
-    suelo_ideal: 'Tierra negra profunda, rica en materia orgánica y potasio, pH 5.5 a 6.5',
-    descripcion: 'Excelente como cultivo principal en clima cálido o como sombrío transitorio para café o cacao en clima templado.'
-  },
-  {
-    id: 104,
-    nombre: 'Cacao (Clones CCN51 / Fedecacao)',
-    icono: '🍫',
-    altitud_min: 0,
-    altitud_max: 1200,
-    piso_ideal: 'Cálido Húmedo',
-    ciclo_dias: 180,
-    distancia_surco: 3.0,
-    distancia_planta: 3.0,
-    sistema: 'Cuadro',
-    rendimiento_ton_ha: 1.8,
-    suelo_ideal: 'Tierra franca rica en mantillo vegetal, pH 6.0 a 7.0',
-    descripcion: 'Requiere sombrío los primeros 3 años. No tolera alturas mayores a 1.200 msnm porque el frío pasma las mazorcas y aumenta la monilia.'
-  },
-  {
-    id: 105,
-    nombre: 'Palma de Aceite',
-    icono: '🌴',
-    altitud_min: 0,
-    altitud_max: 600,
-    piso_ideal: 'Cálido Tropical',
-    ciclo_dias: 150,
-    distancia_surco: 9.0,
-    distancia_planta: 9.0,
-    sistema: 'Tresbolillo',
-    rendimiento_ton_ha: 22.0,
-    suelo_ideal: 'Suelos aluviales profundos, planos, pH 4.5 a 6.5',
-    descripcion: 'Exclusiva de tierras bajas y calientes (<500 msnm) con alta radiación solar y lluvias abundantes.'
-  },
-  {
-    id: 106,
-    nombre: 'Maíz Tecnificado',
-    icono: '🌽',
-    altitud_min: 0,
-    altitud_max: 2200,
-    piso_ideal: 'Cálido a Frío',
-    ciclo_dias: 140,
-    distancia_surco: 0.8,
-    distancia_planta: 0.25,
-    sistema: 'Cuadro',
-    rendimiento_ton_ha: 6.5,
-    suelo_ideal: 'Franco o franco-arcilloso bien aireado, pH 5.8 a 7.0',
-    descripcion: 'En clima caliente se cosecha en 110-120 días; en clima frío puede tardar hasta 160-180 días.'
-  },
-  {
-    id: 107,
-    nombre: 'Cítricos (Limón Tahití / Naranja)',
-    icono: '🍋',
-    altitud_min: 0,
-    altitud_max: 1400,
-    piso_ideal: 'Cálido - Templado',
-    ciclo_dias: 160,
-    distancia_surco: 5.0,
-    distancia_planta: 4.0,
-    sistema: 'Tresbolillo',
-    rendimiento_ton_ha: 20.0,
-    suelo_ideal: 'Franco-arenoso a franco, profundo, sin capas freáticas altas, pH 5.5 a 6.5',
-    descripcion: 'Excelente para exportación. Requiere buena poda y control de floración con estrés hídrico controlado.'
-  },
-  {
-    id: 108,
-    nombre: 'Papa (Diacol Capiro / Criolla)',
-    icono: '🥔',
-    altitud_min: 2000,
-    altitud_max: 3200,
-    piso_ideal: 'Frío de Páramo',
-    ciclo_dias: 150,
-    distancia_surco: 1.0,
-    distancia_planta: 0.35,
-    sistema: 'Cuadro',
-    rendimiento_ton_ha: 28.0,
-    suelo_ideal: 'Tierra negra de páramo (Andisol), suelta, mullida y rica en fósforo, pH 5.0 a 6.0',
-    descripcion: 'Requiere temperaturas frescas de páramo (10-14°C). Por debajo de 1.800 msnm no tuberiza.'
-  }
-];
-
 export default function AsistenteSiembraCampesina({ isOpen, onClose, onSiembraCreated, tenantId = 1 }) {
   // Pasos del Wizard: 1 a 6
   const [pasoActual, setPasoActual] = useState(1);
@@ -140,6 +17,25 @@ export default function AsistenteSiembraCampesina({ isOpen, onClose, onSiembraCr
   // Catálogos
   const [fincas, setFincas] = useState([]);
   const [lotes, setLotes] = useState([]);
+  const [cultivosExpertos, setCultivosExpertos] = useState([]);
+
+  useEffect(() => {
+    const fetchCultivosExpertos = async () => {
+      try {
+        const res = await authFetch('/api/cultivos/expertos');
+        if (res.ok) {
+          const data = await res.json();
+          setCultivosExpertos(data);
+          if (data && data.length > 0 && !cultivoSeleccionado) {
+            setCultivoSeleccionado(data[0]);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching cultivos expertos:', err);
+      }
+    };
+    fetchCultivosExpertos();
+  }, []);
 
   // Estado Paso 1: Medida del Terreno
   const [selectedFincaId, setSelectedFincaId] = useState('');
@@ -151,7 +47,7 @@ export default function AsistenteSiembraCampesina({ isOpen, onClose, onSiembraCr
 
   // Estado Paso 2: Altura y Clima
   const [altitudMsnm, setAltitudMsnm] = useState(1650);
-  const [cultivoSeleccionado, setCultivoSeleccionado] = useState(CULTIVOS_EXPERTOS[0]);
+  const [cultivoSeleccionado, setCultivoSeleccionado] = useState(null);
 
   // Estado Paso 3: Tipo de Suelo y pH
   const [tipoSuelo, setTipoSuelo] = useState('franco'); // 'franco', 'arcilloso', 'arenoso'
@@ -239,7 +135,7 @@ export default function AsistenteSiembraCampesina({ isOpen, onClose, onSiembraCr
     const precaucion = [];
     const noAptos = [];
 
-    CULTIVOS_EXPERTOS.forEach(c => {
+    cultivosExpertos.forEach(c => {
       if (altitudMsnm >= c.altitud_min && altitudMsnm <= c.altitud_max) {
         recomendados.push(c);
       } else if (
@@ -281,7 +177,7 @@ export default function AsistenteSiembraCampesina({ isOpen, onClose, onSiembraCr
   // Calendario Fenológico Proyectado
   const cronogramaFenologico = useMemo(() => {
     const fInicio = new Date(fechaSiembra);
-    const diasCiclo = cultivoSeleccionado.ciclo_dias || 240;
+    const diasCiclo = cultivoSeleccionado?.ciclo_dias || 240;
 
     const sumarDias = (dias) => {
       const d = new Date(fInicio.getTime());
@@ -899,12 +795,9 @@ export default function AsistenteSiembraCampesina({ isOpen, onClose, onSiembraCr
 
               <div className="fecha-picker-box">
                 <label>🗓️ ¿Qué día va a sembrar en el lote?</label>
-                <input 
-                  type="date" 
-                  value={fechaSiembra} 
+                <DatePickerClaro value={fechaSiembra} 
                   onChange={e => setFechaSiembra(e.target.value)}
-                  style={{ maxWidth: '300px', fontSize: '1.1em', padding: '10px' }}
-                />
+                  style={{ maxWidth: '300px', fontSize: '1.1em', padding: '10px' }} />
               </div>
 
               {/* Línea de Tiempo Fenológica */}

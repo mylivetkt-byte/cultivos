@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { Modal, Button, Alert } from 'antd';
 import { BookOutlined, SoundOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import AyudaCampesina from '../Common/AyudaCampesina';
@@ -127,12 +128,9 @@ function ProduccionLeche({ fincaId }) {
                 <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Fecha de Ordeño</label>
                 <AyudaCampesina campoKey="fecha_inicio" />
               </div>
-              <input 
-                type="date" 
-                value={fecha} 
+              <DatePickerClaro value={fecha} 
                 onChange={e => setFecha(e.target.value)} 
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', marginTop: '4px' }}
-              />
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', marginTop: '4px' }} />
             </div>
 
             <div>

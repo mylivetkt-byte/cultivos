@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import axios from 'axios';
 import { Select } from 'antd';
 import { 
@@ -422,12 +423,9 @@ const ProductionPreciosMercado = () => {
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-slate-400 uppercase">Fecha Inicial</label>
               <div className="relative">
-                <input
-                  type="date"
-                  value={filterFechaDesde}
+                <DatePickerClaro value={filterFechaDesde}
                   onChange={e => setFilterFechaDesde(e.target.value)}
-                  className="w-full bg-[#1b253b] border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-500/30"
-                />
+                  className="w-full bg-[#1b253b] border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-500/30" />
               </div>
             </div>
 
@@ -435,12 +433,9 @@ const ProductionPreciosMercado = () => {
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-slate-400 uppercase">Fecha Final</label>
               <div className="relative">
-                <input
-                  type="date"
-                  value={filterFechaHasta}
+                <DatePickerClaro value={filterFechaHasta}
                   onChange={e => setFilterFechaHasta(e.target.value)}
-                  className="w-full bg-[#1b253b] border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-500/30"
-                />
+                  className="w-full bg-[#1b253b] border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-teal-500/30" />
               </div>
             </div>
           </div>

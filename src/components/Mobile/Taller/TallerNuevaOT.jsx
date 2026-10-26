@@ -46,22 +46,33 @@ const TallerNuevaOT = ({ onBack, tenantId }) => {
     
     setSaving(true);
     try {
-      // Create a mock payload as there might not be a POST /api/taller/ordenes-trabajo yet
-      // In a real app we'd POST the OT, then trigger WhatsApp
-      alert("Simulación: OT Generada con éxito y asignada al mecánico.");
+      const mecanico = contactos.find(c => String(c.id) === String(form.id_tecnico) || c.nombre === form.id_tecnico);
+      const res = await authFetch(`/api/taller/ordenes-trabajo?tenantId=${tenantId || 1}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_maquina: form.id_activo,
+          tipo_orden: 'Correctivo Emergencia',
+          id_mecanico_asignado: mecanico ? mecanico.id : null,
+          descripcion_problema: form.descripcion_problema
+        })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Error al registrar la orden en la base de datos');
+      }
+
+      alert("✅ Orden de Trabajo generada y guardada en la base de datos con éxito.");
       
-      if(form.enviar_wsp) {
-        const mecanico = contactos.find(c => c.nombre === form.id_tecnico); 
-        if(mecanico && mecanico.telefono) {
-          const mensaje = encodeURIComponent(`🚨 *EMERGENCIA TALLER* 🚨\n\nSe te ha asignado una nueva OT de emergencia.\n\n*Problema:* ${form.descripcion_problema}`);
-          window.open(`https://wa.me/${mecanico.telefono.replace(/\D/g, '')}?text=${mensaje}`, '_blank');
-        }
+      if(form.enviar_wsp && mecanico && mecanico.telefono) {
+        const mensaje = encodeURIComponent(`🚨 *EMERGENCIA TALLER* 🚨\n\nSe te ha asignado una nueva OT de emergencia.\n\n*Problema:* ${form.descripcion_problema}`);
+        window.open(`https://wa.me/${mecanico.telefono.replace(/\D/g, '')}?text=${mensaje}`, '_blank');
       }
       
       onBack();
     } catch(err) {
       console.error(err);
-      alert("Error al guardar la OT.");
+      alert("Error al guardar la OT: " + err.message);
     } finally {
       setSaving(false);
     }
@@ -106,7 +117,7 @@ const TallerNuevaOT = ({ onBack, tenantId }) => {
           >
             <option value="">Selecciona mecánico...</option>
             {contactos.map((c, i) => (
-              <option key={i} value={c.nombre}>{c.nombre} ({c.telefono})</option>
+              <option key={c.id || i} value={c.id}>{c.nombre} ({c.telefono})</option>
             ))}
           </select>
         </div>

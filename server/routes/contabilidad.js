@@ -826,4 +826,110 @@ router.get('/consultas/balance-mensual', async (req, res) => {
     }
   });
 
+// 12. Conciliación Fiscal (NIIF vs Local) desde base de datos
+router.get('/conciliacion-fiscal', async (req, res) => {
+  const tenantId = req.query.tenantId || 1;
+  const anio = req.query.anio || new Date().getFullYear();
+  try {
+    const [rows] = await getDb(req).query(`
+      SELECT 
+        CONCAT(p.codigo, ' - ', p.nombre) as cuenta,
+        p.codigo,
+        p.naturaleza,
+        COALESCE(SUM(d.debito), 0) as total_debito,
+        COALESCE(SUM(d.credito), 0) as total_credito,
+        CASE 
+          WHEN p.naturaleza = 'D' THEN COALESCE(SUM(d.debito - d.credito), 0)
+          ELSE COALESCE(SUM(d.credito - d.debito), 0)
+        END as saldoNIIF
+      FROM plan_contable p
+      LEFT JOIN contab_detalles d ON p.id_cuenta = d.id_cuenta
+      LEFT JOIN contab_documentos doc ON d.id_documento = doc.id_documento
+      LEFT JOIN contab_comprobantes c ON doc.id_comprobante = c.id_comprobante AND c.id_tenant = ?
+      WHERE p.id_tenant = ? AND (doc.fecha IS NULL OR YEAR(doc.fecha) <= ?)
+        AND p.nivel <= 4
+      GROUP BY p.id_cuenta, p.codigo, p.nombre, p.naturaleza
+      HAVING ABS(saldoNIIF) > 0
+      ORDER BY p.codigo
+      LIMIT 50
+    `, [tenantId, tenantId, anio]);
+
+    const result = rows.map(r => {
+      let saldoFiscal = r.saldoNIIF;
+      let observacion = 'Sin diferencia tributaria relevante';
+
+      if (r.codigo.startsWith('15')) {
+        saldoFiscal = Math.round(r.saldoNIIF * 0.80);
+        observacion = 'Diferencia en estimación de vida útil y valor residual NIIF';
+      } else if (r.codigo.startsWith('1430') || r.codigo.startsWith('4105')) {
+        saldoFiscal = 0;
+        observacion = 'NIC 41 (Valor Razonable) no se reconoce fiscalmente hasta enajenación';
+      } else if (r.codigo.startsWith('5199') || r.codigo.startsWith('1399')) {
+        saldoFiscal = 0;
+        observacion = 'Provisión contable no deducible hasta cumplimiento de requisitos DIAN';
+      }
+
+      const diferencia = Math.abs(r.saldoNIIF - saldoFiscal);
+
+      return {
+        cuenta: r.cuenta,
+        saldoNIIF: r.saldoNIIF,
+        saldoFiscal,
+        diferencia,
+        observacion
+      };
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error en conciliacion fiscal:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 13. Auditoría Información Exógena DIAN desde base de datos
+router.get('/auditoria-exogena', async (req, res) => {
+  const tenantId = req.query.tenantId || 1;
+  const { formato, vigencia } = req.query;
+  const anio = vigencia || new Date().getFullYear();
+
+  try {
+    let whereFormato = '';
+    if (formato === '1001') {
+      whereFormato = "AND (p.codigo LIKE '5%' OR p.codigo LIKE '7%' OR p.codigo LIKE '2365%')";
+    } else if (formato === '1003') {
+      whereFormato = "AND p.codigo LIKE '1355%'";
+    } else if (formato === '1005') {
+      whereFormato = "AND p.codigo LIKE '2408%'";
+    } else if (formato === '1007') {
+      whereFormato = "AND p.codigo LIKE '4%'";
+    }
+
+    const [rows] = await getDb(req).query(`
+      SELECT 
+        CONCAT(p.codigo, ' - ', p.nombre) as concepto,
+        COALESCE(t.documento, '222222222') as nit,
+        COALESCE(t.nombre_completo, t.nombre_comercial, 'TERCERO GENERAL') as nombre,
+        ROUND(SUM(COALESCE(d.debito, 0)), 2) as pago,
+        ROUND(SUM(CASE WHEN p.codigo LIKE '2365%' OR p.maneja_retefuente = 1 THEN COALESCE(d.credito, 0) ELSE 0 END), 2) as retencion
+      FROM contab_detalles d
+      JOIN contab_documentos doc ON d.id_documento = doc.id_documento
+      JOIN contab_comprobantes c ON doc.id_comprobante = c.id_comprobante
+      JOIN plan_contable p ON d.id_cuenta = p.id_cuenta
+      LEFT JOIN terceros t ON d.id_tercero = t.id_tercero
+      WHERE c.id_tenant = ? AND YEAR(doc.fecha) <= ? ${whereFormato}
+      GROUP BY p.codigo, p.nombre, t.documento, t.nombre_completo, t.nombre_comercial
+      HAVING pago > 0 OR retencion > 0
+      ORDER BY pago DESC
+      LIMIT 100
+    `, [tenantId, anio]);
+
+    res.json(rows);
+  } catch (error) {
+    console.error('Error en auditoria exogena:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
+

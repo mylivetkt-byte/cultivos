@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import PremiumSelect from '../PremiumSelect';
 import { PlusOutlined, FilePdfOutlined, FileExcelOutlined, WhatsAppOutlined } from '@ant-design/icons';
 import { Modal, Form, Input, InputNumber, Select as AntSelect, message, ConfigProvider, theme } from 'antd';
@@ -439,24 +440,18 @@ export default function CosechasAvanzado({ tenantId, permisos = {} }) {
           <div className="form-group" style={{ margin: 0, gridColumn: 'span 2' }}>
             <label style={{ fontSize: '0.85em', color: '#94a3b8', marginBottom: '5px' }}>Rango Fechas (Opcional)</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <input 
-                type="date" 
-                className="form-control" 
+              <DatePickerClaro className="form-control" 
                 style={{ cursor: 'pointer', background: '#334155', color: '#f8fafc', border: '1px solid #475569', textAlign: 'center' }}
                 value={filters.fechaInicio} 
                 onChange={e => setFilters({...filters, fechaInicio: e.target.value})} 
                 title="Fecha Inicio"
-                onClick={e => e.target.showPicker && e.target.showPicker()}
-              />
-              <input 
-                type="date" 
-                className="form-control" 
+                onClick={e => e.target.showPicker && e.target.showPicker()} />
+              <DatePickerClaro className="form-control" 
                 style={{ cursor: 'pointer', background: '#334155', color: '#f8fafc', border: '1px solid #475569', textAlign: 'center' }}
                 value={filters.fechaFin} 
                 onChange={e => setFilters({...filters, fechaFin: e.target.value})} 
                 title="Fecha Fin" 
-                onClick={e => e.target.showPicker && e.target.showPicker()}
-              />
+                onClick={e => e.target.showPicker && e.target.showPicker()} />
             </div>
           </div>
         </div>
@@ -644,7 +639,7 @@ export default function CosechasAvanzado({ tenantId, permisos = {} }) {
 
               <div>
                 <Form.Item name="fecha_cosecha" label="Fecha de la Cosecha" rules={[{ required: true, message: 'Indique la fecha' }]}>
-                  <input type="date" className="form-control" style={{ width: '100%', padding: '8px', background: '#334155', color: '#fff', border: '1px solid #475569', borderRadius: '6px' }} />
+                  <DatePickerClaro className="form-control" style={{ width: '100%', padding: '8px', background: '#334155', color: '#fff', border: '1px solid #475569', borderRadius: '6px' }} />
                 </Form.Item>
                 <AyudaCampesina campo="fecha_cosecha" />
               </div>

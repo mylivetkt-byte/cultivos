@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { message } from 'antd';
 import Select from 'react-select';
 import { authFetch } from '../../utils/api';
@@ -651,12 +652,9 @@ const JefeCuadrillaApp = ({ tenantId }) => {
 
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#334155' }}>Fecha de la Labor</label>
-              <input 
-                type="date" 
-                value={assignData.fecha_planificada}
+              <DatePickerClaro value={assignData.fecha_planificada}
                 onChange={e => setAssignData({...assignData, fecha_planificada: e.target.value})}
-                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-              />
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
             </div>
 
             <div style={{ marginBottom: '16px' }}>

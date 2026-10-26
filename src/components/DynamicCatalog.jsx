@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import DatePickerClaro from './Common/DatePickerClaro';
 import Select from 'react-select';
 import AsyncSelect from 'react-select/async';
 import Modal from './Modal';
@@ -493,44 +494,120 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
 
   const handleExportPdf = async () => {
     if (!structure) return;
-    const exportData = await fetchAllForExport();
-    if (!exportData || exportData.length === 0) return;
     
-    if (['enfermedades', 'plagas', 'malezas'].includes(tableName)) {
-       exportFichasPdf(tableName, structure.columns, exportData, getExportMetadata(), fkOptions);
-    } else {
-       let exportCols = structure.columns;
-       
-       if (tableName === 'insumos') {
-         const importantCols = ['codigo', 'nombre', 'id_grupo', 'id_proveedor', 'es_nocivo', 'stock_actual', 'precio_venta_1'];
-         exportCols = structure.columns.filter(c => importantCols.includes(c.name));
-       } else if (tableName === 'rrhh_empleados') {
-         const importantCols = ['documento', 'nombres', 'apellidos', 'id_cargo', 'estado_activo', 'salario_base', 'telefono'];
-         exportCols = structure.columns.filter(c => importantCols.includes(c.name));
-       } else if (tableName === 'fincas' || tableName === 'lotes') {
-         const importantCols = ['codigo', 'nombre', 'id_finca', 'area_total_ha', 'area_cultivable_ha', 'departamento', 'municipio'];
-         exportCols = structure.columns.filter(c => importantCols.includes(c.name));
-       } else if (tableName === 'maquinaria' || tableName === 'agroind_maquinaria_equipo') {
-         const importantCols = ['codigo', 'nombre', 'marca', 'modelo', 'estado', 'horas_motor_totales'];
-         exportCols = structure.columns.filter(c => importantCols.includes(c.name));
-       } else if (tableName === 'terceros') {
-         const importantCols = ['documento', 'nombre_completo', 'tipo_tercero', 'telefono', 'email'];
-         exportCols = structure.columns.filter(c => importantCols.includes(c.name));
-       } else if (tableName === 'vehiculos') {
-         const importantCols = ['placa', 'tipo_vehiculo', 'marca', 'modelo', 'ano', 'kilometraje_actual', 'soat_vencimiento', 'tecnicomecanica_vencimiento'];
-         exportCols = structure.columns.filter(c => importantCols.includes(c.name));
-       }
-       
-       exportToPdf(tableName, exportCols, exportData, getExportMetadata(), fkOptions);
+    // Open preview window synchronously on click so browser never blocks the popup
+    let previewWindow = null;
+    try {
+      previewWindow = window.open('about:blank', '_blank');
+      if (previewWindow) {
+        previewWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head><title>Generando PDF...</title></head>
+            <body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#0d1527;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;">
+              <div style="text-align:center;">
+                <div style="font-size:36px;margin-bottom:12px;">📄</div>
+                <div style="font-size:16px;font-weight:600;color:#38bdf8;">Generando documento PDF...</div>
+                <div style="font-size:12px;color:#94a3b8;margin-top:6px;">Un momento por favor, abriendo vista previa.</div>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+    } catch {
+      // Ignored if window.open fails
+    }
+
+    try {
+      const exportData = await fetchAllForExport();
+      if (!exportData || exportData.length === 0) {
+        if (previewWindow && !previewWindow.closed) previewWindow.close();
+        showToast('No hay registros disponibles para exportar con los filtros seleccionados.', 'warning');
+        return;
+      }
+      
+      showToast('Generando documento PDF...', 'info');
+      if (['enfermedades', 'plagas', 'malezas'].includes(tableName)) {
+         await exportFichasPdf(tableName, structure.columns, exportData, getExportMetadata(), fkOptions, previewWindow);
+      } else {
+         let exportCols = structure.columns;
+         
+         if (tableName === 'insumos') {
+           const importantCols = ['codigo', 'nombre', 'id_grupo', 'id_proveedor', 'es_nocivo', 'stock_actual', 'precio_venta_1'];
+           exportCols = structure.columns.filter(c => importantCols.includes(c.name));
+         } else if (tableName === 'rrhh_empleados') {
+           const importantCols = ['documento', 'nombres', 'apellidos', 'id_cargo', 'estado_activo', 'salario_base', 'telefono'];
+           exportCols = structure.columns.filter(c => importantCols.includes(c.name));
+         } else if (tableName === 'fincas' || tableName === 'lotes') {
+           const importantCols = ['codigo', 'nombre', 'id_finca', 'area_total_ha', 'area_cultivable_ha', 'departamento', 'municipio'];
+           exportCols = structure.columns.filter(c => importantCols.includes(c.name));
+         } else if (tableName === 'maquinaria' || tableName === 'agroind_maquinaria_equipo') {
+           const importantCols = ['codigo', 'nombre', 'marca', 'modelo', 'estado', 'horas_motor_totales'];
+           exportCols = structure.columns.filter(c => importantCols.includes(c.name));
+         } else if (tableName === 'terceros') {
+           const importantCols = ['documento', 'nombre_completo', 'tipo_tercero', 'telefono', 'email'];
+           exportCols = structure.columns.filter(c => importantCols.includes(c.name));
+         } else if (tableName === 'vehiculos') {
+           const importantCols = ['placa', 'tipo_vehiculo', 'marca', 'modelo', 'ano', 'kilometraje_actual', 'soat_vencimiento', 'tecnicomecanica_vencimiento'];
+           exportCols = structure.columns.filter(c => importantCols.includes(c.name));
+         }
+         
+         await exportToPdf(tableName, exportCols, exportData, getExportMetadata(), fkOptions, previewWindow);
+      }
+      showToast('Documento PDF generado y abierto exitosamente.', 'success');
+    } catch (err) {
+      if (previewWindow && !previewWindow.closed) {
+        try { previewWindow.close(); } catch {}
+      }
+      console.error('Error exportando PDF:', err);
+      showToast('Error al exportar PDF: ' + err.message, 'error');
     }
   };
 
   const handleExportExcel = async () => {
     if (!structure) return;
-    const exportData = await fetchAllForExport();
-    if (!exportData || exportData.length === 0) return;
-    
-    exportToExcel(tableName, structure.columns, exportData, getExportMetadata());
+
+    // Open preview window synchronously on click so browser never blocks the popup
+    let previewWindow = null;
+    try {
+      previewWindow = window.open('about:blank', '_blank');
+      if (previewWindow) {
+        previewWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head><title>Generando Excel...</title></head>
+            <body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#0d1527;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;">
+              <div style="text-align:center;">
+                <div style="font-size:36px;margin-bottom:12px;">📊</div>
+                <div style="font-size:16px;font-weight:600;color:#10b981;">Generando documento Excel...</div>
+                <div style="font-size:12px;color:#94a3b8;margin-top:6px;">Un momento por favor, abriendo vista previa.</div>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+    } catch {
+      // Ignored if window.open fails
+    }
+
+    try {
+      const exportData = await fetchAllForExport();
+      if (!exportData || exportData.length === 0) {
+        if (previewWindow && !previewWindow.closed) previewWindow.close();
+        showToast('No hay registros disponibles para exportar con los filtros seleccionados.', 'warning');
+        return;
+      }
+      
+      showToast('Generando documento Excel...', 'info');
+      await exportToExcel(tableName, structure.columns, exportData, getExportMetadata(), fkOptions, previewWindow);
+      showToast('Documento Excel generado y abierto exitosamente.', 'success');
+    } catch (err) {
+      if (previewWindow && !previewWindow.closed) {
+        try { previewWindow.close(); } catch {}
+      }
+      console.error('Error exportando Excel:', err);
+      showToast('Error al exportar Excel: ' + err.message, 'error');
+    }
   };
 
   const handleExportWhatsApp = async () => {
@@ -818,12 +895,9 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
             {formatColumnName(col.name)}
             {!col.isNullable && <span className="required">*</span>}
           </label>
-          <input
-            type="date"
-            value={value ? value.toString().slice(0, 10) : ''}
+          <DatePickerClaro value={value ? value.toString().slice(0, 10) : ''}
             onChange={(e) => handleFormChange(col.name, e.target.value)}
-            onBlur={() => checkFieldUniqueness(col.name)}
-          />
+            onBlur={() => checkFieldUniqueness(col.name)} />
           {checkingUnique && <span className="form-hint">Validando unicidad...</span>}
           {error && <span className="form-error">{error}</span>}
         </div>
@@ -1392,23 +1466,17 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Desde:</span>
-                  <input 
-                    type="date" 
-                    className="form-input" 
+                  <DatePickerClaro className="form-input" 
                     style={{ padding: '4px 8px', width: 'auto' }}
                     value={filterDateFrom}
-                    onChange={(e) => { setFilterDateFrom(e.target.value); setPagination(p => ({...p, page: 1})); }}
-                  />
+                    onChange={(e) => { setFilterDateFrom(e.target.value); setPagination(p => ({...p, page: 1})); }} />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Hasta:</span>
-                  <input 
-                    type="date" 
-                    className="form-input" 
+                  <DatePickerClaro className="form-input" 
                     style={{ padding: '4px 8px', width: 'auto' }}
                     value={filterDateTo}
-                    onChange={(e) => { setFilterDateTo(e.target.value); setPagination(p => ({...p, page: 1})); }}
-                  />
+                    onChange={(e) => { setFilterDateTo(e.target.value); setPagination(p => ({...p, page: 1})); }} />
                 </div>
               </div>
             )}
@@ -1715,7 +1783,54 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={modalMode === 'add' ? `Nuevo Registro — ${formatTableName(tableName)}` : `Editar Registro — ${formatTableName(tableName)}`}
+        title={
+          modalMode === 'add' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <span style={{ 
+                background: 'rgba(16, 185, 129, 0.18)', 
+                color: '#10b981', 
+                border: '1px solid rgba(16, 185, 129, 0.4)',
+                fontSize: '11px', 
+                fontWeight: 700, 
+                padding: '3px 8px', 
+                borderRadius: '6px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <span>✨</span> Nuevo Registro
+              </span>
+              <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '18px' }}>
+                {formatTableName(tableName)}
+              </span>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <span style={{ 
+                background: 'rgba(56, 189, 248, 0.18)', 
+                color: '#38bdf8', 
+                border: '1px solid rgba(56, 189, 248, 0.4)',
+                fontSize: '11px', 
+                fontWeight: 700, 
+                padding: '3px 8px', 
+                borderRadius: '6px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <span>✏️</span> Editar Registro
+              </span>
+              <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '18px' }}>
+                {formatTableName(tableName)}
+              </span>
+            </div>
+          )
+        }
+        subtitle={`Módulo: ${formatTableName(tableName)} — Completa o actualiza los datos del formulario`}
         footer={
           <>
             <button className="btn btn-outline" onClick={() => setModalOpen(false)} disabled={submitting}>
@@ -1736,6 +1851,38 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
           </>
         }
       >
+        {/* Contextual Location Banner inside Form */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '10px 14px',
+          background: 'rgba(255, 255, 255, 0.04)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '8px',
+          marginBottom: '18px',
+          fontSize: '13px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8' }}>
+            <span style={{ color: '#64748b' }}>Ubicación:</span>
+            <span style={{ color: '#f8fafc', fontWeight: 600 }}>{formatTableName(tableName)}</span>
+            <span style={{ color: '#64748b' }}>›</span>
+            <span style={{ color: modalMode === 'add' ? '#10b981' : '#38bdf8', fontWeight: 600 }}>
+              {modalMode === 'add' ? 'Nuevo Registro' : `Editando Registro #${editingId || ''}`}
+            </span>
+          </div>
+          <span style={{
+            fontSize: '11px',
+            color: '#94a3b8',
+            background: 'rgba(255, 255, 255, 0.06)',
+            padding: '2px 8px',
+            borderRadius: '4px',
+            fontFamily: 'monospace'
+          }}>
+            {tableName}
+          </span>
+        </div>
+
         {structure && (
           <div className="form-grid">
             {structure.columns

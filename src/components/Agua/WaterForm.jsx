@@ -1,5 +1,6 @@
 // src/components/Agua/WaterForm.jsx
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { createWaterRecord, updateWaterRecord, fetchWaterOptions } from '../../services/waterApi.js';
 import { authFetch, API_BASE } from '../../utils/api.js';
 import AyudaCampesina from '../Common/AyudaCampesina.jsx';
@@ -232,13 +233,13 @@ export default function WaterForm({ onSuccess, initialData = null, tenantId, fin
 
       <div className="form-row">
         <label>Fecha inicio *</label>
-        <input type="date" name="fecha_inicio" value={form.fecha_inicio} onChange={handleChange} required />
+        <DatePickerClaro name="fecha_inicio" value={form.fecha_inicio} onChange={handleChange} required />
         <AyudaCampesina campo="fecha_inicio" />
       </div>
 
       <div className="form-row">
         <label>Fecha fin *</label>
-        <input type="date" name="fecha_fin" value={form.fecha_fin} onChange={handleChange} required />
+        <DatePickerClaro name="fecha_fin" value={form.fecha_fin} onChange={handleChange} required />
         <AyudaCampesina campo="fecha_fin" />
       </div>
 

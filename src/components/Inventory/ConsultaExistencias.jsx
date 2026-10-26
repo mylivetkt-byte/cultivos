@@ -14,11 +14,13 @@ export default function ConsultaExistencias({ tenantId, fincaId }) {
     if (!tenantId) return;
     fetchBodegas();
     fetchExistencias();
-  }, [tenantId, filterBodega]);
+  }, [tenantId, filterBodega, fincaId]);
 
   const fetchBodegas = async () => {
     try {
-      const res = await authFetch(`/api/table/bod_bodegas?tenantId=${tenantId}`);
+      let url = `/api/table/bod_bodegas?tenantId=${tenantId}`;
+      if (fincaId && fincaId !== 'all') url += `&id_finca=${fincaId}`;
+      const res = await authFetch(url);
       const data = await res.json();
       setBodegas(data.data || []);
     } catch (err) {
@@ -31,6 +33,7 @@ export default function ConsultaExistencias({ tenantId, fincaId }) {
     try {
       let url = `/api/inventario/existencias?tenantId=${tenantId}`;
       if (filterBodega) url += `&bodegaId=${filterBodega}`;
+      if (fincaId && fincaId !== 'all') url += `&fincaId=${fincaId}`;
       
       const res = await authFetch(url);
       const data = await res.json();
@@ -91,6 +94,7 @@ export default function ConsultaExistencias({ tenantId, fincaId }) {
         <table className="data-table">
           <thead>
             <tr>
+              <th>Finca</th>
               <th>Bodega</th>
               <th>Código</th>
               <th>Insumo/Producto</th>
@@ -102,9 +106,10 @@ export default function ConsultaExistencias({ tenantId, fincaId }) {
           </thead>
           <tbody>
             {existencias.length === 0 ? (
-              <tr><td colSpan="7" style={{ textAlign: 'center' }}>No hay existencias registradas.</td></tr>
+              <tr><td colSpan="8" style={{ textAlign: 'center' }}>No hay existencias registradas.</td></tr>
             ) : existencias.slice((currentPage - 1) * 20, currentPage * 20).map(e => (
               <tr key={e.id_existencia}>
+                <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{e.finca_nombre || 'Consolidado'}</td>
                 <td>{e.bodega_nombre} {e.es_principal ? '⭐' : ''}</td>
                 <td>{e.codigo}</td>
                 <td style={{ fontWeight: 600 }}>{e.insumo_nombre}</td>

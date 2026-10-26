@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import Select from 'react-select';
 import { customStyles } from '../PremiumSelect';
 
@@ -222,7 +223,7 @@ function ProgramadorPrenez() {
 
               <div>
                 <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Fecha del Evento</label>
-                <input type="date" value={formData.fecha} onChange={e => setFormData({...formData, fecha: e.target.value})} required style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                <DatePickerClaro value={formData.fecha} onChange={e => setFormData({...formData, fecha: e.target.value})} required style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
               </div>
 
               {formData.tipo_evento === 'Servicio' && (

@@ -41,6 +41,8 @@ import cosechasAuditoriaRouter from './routes/cosechasAuditoria.js';
 import produccionRouter from './routes/produccion.js';
 import usuariosPermisosRouter from './routes/usuarios_permisos.js';
 import radarMaquinariaRouter from './routes/radar_maquinaria.js';
+import catalogoCultivosSuperRouter from './routes/catalogo_cultivos_super.js';
+import { getFincasHandler } from './routes/tables.js';
 import { authMiddleware, tenantPoolMiddleware } from './utils/auth.js';
 import { logger, initSentry, loggerMiddleware } from './utils/logger.js';
 import helmet from 'helmet';
@@ -131,7 +133,7 @@ app.use('/api/cosechas', authMiddleware, tenantPoolMiddleware, cosechasDetalleRo
 app.use('/api/cosechas', auth, cosechasAuditoriaRouter);
 
 import aiRouter from './routes/ai_diagnosis.js';
-import whatsappRoutes from './routes/whatsapp.js';
+import whatsappRoutes, { webhookRouter as whatsappWebhookRouter } from './routes/whatsapp.js';
 import reportesInventarioRouter from './routes/reportes-inventario.js';
 import { connectToWhatsApp } from './services/whatsappService.js';
 import authRouter from './routes/auth.js';
@@ -189,6 +191,9 @@ app.use('/api/auth', apiLimiter, authRouter);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Webhook oficial de Meta WhatsApp Cloud API (Público, verificado por token de Meta)
+app.use('/api/whatsapp/webhook', whatsappWebhookRouter);
 
 // Protected routes - all require authentication + tenant pool
 // Aplicamos un rate limit un poco más estricto a las rutas generales de API
@@ -274,6 +279,9 @@ app.use('/api/riego-precision', auth, riegoPrecisionRouter);
 app.use('/api/vra', auth, vraPrescripcionRouter);
 app.use('/api/rendimiento', auth, rendimientoRouter);
 app.use('/api/drones', auth, dronesRouter);
+app.use('/api/catalogo_cultivos_super', catalogoCultivosSuperRouter);
+app.get('/api/fincas', auth, getFincasHandler);
+app.use('/api/whatsapp', auth, whatsappRoutes);
 
 app.use('/api/water', auth, waterRouter);
 app.get('/api/dashboard/stats', auth, async (req, res) => {

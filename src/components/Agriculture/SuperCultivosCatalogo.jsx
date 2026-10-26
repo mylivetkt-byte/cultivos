@@ -3,6 +3,15 @@ import axios from 'axios';
 import { Table, Button, Modal, Tabs, Form, Input, InputNumber, notification, Card, Row, Col, Typography, Select, ConfigProvider, theme, Space, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, CompassOutlined, CheckCircleOutlined, MinusCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 
+// Interceptor para inyectar token de autenticación a peticiones axios
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 const { TabPane } = Tabs;
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -146,7 +155,8 @@ export default function SuperCultivosCatalogo() {
   const fetchEspecies = async () => {
     try {
       const res = await axios.get('/api/catalogo_cultivos_super/especies');
-      setEspeciesList(res.data.map(item => item.especie_biologica));
+      const list = Array.isArray(res.data) ? res.data : [];
+      setEspeciesList(list.map(item => typeof item === 'string' ? item : item.especie_biologica).filter(Boolean));
     } catch (err) {
       console.error('Error fetching especies', err);
     }
@@ -155,9 +165,10 @@ export default function SuperCultivosCatalogo() {
   const fetchFincas = async () => {
     try {
       const res = await axios.get('/api/fincas');
-      setFincasList(res.data);
-      if (res.data.length > 0) {
-        setSelectedFinca(res.data[0]);
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      setFincasList(list);
+      if (list.length > 0) {
+        setSelectedFinca(list[0]);
       }
     } catch (error) {
       console.error('Error fetching fincas:', error);
@@ -168,8 +179,10 @@ export default function SuperCultivosCatalogo() {
     setLoading(true);
     try {
       const res = await axios.get('/api/catalogo_cultivos_super');
-      setData(res.data);
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      setData(list);
     } catch (err) {
+      console.error('Error cargando catalogo:', err);
       notification.error({ message: 'Error cargando catálogo' });
     } finally {
       setLoading(false);

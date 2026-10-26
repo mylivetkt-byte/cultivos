@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { authFetch, API_BASE } from '../../utils/api.js';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../context/AuthContext';
 import { Select, ConfigProvider, theme } from 'antd';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from '../../utils/exportPdf';
+
 import * as XLSX from 'xlsx';
+import { downloadExcelWorkbook } from '../../utils/exportExcel';
 import './InventarioCamadas.css';
 
 export default function InventarioCamadas({ tenantId = 1 }) {
@@ -261,7 +263,7 @@ export default function InventarioCamadas({ tenantId = 1 }) {
         const camadaName = camada ? `${camada.codigo_camada} (${camada.nombre_semilla})` : 'Desconocida';
 
         // 1. Generar PDF
-        const doc = new jsPDF();
+        const doc = new (getJsPDFConstructor())();
         addPdfHeader(doc, 'REMISIÓN DE DESPACHO A LOTE');
         
         doc.setFontSize(11);
@@ -277,7 +279,7 @@ export default function InventarioCamadas({ tenantId = 1 }) {
         doc.line(120, 130, 196, 130);
         doc.text('Firma de Quien Recibe', 120, 140);
 
-        doc.save(`Remision_Despacho_${Date.now()}.pdf`);
+        downloadPdfDoc(doc, `Remision_Despacho_${Date.now()}.pdf`);
 
         // 2. Enviar por WhatsApp
         const msj = `*REMISIÓN DE DESPACHO (VIVERO)*\n\nHola ${empRecibeName}, te informo que se acaban de despachar *${movForm.cantidad} plántulas* de la camada *${camadaName}* hacia el *${loteName}*.\n\nPor favor, asegúrate de recibirlas y firmar la remisión adjunta.`;
@@ -328,27 +330,27 @@ export default function InventarioCamadas({ tenantId = 1 }) {
   };
 
   const handleExportPDF = () => {
-    const doc = new jsPDF();
+    const doc = new (getJsPDFConstructor())();
     if (activeTab === 'inventario') {
       addPdfHeader(doc, 'Inventario Base (Semillas y Abonos)');
-      doc.autoTable({
+      runAutoTable(doc, {
         startY: 45,
         head: [['Tipo', 'Nombre/Variedad', 'Stock Disponible', 'Costo Promedio']],
         body: inventario.map(item => [item.tipo, item.nombre, `${item.cantidad_disponible} ${item.unidad_medida}`, formatCurrency(Number(item.costo_unitario))])
       });
-      doc.save('Inventario_Vivero.pdf');
+      downloadPdfDoc(doc, 'Inventario_Vivero.pdf');
     } else if (activeTab === 'camadas') {
       addPdfHeader(doc, 'Camadas en Crecimiento');
       const activas = camadas.filter(c => c.estado !== 'Agotada' && c.estado !== 'Descartada');
-      doc.autoTable({
+      runAutoTable(doc, {
         startY: 45,
         head: [['Código', 'Semilla', 'Estado', 'Plántulas Actuales', 'Edad']],
         body: activas.map(camada => [camada.codigo_camada, camada.nombre_semilla, camada.estado, camada.cantidad_actual, `${camada.dias_crecimiento} días`])
       });
-      doc.save('Camadas_Activas.pdf');
+      downloadPdfDoc(doc, 'Camadas_Activas.pdf');
     } else if (activeTab === 'movimientos') {
       addPdfHeader(doc, 'Historial de Movimientos');
-      doc.autoTable({
+      runAutoTable(doc, {
         startY: 45,
         head: [['Fecha', 'Tipo', 'Camada', 'Cantidad', 'Responsable', 'Estado Nómina', 'Observaciones']],
         body: movimientos.map(mov => [
@@ -361,7 +363,7 @@ export default function InventarioCamadas({ tenantId = 1 }) {
           mov.observaciones || '-'
         ])
       });
-      doc.save('Movimientos_Vivero.pdf');
+      downloadPdfDoc(doc, 'Movimientos_Vivero.pdf');
     }
   };
 
@@ -399,7 +401,7 @@ export default function InventarioCamadas({ tenantId = 1 }) {
     }
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Datos');
-    XLSX.writeFile(wb, filename);
+    downloadExcelWorkbook(wb, filename);
   };
 
   const handleExportWhatsApp = () => {
@@ -568,11 +570,11 @@ export default function InventarioCamadas({ tenantId = 1 }) {
           <form onSubmit={fetchMovimientos} className="ic-filter-bar">
             <div className="ic-filter-group">
               <label className="ic-filter-label">Fecha Desde</label>
-              <input type="date" className="ic-filter-input" value={filters.fechaInicio} onChange={e => setFilters({...filters, fechaInicio: e.target.value})} />
+              <DatePickerClaro className="ic-filter-input" value={filters.fechaInicio} onChange={e => setFilters({...filters, fechaInicio: e.target.value})} />
             </div>
             <div className="ic-filter-group">
               <label className="ic-filter-label">Fecha Hasta</label>
-              <input type="date" className="ic-filter-input" value={filters.fechaFin} onChange={e => setFilters({...filters, fechaFin: e.target.value})} />
+              <DatePickerClaro className="ic-filter-input" value={filters.fechaFin} onChange={e => setFilters({...filters, fechaFin: e.target.value})} />
             </div>
             <div className="ic-filter-group">
               <label className="ic-filter-label">Semilla / Variedad</label>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { authFetch } from '../../utils/api';
 import { Select } from 'antd';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -188,8 +189,8 @@ const EstadoResultados = ({ tenantId }) => {
             <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
               {modoTiempo === 'fechas' ? (
                 <>
-                  <div><label style={labelStyle}>Desde</label><input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} style={inputStyle} /></div>
-                  <div><label style={labelStyle}>Hasta</label><input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} style={inputStyle} /></div>
+                  <div><label style={labelStyle}>Desde</label><DatePickerClaro value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} style={inputStyle} /></div>
+                  <div><label style={labelStyle}>Hasta</label><DatePickerClaro value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} style={inputStyle} /></div>
                 </>
               ) : (
                 <>

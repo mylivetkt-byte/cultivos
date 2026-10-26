@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../../components/Common/DatePickerClaro';
 import { fetchTableData, insertRecord, updateRecord } from '../../utils/api';
 import '../../components/dashboard.css';
 
@@ -143,7 +144,7 @@ export default function ControlPlagas({ tenantId }) {
               <div className="form-row">
                 <div className="form-group">
                   <label>Fecha Aplicación *</label>
-                  <input className="form-control" type="date" value={form.fecha_aplicacion} onChange={(e) => setForm({ ...form, fecha_aplicacion: e.target.value })} required />
+                  <DatePickerClaro className="form-control" value={form.fecha_aplicacion} onChange={(e) => setForm({ ...form, fecha_aplicacion: e.target.value })} required />
                 </div>
                 <div className="form-group">
                   <label>Método Aplicación *</label>

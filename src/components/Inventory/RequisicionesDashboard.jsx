@@ -4,8 +4,9 @@ import { PlusOutlined, FilePdfOutlined, FileExcelOutlined, CheckCircleOutlined, 
 import { fetchTableData } from '../../utils/api';
 import WhatsAppManager from '../Sistemas/WhatsAppManager';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { downloadExcelWorkbook } from '../../utils/exportExcel';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from '../../utils/exportPdf';
+
 import { authFetch } from '../../utils/api';
 
 const { Title, Text } = Typography;
@@ -192,11 +193,11 @@ export default function RequisicionesDashboard({ tenantId }) {
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Pedidos");
-    XLSX.writeFile(wb, `Requisiciones_Auditoria.xlsx`);
+    downloadExcelWorkbook(wb, `Requisiciones_Auditoria.xlsx`);
   };
 
   const exportToPDF = () => {
-    const doc = new jsPDF('landscape');
+    const doc = new (getJsPDFConstructor())('landscape');
     doc.text(`Auditoría de Requisiciones Internas`, 14, 15);
     
     const tableColumn = ["ID", "FECHA", "ORIGEN", "SOLICITANTE", "AUTORIZADOR", "ESTADO", "ÍTEMS"];
@@ -210,8 +211,8 @@ export default function RequisicionesDashboard({ tenantId }) {
       p.total_items
     ]);
 
-    doc.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
-    doc.save(`Requisiciones_Auditoria.pdf`);
+    runAutoTable(doc, { head: [tableColumn], body: tableRows, startY: 20 });
+    downloadPdfDoc(doc, `Requisiciones_Auditoria.pdf`);
   };
 
   const getStatusColor = (estado) => {

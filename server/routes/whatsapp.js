@@ -5,6 +5,59 @@ import { getDb } from '../utils/db.js';
 import { generatePedidoPDF } from '../utils/pdfGenerator.js';
 
 const router = express.Router();
+export const webhookRouter = express.Router();
+
+// =====================================================================
+// WEBHOOK PÚBLICO OFICIAL DE META WHATSAPP CLOUD API
+// =====================================================================
+// 1. Verificación del Webhook por parte de los servidores de Meta (GET)
+webhookRouter.get('/', (req, res) => {
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
+    const expectedToken = process.env.META_WA_VERIFY_TOKEN || 'agropaccioli_meta_secret_2026';
+
+    if (mode === 'subscribe' && token === expectedToken) {
+        console.log('✅ [Meta Webhook] Verificado con éxito por Meta.');
+        return res.status(200).send(challenge);
+    }
+    console.warn('⚠️ [Meta Webhook] Token de verificación inválido:', token);
+    return res.sendStatus(403);
+});
+
+// 2. Recepción de mensajes entrantes de campesinos / operarios (POST)
+webhookRouter.post('/', async (req, res) => {
+    // Retornar 200 inmediatamente a Meta para evitar reintentos encolados
+    res.sendStatus(200);
+
+    try {
+        const body = req.body;
+        if (body.object === 'whatsapp_business_account') {
+            const entries = body.entry || [];
+            for (const entry of entries) {
+                const changes = entry.changes || [];
+                for (const change of changes) {
+                    const value = change.value;
+                    if (value && value.messages) {
+                        for (const msg of value.messages) {
+                            const from = msg.from; // Número del campesino
+                            const type = msg.type;
+                            let text = '';
+                            if (type === 'text') {
+                                text = msg.text?.body;
+                            } else if (type === 'interactive') {
+                                text = msg.interactive?.button_reply?.title || msg.interactive?.list_reply?.title;
+                            }
+                            console.log(`📩 [Meta WhatsApp] Mensaje recibido de ${from} (${type}):`, text);
+                        }
+                    }
+                }
+            }
+        }
+    } catch (err) {
+        console.error('Error procesando evento de Meta Webhook:', err);
+    }
+});
 
 router.get('/status', async (req, res) => {
     try {
@@ -32,7 +85,7 @@ router.post('/test', async (req, res) => {
         }
         
         // Asumimos prefijo 57 si no tiene código de país (muy básico, asume 10 dígitos es Colombia)
-        let formattedPhone = phone.replace(/\\D/g, '');
+        let formattedPhone = phone.replace(/\D/g, '');
         if (formattedPhone.length === 10) {
             formattedPhone = '57' + formattedPhone;
         }
@@ -68,7 +121,7 @@ router.post('/send-pedido', async (req, res) => {
         const pdfBuffer = await generatePedidoPDF(pedidoData, detallesData);
 
         // Formato del teléfono
-        let formattedPhone = phone.replace(/\\D/g, '');
+        let formattedPhone = phone.replace(/\D/g, '');
         if (formattedPhone.length === 10) formattedPhone = '57' + formattedPhone;
 
         const caption = `📋 *Requisición Interna #${id_pedido}*\nAdjuntamos el PDF con los detalles del pedido solicitado por ${pedidoData.nombre_solicitante}.`;
@@ -183,7 +236,7 @@ router.post('/solicitar-abastecimiento', async (req, res) => {
         let phone = emps[0].telefono;
         if (!phone) return res.status(404).json({ success: false, error: 'Responsable sin teléfono.' });
         
-        let formattedPhone = phone.replace(/\\D/g, '');
+        let formattedPhone = phone.replace(/\D/g, '');
         if (formattedPhone.length === 10) formattedPhone = '57' + formattedPhone;
         
         const textMessage = is_viol 
@@ -208,7 +261,7 @@ router.post('/alertar-gerencia', async (req, res) => {
         );
         if (emps.length === 0) return res.status(404).json({ success: false, error: 'Gerencia no encontrada.' });
         let phone = emps[0].telefono;
-        let formattedPhone = phone.replace(/\\D/g, '');
+        let formattedPhone = phone.replace(/\D/g, '');
         if (formattedPhone.length === 10) formattedPhone = '57' + formattedPhone;
         
         let riskIcon = '🟢';
@@ -260,7 +313,7 @@ ${nombre_cientifico && nombre_cientifico !== 'Indeterminado' ? `🧬 *Nombre Cie
         // Enviar a todos de manera asíncrona (sin bloquear)
         uniquePhones.forEach(async (phone) => {
             try {
-                let formattedPhone = phone.replace(/\\D/g, '');
+                let formattedPhone = phone.replace(/\D/g, '');
                 if (formattedPhone.length === 10) formattedPhone = '57' + formattedPhone;
                 await sendTextMessage(formattedPhone, textMessage);
             } catch(e) {

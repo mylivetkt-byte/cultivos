@@ -1,5 +1,4 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from './exportPdf';
 import { API_BASE, getAuthHeaders, authFetch } from './api';
 
 export async function exportReporteGerencialLotes(tenantId, metadata = {}, filtros = {}) {
@@ -16,7 +15,8 @@ export async function exportReporteGerencialLotes(tenantId, metadata = {}, filtr
     if (!json.success) throw new Error(json.error || 'Error fetching data');
     const data = json.data || [];
 
-    const doc = new jsPDF({ orientation: 'landscape' });
+    const PDFConstructor = getJsPDFConstructor();
+    const doc = new PDFConstructor({ orientation: 'landscape' });
 
     // 2. Fetch Logo
     let logoBase64 = null;
@@ -123,7 +123,7 @@ export async function exportReporteGerencialLotes(tenantId, metadata = {}, filtr
       { content: new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 }).format(totalRecolectado), styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }
     ]);
 
-    doc.autoTable({
+    runAutoTable(doc, {
       head: [headers],
       body: rows,
       startY: filterY + 5,
@@ -161,11 +161,10 @@ export async function exportReporteGerencialLotes(tenantId, metadata = {}, filtr
       );
     }
 
-    doc.save(`Reporte_Gerencial_Lotes_${new Date().toISOString().slice(0, 10)}.pdf`);
+    downloadPdfDoc(doc, `Reporte_Gerencial_Lotes_${new Date().toISOString().slice(0, 10)}.pdf`);
     return true;
   } catch (err) {
     console.error('Error exporting PDF:', err);
-    alert('Error al generar PDF: ' + err.message);
-    return false;
+    throw new Error('Error al generar PDF: ' + err.message);
   }
 }

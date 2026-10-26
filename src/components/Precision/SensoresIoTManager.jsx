@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { MapContainer, TileLayer, Polygon, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -1185,11 +1186,8 @@ export default function SensoresIoTManager() {
 
               <div className="form-group">
                 <label>Fecha de Instalación</label>
-                <input 
-                  type="date" 
-                  value={sensorForm.fecha_instalacion}
-                  onChange={(e) => setSensorForm({ ...sensorForm, fecha_instalacion: e.target.value })}
-                />
+                <DatePickerClaro value={sensorForm.fecha_instalacion}
+                  onChange={(e) => setSensorForm({ ...sensorForm, fecha_instalacion: e.target.value })} />
               </div>
 
               <div className="modal-actions">
@@ -1368,12 +1366,9 @@ export default function SensoresIoTManager() {
 
                 <div className="form-group">
                   <label>Fecha de Calibración *</label>
-                  <input 
-                    type="date" 
-                    required
+                  <DatePickerClaro required
                     value={calibracionForm.fecha_calibracion}
-                    onChange={(e) => setCalibracionForm({ ...calibracionForm, fecha_calibracion: e.target.value })}
-                  />
+                    onChange={(e) => setCalibracionForm({ ...calibracionForm, fecha_calibracion: e.target.value })} />
                 </div>
               </div>
 

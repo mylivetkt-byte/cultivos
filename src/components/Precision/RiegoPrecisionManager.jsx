@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { 
   Droplet, Gauge, Calendar, Clock, Waves, CheckCircle, 
   AlertTriangle, Plus, Search, RefreshCw, Send, CheckCircle2,
@@ -1072,11 +1073,8 @@ export default function RiegoPrecisionManager() {
 
                   <div className="form-group">
                     <label>Fecha de la Prescripción</label>
-                    <input 
-                      type="date" 
-                      value={faoParams.fecha_programada}
-                      onChange={(e) => setFaoParams({ ...faoParams, fecha_programada: e.target.value })}
-                    />
+                    <DatePickerClaro value={faoParams.fecha_programada}
+                      onChange={(e) => setFaoParams({ ...faoParams, fecha_programada: e.target.value })} />
                   </div>
 
                   <div className="form-grid-2">
@@ -1684,12 +1682,9 @@ export default function RiegoPrecisionManager() {
               <div className="form-grid-3">
                 <div className="form-group">
                   <label>Fecha del Riego *</label>
-                  <input 
-                    type="date" 
-                    required 
+                  <DatePickerClaro required 
                     value={turnoForm.fecha_riego}
-                    onChange={(e) => setTurnoForm({ ...turnoForm, fecha_riego: e.target.value })}
-                  />
+                    onChange={(e) => setTurnoForm({ ...turnoForm, fecha_riego: e.target.value })} />
                   <AyudaCampesina campo="fecha_inicio" textoCustom="Día en que se prende el riego" />
                 </div>
 
@@ -2352,12 +2347,9 @@ export default function RiegoPrecisionManager() {
 
                 <div className="form-group">
                   <label>Fecha del Ensayo *</label>
-                  <input 
-                    type="date" 
-                    required 
+                  <DatePickerClaro required 
                     value={uniformidadForm.fecha_ensayo}
-                    onChange={(e) => setUniformidadForm({ ...uniformidadForm, fecha_ensayo: e.target.value })}
-                  />
+                    onChange={(e) => setUniformidadForm({ ...uniformidadForm, fecha_ensayo: e.target.value })} />
                   <AyudaCampesina campo="fecha_ensayo" />
                 </div>
               </div>

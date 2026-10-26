@@ -1,14 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { authFetch } from '../../utils/api';
 
 function AuditoriaExogena() {
   const [filtros, setFiltros] = useState({ formato: '1001', vigencia: '2026' });
+  const [exogenaData, setExogenaData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const mockData = [
-    { concepto: '5002 - Honorarios', nit: '800123456', nombre: 'Agroservicios S.A.', pago: 5000000, retencion: 550000 },
-    { concepto: '5004 - Arrendamientos', nit: '900654321', nombre: 'Inmobiliaria Fincas', pago: 12000000, retencion: 480000 },
-    { concepto: '5007 - Compra Insumos', nit: '890900123', nombre: 'Fertilizantes Nacionales', pago: 45000000, retencion: 1125000 },
-    { concepto: '5016 - Servicios Técnicos', nit: '700345678', nombre: 'Ingeniería Agrícola SAS', pago: 8500000, retencion: 935000 }
-  ];
+  const fetchExogena = async () => {
+    setLoading(true);
+    try {
+      const res = await authFetch(`/api/contabilidad/auditoria-exogena?formato=${filtros.formato}&vigencia=${filtros.vigencia}`);
+      if (res.ok) {
+        const data = await res.json();
+        setExogenaData(data);
+      }
+    } catch (err) {
+      console.error('Error cargando auditoria exogena:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExogena();
+  }, [filtros.formato, filtros.vigencia]);
 
   const formatCurrency = (val) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
 
@@ -40,12 +55,14 @@ function AuditoriaExogena() {
           </select>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          <button style={{ background: 'var(--primary)', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Procesar</button>
+          <button onClick={fetchExogena} disabled={loading} style={{ background: 'var(--primary)', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+            {loading ? 'Consultando BD...' : 'Procesar'}
+          </button>
         </div>
       </div>
 
       <div className="card" style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '8px' }}>
-        <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '15px' }}>Vista previa de la pre-validación del prevalidador de la DIAN.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '15px' }}>Vista previa de la pre-validación del prevalidador de la DIAN (Datos reales de Base de Datos).</p>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
           <thead>
             <tr style={{ background: 'var(--border)', color: 'var(--text)' }}>
@@ -57,15 +74,23 @@ function AuditoriaExogena() {
             </tr>
           </thead>
           <tbody>
-            {mockData.map((row, idx) => (
-              <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
-                <td style={{ padding: '10px', color: 'var(--text)' }}>{row.concepto}</td>
-                <td style={{ padding: '10px', color: 'var(--text)' }}>{row.nit}</td>
-                <td style={{ padding: '10px', color: 'var(--text)' }}>{row.nombre}</td>
-                <td style={{ padding: '10px', textAlign: 'right', color: 'var(--text)' }}>{formatCurrency(row.pago)}</td>
-                <td style={{ padding: '10px', textAlign: 'right', color: '#ef4444' }}>{formatCurrency(row.retencion)}</td>
+            {exogenaData.length === 0 ? (
+              <tr>
+                <td colSpan={5} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  {loading ? 'Consultando registros contables en MySQL...' : 'No se registraron movimientos exógenos para este formato y vigencia.'}
+                </td>
               </tr>
-            ))}
+            ) : (
+              exogenaData.map((row, idx) => (
+                <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '10px', color: 'var(--text)' }}>{row.concepto}</td>
+                  <td style={{ padding: '10px', color: 'var(--text)' }}>{row.nit}</td>
+                  <td style={{ padding: '10px', color: 'var(--text)' }}>{row.nombre}</td>
+                  <td style={{ padding: '10px', textAlign: 'right', color: 'var(--text)' }}>{formatCurrency(row.pago)}</td>
+                  <td style={{ padding: '10px', textAlign: 'right', color: '#ef4444' }}>{formatCurrency(row.retencion)}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

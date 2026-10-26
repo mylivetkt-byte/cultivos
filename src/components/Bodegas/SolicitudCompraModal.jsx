@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import Select from 'react-select';
 import AsyncSelect from 'react-select/async';
 import Modal from '../Modal';
@@ -228,11 +229,8 @@ function SolicitudCompraModal({ isOpen, onClose, onSuccess, tenantId, fincaId, n
               </div>
               <div className="form-group">
                 <label>Fecha de Necesidad *</label>
-                <input 
-                  type="date" 
-                  value={headerData.fecha_necesidad} 
-                  onChange={(e) => setHeaderData({...headerData, fecha_necesidad: e.target.value})} 
-                />
+                <DatePickerClaro value={headerData.fecha_necesidad} 
+                  onChange={(e) => setHeaderData({...headerData, fecha_necesidad: e.target.value})} />
               </div>
               <div className="form-group">
                 <label>Prioridad</label>

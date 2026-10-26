@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from './Common/DatePickerClaro';
 import { fetchDashboardStats } from '../utils/api';
 import GerenciaDashboard from './GerenciaDashboard';
 import './dashboard.css';
@@ -81,21 +82,15 @@ function DashboardComponent({ modules, loading, onSelectTable, tenantId, fincaId
       <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', alignItems: 'flex-end' }}>
         <div>
           <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Fecha Desde</label>
-          <input 
-            type="date" 
-            value={startDate} 
+          <DatePickerClaro value={startDate} 
             onChange={e => setStartDate(e.target.value)}
-            style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
-          />
+            style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }} />
         </div>
         <div>
           <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Fecha Hasta</label>
-          <input 
-            type="date" 
-            value={endDate} 
+          <DatePickerClaro value={endDate} 
             onChange={e => setEndDate(e.target.value)}
-            style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
-          />
+            style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }} />
         </div>
         <button 
           onClick={handleApplyFilters}

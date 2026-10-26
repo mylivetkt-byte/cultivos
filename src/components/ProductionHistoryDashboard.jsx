@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from './Common/DatePickerClaro';
 import axios from 'axios';
 import { Search, Download, Eye, RefreshCw, Layers, ShieldCheck, Hammer, Users, Printer, FileText, Send } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -465,22 +466,16 @@ const ProductionHistoryDashboard = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slate-400 mb-1">Fecha Desde</label>
-              <input
-                type="date"
-                value={filtros.fecha_desde}
+              <DatePickerClaro value={filtros.fecha_desde}
                 onChange={(e) => setFiltros({ ...filtros, fecha_desde: e.target.value })}
-                className="w-full bg-[#1b253b] border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500"
-              />
+                className="w-full bg-[#1b253b] border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500" />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-400 mb-1">Fecha Hasta</label>
-              <input
-                type="date"
-                value={filtros.fecha_hasta}
+              <DatePickerClaro value={filtros.fecha_hasta}
                 onChange={(e) => setFiltros({ ...filtros, fecha_hasta: e.target.value })}
-                className="w-full bg-[#1b253b] border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500"
-              />
+                className="w-full bg-[#1b253b] border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500" />
             </div>
           </div>
 

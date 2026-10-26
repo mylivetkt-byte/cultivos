@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { MapContainer, TileLayer, Polygon, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -753,13 +754,10 @@ export default function MuestreoSuelosManager() {
                 </div>
                 <div className="form-group">
                   <label>Fecha de Planificación</label>
-                  <input 
-                    type="date" 
-                    className="form-control-input" 
+                  <DatePickerClaro className="form-control-input" 
                     required 
                     value={mallaForm.fecha_plan}
-                    onChange={e => setMallaForm({ ...mallaForm, fecha_plan: e.target.value })}
-                  />
+                    onChange={e => setMallaForm({ ...mallaForm, fecha_plan: e.target.value })} />
                 </div>
               </div>
 

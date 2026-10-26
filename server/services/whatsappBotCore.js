@@ -5,6 +5,7 @@ import { makeWASocket, useMultiFileAuthState, DisconnectReason } from '@whiskeys
 import pino from 'pino';
 import QRCode from 'qrcode';
 import fetch from 'node-fetch';
+import fs from 'fs';
 
 let sock = null;
 let currentQR = '';
@@ -37,14 +38,22 @@ export async function connectToWhatsApp() {
 
         if (connection === 'close') {
             isConnected = false;
-            const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+            const isLoggedOut = lastDisconnect?.error?.output?.statusCode === DisconnectReason.loggedOut;
+            const shouldReconnect = !isLoggedOut;
             console.log('Conexión de WhatsApp cerrada. Reconectando:', shouldReconnect);
             if (shouldReconnect) {
                 sock = null;
                 setTimeout(connectToWhatsApp, 3000);
             } else {
-                console.log('WhatsApp desconectado manualmente.');
+                console.log('WhatsApp desconectado (sesión cerrada en móvil). Limpiando credenciales para generar nuevo QR...');
+                try {
+                    fs.rmSync('auth_info_baileys', { recursive: true, force: true });
+                } catch (e) {
+                    console.error('Error limpiando auth_info_baileys:', e.message);
+                }
+                sock = null;
                 currentQR = '';
+                setTimeout(connectToWhatsApp, 2000);
             }
         } else if (connection === 'open') {
             isConnected = true;
@@ -83,13 +92,23 @@ export async function connectToWhatsApp() {
 }
 
 export function getStatus() {
-    return { connected: isConnected, qr: currentQR };
+    const phone = sock?.user?.id ? sock.user.id.split(':')[0].split('@')[0] : null;
+    return { connected: isConnected, qr: currentQR, phone };
 }
 
 export async function logoutWhatsApp() {
-    if (sock) {
-        await sock.logout();
-    }
+    try {
+        if (sock) {
+            await sock.logout();
+        }
+    } catch (e) {}
+    try {
+        fs.rmSync('auth_info_baileys', { recursive: true, force: true });
+    } catch (e) {}
+    sock = null;
+    isConnected = false;
+    currentQR = '';
+    setTimeout(connectToWhatsApp, 1500);
 }
 
 export async function sendTextMessage(phone, text) {

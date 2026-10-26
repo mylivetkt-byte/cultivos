@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { downloadExcelWorkbook } from './exportExcel';
 import { authFetch } from './api';
 
 export async function exportReporteGerencialLotesExcel(tenantId, metadata = {}, filtros = {}) {
@@ -66,11 +67,10 @@ export async function exportReporteGerencialLotesExcel(tenantId, metadata = {}, 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Lotes');
     
-    XLSX.writeFile(wb, `Reporte_Gerencial_Lotes_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    downloadExcelWorkbook(wb, `Reporte_Gerencial_Lotes_${new Date().toISOString().slice(0, 10)}.xlsx`);
     return true;
   } catch (err) {
     console.error('Error exportando Excel:', err);
-    alert('Error al generar Excel: ' + err.message);
-    return false;
+    throw new Error('Error al generar Excel: ' + err.message);
   }
 }

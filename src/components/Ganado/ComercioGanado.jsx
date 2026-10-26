@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { fetchTableData } from '../../utils/api';
 
 function ComercioGanado({ fincaId }) {
@@ -254,7 +255,7 @@ function ComercioGanado({ fincaId }) {
               </select>
             </div>
             <div><label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Fecha de Entrada</label><br/>
-              <input type="date" value={fechaEntrada} onChange={e => setFechaEntrada(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}/>
+              <DatePickerClaro value={fechaEntrada} onChange={e => setFechaEntrada(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} />
             </div>
 
             <div style={{ gridColumn: 'span 3', borderTop: '1px dashed var(--border)', margin: '10px 0' }}></div>
@@ -301,7 +302,7 @@ function ComercioGanado({ fincaId }) {
           </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-            <div><label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Fecha de Salida/Muerte</label><br/><input type="date" value={fechaSalida} onChange={e => setFechaSalida(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}/></div>
+            <div><label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Fecha de Salida/Muerte</label><br/><DatePickerClaro value={fechaSalida} onChange={e => setFechaSalida(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }} /></div>
             
             {tipoSalida !== 'Muerte' && (
               <div><label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{tipoSalida === 'Venta' ? 'Comprador' : 'Beneficiario'}</label><br/><input type="text" value={comprador} onChange={e => setComprador(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)' }}/></div>

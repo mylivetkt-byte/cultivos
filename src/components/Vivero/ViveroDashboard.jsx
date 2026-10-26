@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { authFetch } from '../../utils/api.js';
 import { formatCurrency } from '../../utils/format';
 import { 
@@ -6,9 +7,10 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
   LineChart, Line
 } from 'recharts';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from '../../utils/exportPdf';
+
 import * as XLSX from 'xlsx';
+import { downloadExcelWorkbook } from '../../utils/exportExcel';
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#a855f7', '#ec4899', '#06b6d4'];
 
@@ -101,7 +103,7 @@ export default function ViveroDashboard() {
   };
 
   const exportToPDF = () => {
-    const doc = new jsPDF();
+    const doc = new (getJsPDFConstructor())();
     const fincaName = filtrosCatalog.fincas.find(f => f.id_finca == selectedFinca)?.nombre || 'Todas las Fincas';
     const viveroName = filtrosCatalog.viveros.find(v => v.id_vivero == selectedVivero)?.nombre || 'Todos los Viveros';
 
@@ -111,7 +113,7 @@ export default function ViveroDashboard() {
     doc.text(`Finca: ${fincaName} | Vivero: ${viveroName}`, 14, 28);
     if (fechaInicio && fechaFin) doc.text(`Periodo: ${fechaInicio} a ${fechaFin}`, 14, 34);
 
-    doc.autoTable({
+    runAutoTable(doc, {
       startY: 40,
       head: [['Insumo/Semilla', 'Tipo', 'Existencia', 'Consumido', 'Valor Total Inmovilizado']],
       body: (stats.kardex || []).map(k => [
@@ -121,7 +123,7 @@ export default function ViveroDashboard() {
       styles: { fontSize: 9 }
     });
 
-    doc.save(`Reporte_Vivero_${new Date().getTime()}.pdf`);
+    downloadPdfDoc(doc, `Reporte_Vivero_${new Date().getTime()}.pdf`);
   };
 
   const exportToExcel = () => {
@@ -132,7 +134,7 @@ export default function ViveroDashboard() {
     const camadasSheet = XLSX.utils.json_to_sheet(stats.camadasTimeline || []);
     XLSX.utils.book_append_sheet(wb, camadasSheet, "Desarrollo Camadas");
 
-    XLSX.writeFile(wb, `Reporte_Vivero_${new Date().getTime()}.xlsx`);
+    downloadExcelWorkbook(wb, `Reporte_Vivero_${new Date().getTime()}.xlsx`);
   };
 
   if (!stats) return null;
@@ -189,12 +191,12 @@ export default function ViveroDashboard() {
 
         <div style={{ flex: 1, minWidth: '130px' }}>
           <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '5px' }}>Desde</label>
-          <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-color)', color: 'var(--text)' }} />
+          <DatePickerClaro value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-color)', color: 'var(--text)' }} />
         </div>
 
         <div style={{ flex: 1, minWidth: '130px' }}>
           <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '5px' }}>Hasta</label>
-          <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-color)', color: 'var(--text)' }} />
+          <DatePickerClaro value={fechaFin} onChange={e => setFechaFin(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-color)', color: 'var(--text)' }} />
         </div>
 
         <button onClick={loadDashboard} style={{ padding: '8px 20px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', height: '37px', fontWeight: 'bold' }}>

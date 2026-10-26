@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DatePickerClaro from '../Common/DatePickerClaro';
 import { 
   PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -151,11 +152,11 @@ function DashboardGanadero({ fincaId: globalFincaId }) {
           </div>
           <div style={{ flex: '1', minWidth: '150px' }}>
             <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 'bold' }}>Desde</label>
-            <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-color)', color: 'var(--text)' }} />
+            <DatePickerClaro value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-color)', color: 'var(--text)' }} />
           </div>
           <div style={{ flex: '1', minWidth: '150px' }}>
             <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 'bold' }}>Hasta</label>
-            <input type="date" value={fechaFin} onChange={e => setFechaFin(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-color)', color: 'var(--text)' }} />
+            <DatePickerClaro value={fechaFin} onChange={e => setFechaFin(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-color)', color: 'var(--text)' }} />
           </div>
           <div style={{ flex: '1', minWidth: '150px', display: 'flex', alignItems: 'flex-end' }}>
             <button 

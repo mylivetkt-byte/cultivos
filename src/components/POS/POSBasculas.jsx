@@ -3,10 +3,10 @@ import { useAuth } from '../../context/AuthContext';
 import { authFetch } from '../../utils/api';
 import { Scale, Plus, Edit, Trash2, FileText, Download, Save, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
+import { downloadExcelWorkbook } from '../../utils/exportExcel';
+import { getJsPDFConstructor, runAutoTable, downloadPdfDoc } from '../../utils/exportPdf';
 import { useSortableData } from '../../hooks/useSortableData';
 import Pagination from '../Pagination';
-import 'jspdf-autotable';
 
 export default function POSBasculas() {
   const { tenantId } = useAuth();
@@ -108,22 +108,33 @@ export default function POSBasculas() {
   };
 
   const exportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(basculas);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Básculas");
-    XLSX.writeFile(wb, "basculas_pos.xlsx");
+    try {
+      const ws = XLSX.utils.json_to_sheet(basculas);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Básculas");
+      downloadExcelWorkbook(wb, "basculas_pos.xlsx");
+    } catch (e) {
+      console.error(e);
+      alert('Error exportando Excel: ' + e.message);
+    }
   };
 
   const exportPDF = () => {
-    const doc = new jsPDF();
-    doc.text("Reporte de Básculas POS", 14, 15);
-    const tableData = basculas.map(b => [b.codigo, b.nombre, b.modelo_nombre || 'N/A', b.tipo_conexion, b.puerto_com, b.activa ? 'Sí' : 'No']);
-    doc.autoTable({
-      head: [['Código', 'Nombre', 'Modelo', 'Conexión', 'Puerto', 'Activa']],
-      body: tableData,
-      startY: 20,
-    });
-    doc.save("basculas_pos.pdf");
+    try {
+      const PDFConstructor = getJsPDFConstructor();
+      const doc = new PDFConstructor();
+      doc.text("Reporte de Básculas POS", 14, 15);
+      const tableData = basculas.map(b => [b.codigo, b.nombre, b.modelo_nombre || 'N/A', b.tipo_conexion, b.puerto_com, b.activa ? 'Sí' : 'No']);
+      runAutoTable(doc, {
+        head: [['Código', 'Nombre', 'Modelo', 'Conexión', 'Puerto', 'Activa']],
+        body: tableData,
+        startY: 20,
+      });
+      downloadPdfDoc(doc, "basculas_pos.pdf");
+    } catch (e) {
+      console.error(e);
+      alert('Error exportando PDF: ' + e.message);
+    }
   };
 
   return (
