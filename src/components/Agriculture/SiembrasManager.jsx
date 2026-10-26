@@ -469,7 +469,7 @@ const SiembrasManager = () => {
         </div>
       </div>
 
-      <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
+      <div className="card table-scroll" style={{ padding: 0 }}>
         <table className="data-table">
           <thead>
             <tr>
@@ -482,7 +482,7 @@ const SiembrasManager = () => {
               <th>Hectáreas</th>
               <th>Plantas / Densidad</th>
               <th>Estado</th>
-              <th>Acciones</th>
+              <th className="col-actions">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -527,8 +527,8 @@ const SiembrasManager = () => {
                       {s.estado || 'Activo'}
                     </span>
                   </td>
-                  <td style={{ position: 'sticky', right: 0, backgroundColor: 'var(--card-bg)', zIndex: 1, borderLeft: '1px solid var(--border)', padding: '8px' }}>
-                    <div className="cell-actions" style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap', alignItems: 'center' }}>
+                  <td className="cell-actions-col">
+                    <div className="cell-actions">
                       <button className="btn btn-outline btn-sm btn-edit" onClick={() => handleEdit(s)}>
                         ✏️ <span className="btn-text">Editar</span>
                       </button>

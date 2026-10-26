@@ -1516,6 +1516,10 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
         </div>
       ) : structure ? (
         <div className="table-wrapper">
+          <div className="mobile-table-hint">
+            <span className="mobile-table-hint-text">↔ Desliza para explorar columnas</span>
+            <span className="mobile-table-hint-badge">{pagination.total > 0 ? `${pagination.total} registros` : `${data.length} filas`}</span>
+          </div>
           <div className="table-scroll">
             <table className="data-table">
               <thead>
@@ -1544,17 +1548,7 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
                       )}
                     </th>
                   ))}
-                  <th style={{ 
-                    width: '260px', 
-                    minWidth: '260px', 
-                    cursor: 'default', 
-                    position: 'sticky', 
-                    right: 0, 
-                    backgroundColor: 'var(--card-bg)', 
-                    zIndex: 2, 
-                    borderLeft: '1px solid var(--border)',
-                    boxShadow: '-4px 0 8px rgba(0,0,0,0.05)'
-                  }}>Acciones</th>
+                  <th className="col-actions">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -1591,8 +1585,8 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
                           {renderCellValue(col, row)}
                         </td>
                       ))}
-                      <td style={{ position: 'sticky', right: 0, backgroundColor: 'var(--card-bg)', zIndex: 1, borderLeft: '1px solid var(--border)', padding: '8px' }}>
-                        <div className="cell-actions" style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap', alignItems: 'center' }}>
+                      <td className="cell-actions-col">
+                        <div className="cell-actions">
                           <button
                             className="btn btn-outline btn-sm btn-edit"
                             onClick={() => openEditModal(row)}
@@ -1731,18 +1725,20 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
               </div>
               <div className="pagination">
                 <button
-                  className="page-btn"
+                  className="page-btn page-btn-nav"
                   onClick={() => handlePageChange(1)}
                   disabled={pagination.page === 1}
+                  title="Primera página"
                 >
                   ««
                 </button>
                 <button
-                  className="page-btn"
+                  className="page-btn page-btn-nav"
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={pagination.page === 1}
+                  title="Página anterior"
                 >
-                  ‹
+                  ‹ <span className="page-nav-text">Ant</span>
                 </button>
                 {getPageNumbers().map((p, i) =>
                   p === '...' ? (
@@ -1760,16 +1756,18 @@ function DynamicCatalog({ tableName, tenantId, fincaId, nucleoId }) {
                   )
                 )}
                 <button
-                  className="page-btn"
+                  className="page-btn page-btn-nav"
                   onClick={() => handlePageChange(pagination.page + 1)}
                   disabled={pagination.page === pagination.totalPages}
+                  title="Página siguiente"
                 >
-                  ›
+                  <span className="page-nav-text">Sig</span> ›
                 </button>
                 <button
-                  className="page-btn"
+                  className="page-btn page-btn-nav"
                   onClick={() => handlePageChange(pagination.totalPages)}
                   disabled={pagination.page === pagination.totalPages}
+                  title="Última página"
                 >
                   »»
                 </button>
