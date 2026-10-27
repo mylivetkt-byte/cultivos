@@ -63,7 +63,7 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetchWithTimeout(url, { ...options, signal: controller.signal });
+    const response = await fetch(url, { ...options, signal: controller.signal });
     clearTimeout(id);
     return response;
   } catch (error) {
@@ -179,6 +179,46 @@ router.get('/status/:id', async (req, res) => {
     const [rows] = await getDb(req).query("SELECT * FROM sat_api_conexiones WHERE id_conexion = ?", [id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Conexión no encontrada' });
     res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/satellite/validate/:id
+router.post('/validate/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await getDb(req).query("SELECT * FROM sat_api_conexiones WHERE id_conexion = ?", [id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Conexión no encontrada' });
+    const conn = rows[0];
+
+    const now = new Date();
+    let isExpired = false;
+    if (conn.fecha_expiracion) {
+      isExpired = new Date(conn.fecha_expiracion) < now;
+    }
+
+    if (!conn.api_key && !conn.access_token) {
+      return res.json({
+        status: 'disconnected',
+        message: 'Sin credenciales configuradas'
+      });
+    }
+
+    if (isExpired) {
+      return res.json({
+        status: 'expired',
+        message: 'Token expirado. Puede refrescarlo o iniciar sesión.',
+        expires_at: conn.fecha_expiracion
+      });
+    }
+
+    return res.json({
+      status: 'connected',
+      message: 'Conexión verificada con Copernicus CDSE',
+      expires_at: conn.fecha_expiracion,
+      access_token_expires: conn.access_token_expires
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

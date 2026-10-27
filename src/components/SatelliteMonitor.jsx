@@ -173,26 +173,21 @@ function SatelliteMonitor() {
   const checkStatus = async (id, apiKey, fechaExpiracion) => {
     setChecking(prev => ({ ...prev, [id]: true }));
     try {
-      // Check local expiration date first
       if (fechaExpiracion) {
         const expDate = new Date(fechaExpiracion);
         const today = new Date();
-        // Set hours to 0 to compare dates
         expDate.setHours(0,0,0,0);
         today.setHours(0,0,0,0);
 
         if (expDate < today) {
-          // Token is expired! Let's trigger auto-refresh
           setStatuses(prev => ({
             ...prev,
-            [id]: { status: 'expired', message: 'Token de base de datos expirado. Intentando auto-refrescar...' }
+            [id]: { status: 'expired', message: 'Token expirado. Ingrese credenciales para renovar.', expires_at: fechaExpiracion }
           }));
-          await triggerAutoRefresh(id);
           return;
         }
       }
 
-      // If not locally expired, call backend validation against Copernicus
       const res = await validateSatelliteConnection(id);
       setStatuses(prev => ({
         ...prev,
@@ -202,15 +197,10 @@ function SatelliteMonitor() {
           expires_at: res.expires_at || fechaExpiracion 
         }
       }));
-
-      // If backend reports expired token, trigger auto-refresh
-      if (res.status === 'expired') {
-        await triggerAutoRefresh(id);
-      }
     } catch (err) {
       setStatuses(prev => ({
         ...prev,
-        [id]: { status: 'error', message: `Error: ${err.message}` }
+        [id]: { status: 'disconnected', message: `Sin validar: ${err.message}` }
       }));
     } finally {
       setChecking(prev => ({ ...prev, [id]: false }));
@@ -302,14 +292,16 @@ function SatelliteMonitor() {
             status: 'connected',
             message: res.message,
             expires_at: res.expires_at,
-            access_token_expires: res.access_token_expires,
+            expires_at: res.connection?.fecha_expiracion || res.expires_at,
+            access_token_expires: res.connection?.access_token_expires || res.access_token_expires,
             token_type: 'real'
           }
         }));
         // Clear password from memory
         setPasswordInputs(prev => ({ ...prev, [id]: '' }));
-        // Start auto-refresh timer
-        scheduleAutoRefresh(id, res.access_token_expires);
+        // Start auto-refresh timer safely if valid future date
+        const exp = res.connection?.access_token_expires || res.access_token_expires;
+        if (exp) scheduleAutoRefresh(id, exp);
       } else {
         showToast(res.message || 'Error de autenticación', 'error');
       }
@@ -324,33 +316,35 @@ function SatelliteMonitor() {
     }
   };
 
-  // Schedule auto-refresh based on access_token expiration
+  // Schedule auto-refresh safely based on access_token expiration
   const scheduleAutoRefresh = (id, expiresAt) => {
     if (refreshTimerRef.current) {
       clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
     }
     if (!expiresAt) return;
     const expiresMs = new Date(expiresAt).getTime();
+    if (isNaN(expiresMs)) return;
     const now = Date.now();
-    // Refresh 60 seconds before expiry
-    const refreshIn = Math.max((expiresMs - now) - 60000, 5000);
+    const diff = (expiresMs - now) - 60000;
+    if (diff < 30000) return; // Mínimo 30 segundos, no loop infinito
+
+    const refreshIn = Math.min(diff, 24 * 60 * 60 * 1000);
     console.log(`[Satellite] Auto-refresh programado en ${Math.round(refreshIn/1000)}s para conexión #${id}`);
     refreshTimerRef.current = setTimeout(async () => {
       console.log(`[Satellite] Ejecutando auto-refresh para conexión #${id}`);
       try {
         const res = await refreshSatelliteToken(id);
-        if (res.success) {
+        if (res && res.success) {
           showToast(`🔄 Token auto-renovado para ${res.connection?.proveedor || 'satélite'}`, 'success');
           setConnections(prev => prev.map(c => c.id_conexion === id ? res.connection : c));
           setTokensInput(prev => ({ ...prev, [id]: res.connection.api_key }));
-          // Check if there's a new access_token_expires to schedule next refresh
-          if (res.access_token_expires) {
-            scheduleAutoRefresh(id, res.access_token_expires);
+          if (res.connection?.access_token_expires) {
+            scheduleAutoRefresh(id, res.connection.access_token_expires);
           }
         }
       } catch (err) {
-        console.error('[Satellite] Auto-refresh falló:', err);
-        showToast(`⚠️ Auto-refresh falló: ${err.message}`, 'error');
+        console.warn('[Satellite] Auto-refresh no completado:', err.message);
       }
     }, refreshIn);
   };
