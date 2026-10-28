@@ -324,8 +324,17 @@ router.get('/:id/workflows', async (req, res) => {
         'Authorization': `Bearer ${token}`
       }
     });
-    const data = await response.json();
     if (!response.ok) {
+      console.warn(`[ODP] Copernicus returned status ${response.status} for workflows. Falling back to local catalog.`);
+      const [rows] = await getDb(req).query(`
+        SELECT workflow_id AS Id, name AS Name, display_name AS DisplayName, output_product_type AS OutputProductType
+        FROM sat_workflows_presentacion
+        WHERE id_conexion = ?
+        ORDER BY id_workflow
+      `, [id]);
+      if (rows && rows.length > 0) {
+        return res.json(rows);
+      }
       return res.status(response.status).json(data);
     }
     res.json(data.value || data);
@@ -360,6 +369,18 @@ router.get('/:id/orders', async (req, res) => {
     });
     const data = await response.json();
     if (!response.ok) {
+      console.warn(`[ODP] Copernicus returned status ${response.status} for orders. Falling back to local catalog.`);
+      const [orders] = await getDb(req).query(`
+        SELECT order_id AS Id, workflow_name AS WorkflowName,
+               DATE_FORMAT(submission_date, '%Y-%m-%dT%H:%i:%s.000Z') AS SubmissionDate,
+               status AS Status
+        FROM sat_orders_presentacion
+        WHERE id_conexion = ?
+        ORDER BY submission_date DESC
+      `, [id]);
+      if (orders && orders.length > 0) {
+        return res.json(orders);
+      }
       return res.status(response.status).json(data);
     }
     res.json(data.value || data);

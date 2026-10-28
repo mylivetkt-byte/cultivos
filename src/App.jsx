@@ -64,7 +64,7 @@ import PreliquidacionTaller from './components/Taller/PreliquidacionTaller.jsx';
 import RadarMaquinaria from './components/RadarMaquinaria.jsx';
 
 function AppContent() {
-  const { user, loading, logout, tenantId, permisos } = useAuth();
+  const { user, loading, logout, tenantId, permisos, requiereCambioClave } = useAuth();
   const publicEmployeePortal = window.location.pathname.startsWith('/portal/empleado');
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = React.useState(window.innerWidth > 768);
@@ -175,7 +175,6 @@ function AppContent() {
     );
   }
 
-  const { requiereCambioClave } = useAuth();
   if (user && requiereCambioClave) {
     return <CambioClaveObligatorio />;
   }

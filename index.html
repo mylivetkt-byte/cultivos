@@ -9,16 +9,6 @@
     <title>AgroPaccioli - Sistema de Gestión</title>
     <!-- Google Font: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-    <!-- Tailwind CSS for UI components -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      window.addEventListener('error', function(e) {
-        document.body.innerHTML += '<div style="color:red; padding: 20px; font-size:20px; z-index:9999; position:relative;">ERROR: ' + e.message + '</div>';
-      });
-      window.addEventListener('unhandledrejection', function(e) {
-        document.body.innerHTML += '<div style="color:red; padding: 20px; font-size:20px; z-index:9999; position:relative;">PROMISE: ' + (e.reason && e.reason.message ? e.reason.message : e.reason) + '</div>';
-      });
-    </script>
   </head>
   <body>
     <div id="root"></div>
