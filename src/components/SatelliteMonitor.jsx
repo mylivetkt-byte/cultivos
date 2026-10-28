@@ -121,8 +121,9 @@ function SatelliteMonitor() {
         setOdpWorkflowName(wData[0].Name);
       }
     } catch (err) {
-      console.error('Error loading ODP data:', err);
-      showToast(`Error al cargar ODP de Copernicus: ${err.message}`, 'error');
+      console.warn('ODP data not available or restricted for this CDSE account:', err);
+      setWorkflows([]);
+      setOrders([]);
     } finally {
       setLoadingODP(false);
     }

@@ -324,6 +324,14 @@ router.get('/:id/workflows', async (req, res) => {
         'Authorization': `Bearer ${token}`
       }
     });
+
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+
     if (!response.ok) {
       console.warn(`[ODP] Copernicus returned status ${response.status} for workflows. Falling back to local catalog.`);
       const [rows] = await getDb(req).query(`
@@ -335,9 +343,9 @@ router.get('/:id/workflows', async (req, res) => {
       if (rows && rows.length > 0) {
         return res.json(rows);
       }
-      return res.status(response.status).json(data);
+      return res.json([]);
     }
-    res.json(data.value || data);
+    res.json(data?.value || data || []);
   } catch (err) {
     console.error('[ODP] Error fetching workflows:', err.message);
     res.status(500).json({ error: err.message });
@@ -367,7 +375,14 @@ router.get('/:id/orders', async (req, res) => {
         'Authorization': `Bearer ${token}`
       }
     });
-    const data = await response.json();
+
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+
     if (!response.ok) {
       console.warn(`[ODP] Copernicus returned status ${response.status} for orders. Falling back to local catalog.`);
       const [orders] = await getDb(req).query(`
@@ -381,9 +396,9 @@ router.get('/:id/orders', async (req, res) => {
       if (orders && orders.length > 0) {
         return res.json(orders);
       }
-      return res.status(response.status).json(data);
+      return res.json([]);
     }
-    res.json(data.value || data);
+    res.json(data?.value || data || []);
   } catch (err) {
     console.error('[ODP] Error fetching production orders:', err.message);
     res.status(500).json({ error: err.message });
