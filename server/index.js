@@ -61,6 +61,7 @@ const auth = [authMiddleware, tenantPoolMiddleware];
 // ESCUDOS DE SEGURIDAD Y BLINDAJE INDUSTRIAL (NIVEL 3)
 // ============================================================================
 app.use(helmet({
+  contentSecurityPolicy: false, // Permite carga fluida de capas satelitales (Esri, Copernicus, OSM) y telemetría climática Open-Meteo
   hidePoweredBy: true,
   noSniff: true,
   frameguard: { action: 'deny' }, // Anti-clickjacking / iframing

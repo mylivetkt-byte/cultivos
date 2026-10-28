@@ -20,7 +20,7 @@ function MapController({ finca, selectedLote }) {
   useEffect(() => {
     // Prioridad: si hay un lote seleccionado, centrar en él; si no, en la finca
     const target = selectedLote || finca;
-    if (target && target.geometry && target.geometry.type === 'Polygon') {
+    if (target && target.geometry && (target.geometry.type === 'Polygon' || target.geometry.type === 'MultiPolygon')) {
       try {
         const geoJson = L.geoJSON({ type: 'Feature', geometry: target.geometry });
         const bounds = geoJson.getBounds();
@@ -31,7 +31,10 @@ function MapController({ finca, selectedLote }) {
         console.error('Error fitting bounds:', e);
       }
     }
-    map.invalidateSize();
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+    return () => clearTimeout(timer);
   }, [finca, selectedLote, map]);
   return null;
 }
@@ -40,7 +43,8 @@ function SatelliteCommandCenter({ tenantId = 1, onOpenConfig } = {}) {
   const [lotes, setLotes] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [activeLayer, setActiveLayer] = useState('NDVI');
-  const [sentinelInstanceId, setSentinelInstanceId] = useState('');
+  const [baseMap, setBaseMap] = useState('esri');
+  const [syncCount, setSyncCount] = useState(0);
   
   // Nuevos estados interactivos
   const [opacity, setOpacity] = useState(0.8);
@@ -114,20 +118,53 @@ function SatelliteCommandCenter({ tenantId = 1, onOpenConfig } = {}) {
   // Función para mostrar notificaciones temporales
   const showToast = (msg) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const handleSyncSentinel = () => {
-    if (!sentinelInstanceId) {
-      showToast('⚠️ Debes ingresar tu Instance ID de Sentinel Hub primero');
+  const handleSyncSentinel = async () => {
+    const target = selectedLote || finca;
+    if (!target || !target.geometry) {
+      showToast('⚠️ Selecciona una finca o lote con polígono GPS para sincronizar.');
       return;
     }
     setIsSyncing(true);
-    showToast('🔄 Conectando con Copernicus CDSE y Sentinel Hub...');
-    setTimeout(() => {
+    showToast('🔄 Conectando con Copernicus CDSE y procesando Sentinel-2 en tiempo real...');
+    try {
+      const geoJsonLayer = L.geoJSON({ type: 'Feature', geometry: target.geometry });
+      const bounds = geoJsonLayer.getBounds();
+      if (bounds.isValid()) {
+        setLoteBounds([
+          [bounds.getSouthWest().lat, bounds.getSouthWest().lng],
+          [bounds.getNorthEast().lat, bounds.getNorthEast().lng]
+        ]);
+      }
+      
+      const res = await authFetch('/api/satellite/3/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          geometry: target.geometry,
+          layerType: activeLayer,
+          dateTo: new Date().toISOString(),
+          t: Date.now()
+        })
+      });
+      
+      if (res.ok) {
+        const blob = await res.blob();
+        const newUrl = URL.createObjectURL(blob);
+        setLoteImage(newUrl);
+        setSyncCount(prev => prev + 1);
+        showToast(`✅ Sincronización Sentinel-2 exitosa. Capa ${activeLayer} actualizada.`);
+      } else {
+        showToast('⚠️ No se pudo procesar la capa satelital en este momento.');
+      }
+    } catch (err) {
+      console.error('Error sincronizando Sentinel-2:', err);
+      showToast('❌ Error de conexión con Copernicus CDSE.');
+    } finally {
       setIsSyncing(false);
-      showToast('✅ Sincronización exitosa. Capas actualizadas.');
-    }, 2500);
+    }
   };
 
   const handleDespachar = async (alert) => {
@@ -391,10 +428,11 @@ function SatelliteCommandCenter({ tenantId = 1, onOpenConfig } = {}) {
     }
   }, [activeTool, selectedLote]);
 
-  // 5. Fetch CDSE Process API Image for the selected lot
+  // 5. Fetch CDSE Process API Image for the active geometry (selected lot or entire finca)
   useEffect(() => {
     let activeUrl = null;
-    if (!selectedLote || !selectedLote.geometry || activeLayer === 'RENTABILIDAD') {
+    const target = selectedLote || finca;
+    if (!target || !target.geometry || activeLayer === 'RENTABILIDAD') {
       setLoteImage(null);
       setLoteBounds(null);
       return;
@@ -402,22 +440,26 @@ function SatelliteCommandCenter({ tenantId = 1, onOpenConfig } = {}) {
 
     const fetchImage = async () => {
       setIsLoadingImage(true);
-      showToast(`📡 Solicitando imagen real satelital (${activeLayer}) para el lote...`);
+      const targetLabel = selectedLote ? `lote ${selectedLote.name || selectedLote.properties?.nombre || ''}` : `finca ${finca.properties?.nombre || ''}`;
+      showToast(`📡 Cargando imagen satelital real (${activeLayer}) para ${targetLabel}...`);
       try {
-        const geoJsonLayer = L.geoJSON({ type: 'Feature', geometry: selectedLote.geometry });
+        const geoJsonLayer = L.geoJSON({ type: 'Feature', geometry: target.geometry });
         const bounds = geoJsonLayer.getBounds();
-        setLoteBounds([
-          [bounds.getSouthWest().lat, bounds.getSouthWest().lng],
-          [bounds.getNorthEast().lat, bounds.getNorthEast().lng]
-        ]);
+        if (bounds.isValid()) {
+          setLoteBounds([
+            [bounds.getSouthWest().lat, bounds.getSouthWest().lng],
+            [bounds.getNorthEast().lat, bounds.getNorthEast().lng]
+          ]);
+        }
         
         // 3 is the ID for Sentinel-2 in sat_api_conexiones
         const res = await authFetch('/api/satellite/3/process', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            geometry: selectedLote.geometry,
-            layerType: activeLayer
+            geometry: target.geometry,
+            layerType: activeLayer,
+            t: Date.now()
           })
         });
         
@@ -443,7 +485,7 @@ function SatelliteCommandCenter({ tenantId = 1, onOpenConfig } = {}) {
     return () => {
       if (activeUrl) URL.revokeObjectURL(activeUrl);
     }
-  }, [selectedLote, activeLayer]);
+  }, [selectedLote, finca, activeLayer, syncCount]);
 
 
   return (
@@ -589,34 +631,37 @@ function SatelliteCommandCenter({ tenantId = 1, onOpenConfig } = {}) {
         <main className="scc-map-container">
           <MapContainer center={[4.42, -72.75]} zoom={13} zoomControl={false} style={{ height: '100%', width: '100%' }}>
             <MapController finca={finca} selectedLote={selectedLote} />
-            <LayersControl position="topleft">
-              <LayersControl.BaseLayer checked name="Satélite Esri (HD Submétrica)">
-                <TileLayer 
-                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" 
-                  maxZoom={19}
-                  attribution="&copy; Esri World Imagery"
-                />
-              </LayersControl.BaseLayer>
-              <LayersControl.BaseLayer name="Sentinel-2 Sin Nubes (10m ESA Libre)">
-                <TileLayer 
-                  url="https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2021_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg" 
-                  maxZoom={17}
-                  attribution="&copy; Sentinel-2 cloudless by EOX (CC BY 4.0)"
-                />
-              </LayersControl.BaseLayer>
-              <LayersControl.BaseLayer name="Calles y Topografía (OSM)">
-                <TileLayer 
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution="&copy; OpenStreetMap contributors"
-                />
-              </LayersControl.BaseLayer>
-              <LayersControl.Overlay checked name="Límites y Nombres (Etiquetas)">
-                <TileLayer 
-                  url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
-                  zIndex={400}
-                />
-              </LayersControl.Overlay>
-            </LayersControl>
+            {baseMap === 'esri' && (
+              <TileLayer 
+                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" 
+                maxZoom={19}
+                attribution="&copy; Esri World Imagery"
+              />
+            )}
+            {baseMap === 'google' && (
+              <TileLayer 
+                url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" 
+                maxZoom={20}
+                attribution="&copy; Google Satellite"
+              />
+            )}
+            {baseMap === 'sentinel' && (
+              <TileLayer 
+                url="https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2021_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg" 
+                maxZoom={17}
+                attribution="&copy; Sentinel-2 cloudless by EOX (CC BY 4.0)"
+              />
+            )}
+            {baseMap === 'osm' && (
+              <TileLayer 
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution="&copy; OpenStreetMap contributors"
+              />
+            )}
+            <TileLayer 
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+              zIndex={400}
+            />
             
             {loteImage && loteBounds && (
               <ImageOverlay
@@ -628,12 +673,16 @@ function SatelliteCommandCenter({ tenantId = 1, onOpenConfig } = {}) {
             )}
 
             <FeatureGroup>
-                {finca && finca.geometry && finca.geometry.type === 'Polygon' && (
+                {finca && finca.geometry && (
                   <Polygon
-                    positions={finca.geometry.coordinates[0].map(c => [c[1], c[0]])}
+                    positions={
+                      finca.geometry.type === 'MultiPolygon'
+                        ? finca.geometry.coordinates[0][0].map(c => [c[1], c[0]])
+                        : finca.geometry.coordinates[0].map(c => [c[1], c[0]])
+                    }
                     pathOptions={{ color: '#ff7800', fillColor: 'transparent', weight: 3 }}
                   >
-                    <Popup><strong>{finca.properties.nombre}</strong></Popup>
+                    <Popup><strong>{finca.properties?.nombre || 'Finca'}</strong></Popup>
                   </Polygon>
                 )}
 
@@ -766,7 +815,16 @@ function SatelliteCommandCenter({ tenantId = 1, onOpenConfig } = {}) {
             <div className="panel-section">
               <div className="map-base-select">
                 <label>MAPA BASE</label>
-                <select><option>Satélite Esri</option></select>
+                <select 
+                  value={baseMap} 
+                  onChange={(e) => setBaseMap(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-300"
+                >
+                  <option value="esri">🛰️ Satélite Esri (HD Submétrica)</option>
+                  <option value="google">🌍 Google Satélite (Alta Definición)</option>
+                  <option value="sentinel">🇪🇺 Sentinel-2 Sin Nubes (ESA 10m)</option>
+                  <option value="osm">🗺️ Calles y Topografía (OSM)</option>
+                </select>
               </div>
             </div>
 
