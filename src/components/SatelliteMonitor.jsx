@@ -176,11 +176,7 @@ function SatelliteMonitor() {
     try {
       if (fechaExpiracion) {
         const expDate = new Date(fechaExpiracion);
-        const today = new Date();
-        expDate.setHours(0,0,0,0);
-        today.setHours(0,0,0,0);
-
-        if (expDate < today) {
+        if (expDate.getTime() < Date.now()) {
           setStatuses(prev => ({
             ...prev,
             [id]: { status: 'expired', message: 'Token expirado. Ingrese credenciales para renovar.', expires_at: fechaExpiracion }
@@ -576,7 +572,7 @@ function SatelliteMonitor() {
                     <div style={{ marginTop: 4 }}>
                       <strong>Refresh Token Expira:</strong>{' '}
                       <span style={{ color: new Date(state.expires_at) < new Date() ? '#ef4444' : '#10b981', fontWeight: 600 }}>
-                        {new Date(state.expires_at).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        {new Date(state.expires_at).toLocaleString('es-CO', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   )}
