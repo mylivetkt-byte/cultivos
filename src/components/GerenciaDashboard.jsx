@@ -331,12 +331,13 @@ function GerenciaDashboard({ tenantId, fincaId, startDate, endDate }) {
   };
 
   // 6. Acuícola Biomasa (Bar)
-  const totalBiomasaAcuicola = data.acuicola?.reduce((acc, curr) => acc + (curr.biomasa_actual_kg || 0), 0) || 0;
+  const acuicolaList = Array.isArray(data.acuicola) ? data.acuicola : [];
+  const totalBiomasaAcuicola = acuicolaList.reduce((acc, curr) => acc + (curr.biomasa_actual_kg || 0), 0);
   const chartAcuicola = {
-    labels: data.acuicola?.map(d => d.lago) || [],
+    labels: acuicolaList.map(d => d.lago),
     datasets: [{
       label: 'Biomasa Actual (kg)',
-      data: data.acuicola?.map(d => d.biomasa_actual_kg) || [],
+      data: acuicolaList.map(d => d.biomasa_actual_kg),
       backgroundColor: '#0ea5e9',
       borderRadius: 4
     }]
@@ -351,12 +352,13 @@ function GerenciaDashboard({ tenantId, fincaId, startDate, endDate }) {
   };
 
   // 7. Almacenes Valoración (Bar)
-  const totalValorAlmacen = data.almacenes?.reduce((acc, curr) => acc + (curr.valor_total || 0), 0) || 0;
+  const almacenesList = Array.isArray(data.almacenes) ? data.almacenes : [];
+  const totalValorAlmacen = almacenesList.reduce((acc, curr) => acc + (curr.valor_total || 0), 0);
   const chartAlmacenes = {
-    labels: data.almacenes?.map(d => d.bodega) || [],
+    labels: almacenesList.map(d => d.bodega),
     datasets: [{
       label: 'Valoración Actual ($)',
-      data: data.almacenes?.map(d => d.valor_total) || [],
+      data: almacenesList.map(d => d.valor_total),
       backgroundColor: '#10b981',
       borderRadius: 4
     }]

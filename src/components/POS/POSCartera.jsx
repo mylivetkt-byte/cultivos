@@ -100,8 +100,9 @@ export default function POSCartera() {
     }
   };
 
-  const saldoTotal = facturas.reduce((sum, f) => sum + Number(f.saldo_pendiente), 0);
-  const facturasVencidas = facturas.filter(f => f.dias_mora > 0);
+  const facturasList = Array.isArray(facturas) ? facturas : [];
+  const saldoTotal = facturasList.reduce((sum, f) => sum + Number(f.saldo_pendiente), 0);
+  const facturasVencidas = facturasList.filter(f => f.dias_mora > 0);
   const saldoVencido = facturasVencidas.reduce((sum, f) => sum + Number(f.saldo_pendiente), 0);
 
   return (

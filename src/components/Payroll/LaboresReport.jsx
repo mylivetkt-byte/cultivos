@@ -57,9 +57,10 @@ export default function LaboresReport({ tenantId }) {
   }, [labores, searchText, dateRange]);
 
   // KPIs
-  const totalLabores = filteredData.length;
-  const totalHoras = filteredData.reduce((acc, curr) => acc + (Number(curr.horas) || 0), 0);
-  const totalCosto = filteredData.reduce((acc, curr) => acc + (Number(curr.costo_estimado) || 0), 0);
+  const dataRows = Array.isArray(filteredData) ? filteredData : [];
+  const totalLabores = dataRows.length;
+  const totalHoras = dataRows.reduce((acc, curr) => acc + (Number(curr.horas) || 0), 0);
+  const totalCosto = dataRows.reduce((acc, curr) => acc + (Number(curr.costo_estimado) || 0), 0);
 
   const columns = [
     {

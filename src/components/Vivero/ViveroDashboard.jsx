@@ -139,10 +139,12 @@ export default function ViveroDashboard() {
 
   if (!stats) return null;
 
-  const totalSembrado = stats.destinos.find(d => d.tipo === 'Salida_Siembra')?.total || 0;
-  const totalVendido = stats.destinos.find(d => d.tipo === 'Venta')?.total || 0;
-  const totalBajas = stats.destinos.find(d => d.tipo === 'Baja_Enfermedad')?.total || 0;
-  const totalInsumos = stats.kardex.reduce((sum, item) => sum + Number(item.valor_total), 0);
+  const destinosList = Array.isArray(stats.destinos) ? stats.destinos : [];
+  const kardexList = Array.isArray(stats.kardex) ? stats.kardex : [];
+  const totalSembrado = destinosList.find(d => d.tipo === 'Salida_Siembra')?.total || 0;
+  const totalVendido = destinosList.find(d => d.tipo === 'Venta')?.total || 0;
+  const totalBajas = destinosList.find(d => d.tipo === 'Baja_Enfermedad')?.total || 0;
+  const totalInsumos = kardexList.reduce((sum, item) => sum + Number(item.valor_total || 0), 0);
 
   return (
     <div className="p-4 dashboard-container" style={{ display: 'flex', flexDirection: 'column', gap: '20px', background: 'var(--bg-color)', minHeight: '100vh' }}>

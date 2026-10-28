@@ -237,7 +237,7 @@ export default function RendimientoROIManager() {
 
   // Resumen acumulado de ROI de todos los ensayos registrados
   const metricasROI = useMemo(() => {
-    if (trials.length === 0) {
+    if (!Array.isArray(trials) || trials.length === 0) {
       return { totalEnsayos: 0, roiPromedio: 0, ahorroPromedio: 0, deltaRendPromedio: 0 };
     }
     const totalROI = trials.reduce((acc, t) => acc + (parseFloat(t.roi_neto_ha) || 0), 0);

@@ -341,8 +341,8 @@ function SatelliteCommandCenter({ tenantId = 1, onOpenConfig } = {}) {
             const currentTemp = data.current?.temperature_2m != null ? `${data.current.temperature_2m}` : '--';
             const currentHumidity = data.current?.relative_humidity_2m != null ? `${data.current.relative_humidity_2m}` : '--';
             const currentSoilTemp = data.current?.soil_temperature_0cm != null ? `${data.current.soil_temperature_0cm}` : '--';
-            const rainArray = data.daily?.precipitation_sum || [];
-            const totalRain = rainArray.reduce((acc, val) => acc + (val || 0), 0).toFixed(1);
+            const rainArray = Array.isArray(data?.daily?.precipitation_sum) ? data.daily.precipitation_sum : [];
+            const totalRain = rainArray.length > 0 ? rainArray.reduce((acc, val) => acc + (val || 0), 0).toFixed(1) : '0.0';
             const et0Val = data.daily?.et0_fao_evapotranspiration?.[0] != null ? data.daily.et0_fao_evapotranspiration[0].toFixed(1) : '3.8';
             setWeatherData({
               temp: currentTemp,

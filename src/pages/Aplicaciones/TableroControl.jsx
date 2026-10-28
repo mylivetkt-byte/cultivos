@@ -40,10 +40,11 @@ export default function TableroControl({ tenantId, fincaId }) {
     }
   };
 
-  const totalGeneral = data.reduce((s, r) => s + Number(r.total || 0), 0);
-  const totalInsumos = data.reduce((s, r) => s + Number(r.insumos || 0), 0);
-  const totalOperacion = data.reduce((s, r) => s + Number(r.operacion || 0), 0);
-  const totalOrganico = data.reduce((s, r) => s + Number(r.organico || 0), 0);
+  const dataList = Array.isArray(data) ? data : [];
+  const totalGeneral = dataList.reduce((s, r) => s + Number(r.total || 0), 0);
+  const totalInsumos = dataList.reduce((s, r) => s + Number(r.insumos || 0), 0);
+  const totalOperacion = dataList.reduce((s, r) => s + Number(r.operacion || 0), 0);
+  const totalOrganico = dataList.reduce((s, r) => s + Number(r.organico || 0), 0);
 
   return (
     <div className="dashboard-container">

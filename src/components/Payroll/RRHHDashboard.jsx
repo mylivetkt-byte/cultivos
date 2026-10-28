@@ -43,7 +43,8 @@ export default function RRHHDashboard({ tenantId }) {
     }
   };
 
-  const totalCostoOperativo = kpis?.costos?.reduce((sum, c) => sum + Number(c.costo || 0), 0) || 0;
+  const costosList = Array.isArray(kpis?.costos) ? kpis.costos : [];
+  const totalCostoOperativo = costosList.reduce((sum, c) => sum + Number(c.costo || 0), 0);
 
   // Derive unique cargos for the filter dropdown
   const uniqueCargos = useMemo(() => {

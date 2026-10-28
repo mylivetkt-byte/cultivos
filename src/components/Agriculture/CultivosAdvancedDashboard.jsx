@@ -33,14 +33,17 @@ export default function CultivosAdvancedDashboard() {
     );
   }
 
+  const zonasList = Array.isArray(data?.zonas) ? data.zonas : [];
+  const proyeccionList = Array.isArray(data?.proyeccion) ? data.proyeccion : [];
+
   // Formatting Treemap data
   const treemapData = [{
     name: 'Zonas Agroecológicas',
-    children: data.zonas.map(z => ({ name: z.zona, size: z.cantidad }))
+    children: zonasList.map(z => ({ name: z.zona, size: z.cantidad }))
   }];
 
-  const totalEstimado = data.proyeccion.reduce((acc, curr) => acc + curr.Estimado, 0);
-  const totalReal = data.proyeccion.reduce((acc, curr) => acc + curr.Real, 0);
+  const totalEstimado = proyeccionList.reduce((acc, curr) => acc + (curr.Estimado || 0), 0);
+  const totalReal = proyeccionList.reduce((acc, curr) => acc + (curr.Real || 0), 0);
 
   return (
     <div className="advanced-dashboard-container">

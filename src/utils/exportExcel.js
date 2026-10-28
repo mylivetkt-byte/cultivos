@@ -427,9 +427,10 @@ export function exportToExcel(tableName, columns = [], data = [], metadata = {},
     xlsx.utils.sheet_add_json(ws, rows, { header: headers, origin: 'A7' });
 
     // Auto-fit column widths
+    const validData = Array.isArray(data) ? data : [];
     const colWidths = headers.map((h, i) => {
       const colObj = validColumns[i];
-      const maxDataWidth = (data || []).reduce((max, row) => {
+      const maxDataWidth = validData.reduce((max, row) => {
         const val = row[colObj?.name];
         if (val === null || val === undefined) return max;
         return Math.max(max, String(val).length);

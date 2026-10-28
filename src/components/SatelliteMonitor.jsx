@@ -291,7 +291,6 @@ function SatelliteMonitor() {
           [id]: {
             status: 'connected',
             message: res.message,
-            expires_at: res.expires_at,
             expires_at: res.connection?.fecha_expiracion || res.expires_at,
             access_token_expires: res.connection?.access_token_expires || res.access_token_expires,
             token_type: 'real'

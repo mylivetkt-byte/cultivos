@@ -274,7 +274,7 @@ export default function AdministracionUsuarios() {
                       <h4 style={{ margin: 0, fontSize: '15px', color: 'var(--text-primary)' }}>{modulo.nombre}</h4>
                     </div>
                     <div style={{ padding: 0 }}>
-                      {Object.entries(modulo.formularios.reduce((acc, form) => {
+                      {Object.entries((Array.isArray(modulo.formularios) ? modulo.formularios : []).reduce((acc, form) => {
                         const g = form.grupo || 'Opciones Generales';
                         if (!acc[g]) acc[g] = [];
                         acc[g].push(form);

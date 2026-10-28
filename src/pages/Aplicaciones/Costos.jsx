@@ -41,7 +41,7 @@ export default function Costos({ tenantId, loteId }) {
     }
   };
 
-  const total = data.reduce((s, r) => s + Number(r.total_costos || 0), 0);
+  const total = Array.isArray(data) ? data.reduce((s, r) => s + Number(r.total_costos || 0), 0) : 0;
 
   return (
     <div>

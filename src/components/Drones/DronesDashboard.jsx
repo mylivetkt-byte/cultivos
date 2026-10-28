@@ -281,11 +281,14 @@ export default function DronesDashboard({ tenantId = 1 }) {
 
   // Métricas reales
   const stats = useMemo(() => {
-    const activas = misiones.filter(m => m.estado === 'en_curso').length;
-    const programadas = misiones.filter(m => m.estado === 'programada').length;
-    const horasTotales = equipos.reduce((acc, eq) => acc + (parseFloat(eq.horas_vuelo_acumuladas) || 0), 0);
-    const saludPromBaterias = baterias.length > 0 
-      ? +(baterias.reduce((acc, b) => acc + (parseFloat(b.salud_porcentaje) || 0), 0) / baterias.length).toFixed(1)
+    const misList = Array.isArray(misiones) ? misiones : [];
+    const eqList = Array.isArray(equipos) ? equipos : [];
+    const batList = Array.isArray(baterias) ? baterias : [];
+    const activas = misList.filter(m => m.estado === 'en_curso').length;
+    const programadas = misList.filter(m => m.estado === 'programada').length;
+    const horasTotales = eqList.reduce((acc, eq) => acc + (parseFloat(eq.horas_vuelo_acumuladas) || 0), 0);
+    const saludPromBaterias = batList.length > 0 
+      ? +(batList.reduce((acc, b) => acc + (parseFloat(b.salud_porcentaje) || 0), 0) / batList.length).toFixed(1)
       : 95.0;
 
     return { activas, programadas, horasTotales: +horasTotales.toFixed(1), saludPromBaterias };
